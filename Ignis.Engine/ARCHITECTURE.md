@@ -1,12 +1,3 @@
-Here is the updated **Ignis Engine Architecture & Implementation Specification**.
-
-Changes from the previous version:
-1.  **Project Layout**: Added specific files for the new hierarchy and transform logic (`TransformComponents.cs`, `TransformSystem.cs`).
-2.  **Architecture Modules**: Added a **"Scene Graph & Transform System"** section explaining the "Dirty Flag" + "Recursive Propagation" strategy.
-3.  **Phase 3**: Detailed the implementation of `TransformSystem` to handle parent-child matrix concatenation efficiently.
-
-***
-
 # Ignis Engine Architecture & Implementation Specification (3D)
 
 ## 1. Project Overview
@@ -35,9 +26,10 @@ Ignis/
 │   │   ├── IgnisApp.cs                 # Headless Core (manages Friflo World)
 │   │   └── IgnisGame.cs                # MonoGame Wrapper (manages GraphicsDevice)
 │   ├── ECS/
+│   │   ├── Archetypes.cs               # Standard Archetypes (e.g., GameObject)
 │   │   ├── Components/
 │   │   │   ├── ComponentTypes.cs       # (General Registry)
-│   │   │   └── TransformComponents.cs  # LocalTransform, WorldTransform, DirtyTag
+│   │   │   └── TransformComponents.cs  # WorldTransform (Matrix), TransformDirty (Tag)
 │   │   ├── Systems/
 │   │   │   └── TransformSystem.cs      # Recursive World Matrix Calculation
 │   │   └── SystemGroups.cs             # Enums/Constants for system sorting
@@ -60,20 +52,25 @@ Ignis/
 *   **Role**: Manages the ECS World (`EntityStore`) and the 3D simulation loop.
 *   **Usage**: Used by `IgnisGame` (Visual) and `Ignis.Tests` (Headless).
 
-### 4.2. Scene Graph & Transform System (New)
-To support 3D hierarchy efficiently, we employ a **Recursive Dirty Propagation** strategy.
-*   **Goal**: Update `WorldMatrix` only when necessary, respecting parent-child relationships.
+### 4.2. Scene Graph & Transform System
+To support 3D hierarchy efficiently, we employ a **Reactive Dirty Propagation** strategy using Friflo's built-in components and event system.
+
 *   **Data**:
-    *   **`LocalTransform`**: Relative Position (Vec3), Rotation (Quat), Scale (Vec3). Edited by gameplay code.
+    *   **Built-in Components**: `Position` (Vec3), `Rotation` (Quat), `Scale3` (Vec3).
     *   **`WorldTransform`**: The calculated Matrix4x4 used for rendering. Read-only.
-    *   **`TransformDirty` (Tag)**: A tag added automatically when `LocalTransform` is modified.
+    *   **`TransformDirty` (Tag)**: Added automatically via event hooks when built-in components change.
+*   **Archetype**:
+    *   **`GameObject`**: An archetype ensuring `Position`, `Rotation`, `Scale3`, `WorldTransform`, and `TransformDirty` are present on creation.
+*   **Reactivity (`IgnisApp` Setup)**:
+    *   Register `store.OnComponentChanged` events for `Position`, `Rotation`, and `Scale3`.
+    *   **Handler**: When any of these change, add the `TransformDirty` tag to the entity.
 *   **Logic (`TransformSystem`)**:
-    1.  **Identify Roots**: Query all entities that have a Transform but *no* Parent.
-    2.  **Parallel Recursion**: Iterate over Roots. For each Root, call `UpdateRecursive(entity, parentMatrix, parentIsDirty)`.
+    1.  **Identify Roots**: Query all entities that have `WorldTransform` but *no* Parent.
+    2.  **Parallel Recursion**: Iterate over Roots.
     3.  **Optimization**:
-        *   If `parentIsDirty` is `true`, we **must** recalculate the child, even if the child isn't dirty.
-        *   If `parentIsDirty` is `false` AND `child.IsDirty` is `false`, **skip** calculation and recurse to grandchildren.
-        *   This avoids O(N) matrix multiplications for static objects.
+        *   If `parentIsDirty` is `true`, we **must** recalculate the child.
+        *   If `parentIsDirty` is `false` AND `child.Has<TransformDirty>()` is `false`, **skip** calculation and recurse to grandchildren.
+        *   **Completion**: After recalculating, remove the `TransformDirty` tag.
 
 ### 4.3. The Visual Wrapper (`IgnisGame`)
 *   **Role**: Inherits from MonoGame’s `Game` class.
@@ -91,24 +88,36 @@ To support 3D hierarchy efficiently, we employ a **Recursive Dirty Propagation**
 *   **File**: `Ignis.Engine/Core/IgnisApp.cs`
 *   **Requirements**:
     *   **Properties**: `EntityStore World`, `SystemGroup SimulationRoot`.
-    *   **Constructor**: Instantiates World and Systems.
-    *   **Method `Update(double dt)`**: Executing `SimulationRoot`.
+    *   **Constructor**:
+        *   Instantiate `World`.
+        *   **Event Registration**:
+            ```csharp
+            World.OnComponentChanged<Position>(OnTransformChanged);
+            World.OnComponentChanged<Rotation>(OnTransformChanged);
+            World.OnComponentChanged<Scale3>(OnTransformChanged);
+            ```
+        *   **Method `OnTransformChanged`**: `eventArgs.Entity.AddTag<TransformDirty>();`
+    *   **Method `Update(double dt)`**: Execute `SimulationRoot`.
 
 #### Class: `IgnisGame`
 *   **File**: `Ignis.Engine/Core/IgnisGame.cs`
 *   **Requirements**:
     *   Standard MonoGame setup (`GraphicsDeviceManager`).
     *   **Draw Logic**:
-        1.  Reset Render State (Depth/Blend).
-        2.  Call `OnRender3D`.
-        3.  Call `OnRenderUI` (SpriteBatch).
+        1.  Reset Render State.
+        2.  Call `OnRender3D` (virtual).
+        3.  Call `OnRenderUI` (virtual).
 
 ### 5.2. Module: Ignis.Engine.ECS
 
+#### File: `ECS/Archetypes.cs`
+*   **Static Class**: `Archetypes`
+*   **Requirements**:
+    *   Define standard definitions for entity creation.
+    *   `public static Archetype GameObject => ...` (Includes `Position`, `Rotation`, `Scale3`, `WorldTransform`, `TransformDirty`).
+    *   *Rationale*: Ensures new entities don't default to (0,0,0) without the ability to move.
+
 #### File: `ECS/Components/TransformComponents.cs`
-*   **Struct**: `public struct LocalTransform : IComponent`
-    *   `Vector3 Position`, `Quaternion Rotation`, `Vector3 Scale`.
-    *   *Helper*: `static LocalTransform Default => ...`
 *   **Struct**: `public struct WorldTransform : IComponent`
     *   `Matrix4x4 Value`.
 *   **Struct**: `public struct TransformDirty : ITag { }`
@@ -118,18 +127,19 @@ To support 3D hierarchy efficiently, we employ a **Recursive Dirty Propagation**
 *   **Class**: `public class TransformSystem : QuerySystem`
 *   **Role**: Implements the hierarchy traversal.
 *   **Requirements**:
-    *   **Query**: Entities with `LocalTransform` and **without** `Parent` (Roots).
+    *   **Query**: Entities with `WorldTransform` and **without** `Parent` (Roots).
     *   **Method `OnUpdate()`**:
         *   Iterate Roots.
         *   Call `ProcessNode(entity, Matrix4x4.Identity, false)`.
     *   **Method `ProcessNode(Entity entity, Matrix parentMatrix, bool parentDirty)`**:
-        1.  Check if `entity` has `TransformDirty` tag.
+        1.  `bool isSelfDirty = entity.HasTag<TransformDirty>()`.
         2.  `bool needsUpdate = parentDirty || isSelfDirty`.
         3.  If `needsUpdate`:
-            *   Calculate `localMatrix = Matrix.Create...`
-            *   `worldMatrix = localMatrix * parentMatrix`
-            *   `entity.SetComponent(new WorldTransform { Value = worldMatrix })`
-            *   `entity.RemoveTag<TransformDirty>()`
+            *   **Read Native**: `var pos = entity.Position; var rot = entity.Rotation; var scale = entity.Scale3;`
+            *   Calculate `localMatrix = Matrix.CreateScale(scale) * Matrix.CreateFromQuaternion(rot) * Matrix.CreateTranslation(pos)`.
+            *   `worldMatrix = localMatrix * parentMatrix`.
+            *   `entity.GetComponent<WorldTransform>().Value = worldMatrix`.
+            *   `entity.RemoveTag<TransformDirty>()`.
         4.  **Recurse**: `foreach (var child in entity.Children) ProcessNode(child, worldMatrix, needsUpdate)`.
 
 ### 5.3. Module: Ignis.Samples
@@ -137,34 +147,37 @@ To support 3D hierarchy efficiently, we employ a **Recursive Dirty Propagation**
 #### Class: `SampleGame`
 *   **Requirements**:
     *   **Setup**:
-        *   Create `Root` entity (Position: 0,0,0).
-        *   Create `Child` entity (Position: 10,0,0). `Root.AddChild(Child)`.
-        *   Create `GrandChild` entity (Position: 0,5,0). `Child.AddChild(GrandChild)`.
+        *   Create `Root` using `Archetypes.GameObject`.
+        *   Create `Child` using `Archetypes.GameObject`. `Root.AddChild(Child)`.
+        *   Set `Child.Position = new Vector3(10, 0, 0)`.
     *   **Update**:
-        *   Rotate `Root` entity every frame.
+        *   Modify `Root.Rotation` every frame.
     *   **Verification**:
-        *   Verify `Child` and `GrandChild` World Matrices are moving in circles, proving the hierarchy system works.
+        *   Observe `Child` orbiting via its `WorldTransform` matrix.
 
 ---
 
 ## 6. Testing Strategy
 
 ### Unit Tests (`Ignis.Tests`)
-*   **Hierarchy Logic**:
-    1.  Create `A` (Root), `B` (Child).
-    2.  Move `A`.
-    3.  Run `TransformSystem`.
-    4.  Assert `B.WorldTransform` has changed to match `A`'s offset.
-*   **Optimization Check**:
-    1.  Run a frame where nothing moves.
-    2.  Assert `WorldTransform` values are unchanged and no expensive matrix math logs occurred (if logging enabled).
+*   **Event Reactivity**:
+    1.  Create entity `A` (GameObject).
+    2.  Assert `A` has `TransformDirty` (initial state).
+    3.  Run `TransformSystem` (should clear dirty tag).
+    4.  Set `A.Position = new Vector3(1,1,1)`.
+    5.  Assert `A` has `TransformDirty` tag again (proving event listener works).
+*   **Hierarchy Propagation**:
+    1.  Create chain `Root -> Child`.
+    2.  Move `Root`.
+    3.  Run System.
+    4.  Assert `Child.WorldTransform` contains the translation.
 
 ### Visual Verification
-*   **Planetary System**: Run `Ignis.Samples` with a "Sun, Earth, Moon" setup. Visual confirmation that the Moon orbits the Earth while the Earth orbits the Sun.
+*   **Solar System**: Run `Ignis.Samples`. Create a "Sun", "Earth", and "Moon" hierarchy. Rotating the Sun should carry the Earth, and rotating the Earth should carry the Moon, confirming matrix multiplication order and recursion.
 
 ## 7. Roadmap
 1.  **Phase 1**: Core Skeleton & Headless Setup.
-2.  **Phase 2**: **Test Suite** (Hierarchy Logic verification).
-3.  **Phase 3**: **Transform System** (Implementation of the Recursive Dirty Propagation).
+2.  **Phase 2**: **Test Suite** (Focus on Event listeners and Dirty Flag logic).
+3.  **Phase 3**: **Transform System** (Recursive calculation using built-in components).
 4.  **Phase 4**: **3D Rendering** (Mesh/Shader).
 5.  **Phase 5**: **UI Overlay**.
