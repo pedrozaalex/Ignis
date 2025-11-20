@@ -159,7 +159,7 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
         3.  (Optional) Calls `NotifyChanged()` on ECS signals if using a strict polling mode.
     *   **Draw**:
         1.  Calculates Flexbox-style layout (measure/arrange).
-        2.  Draws the tree via `SpriteBatch`.
+        2.  Draws the tree using the hybrid rendering strategy (see below).
 
 
 #### 5.4. Module: Ignis.Engine.UI (Rendering Strategy)

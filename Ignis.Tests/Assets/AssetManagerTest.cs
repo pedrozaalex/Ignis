@@ -1,6 +1,6 @@
 using Ignis.Engine.Assets;
 
-namespace Ignis.Tests;
+namespace Ignis.Tests.Assets;
 
 /// <summary>
 /// Unit tests for Phase 2: AssetManager & Content Pipeline

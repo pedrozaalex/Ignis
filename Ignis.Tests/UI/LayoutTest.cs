@@ -1,7 +1,7 @@
 using Ignis.Engine.UI;
 using Xunit;
 
-namespace Ignis.Tests
+namespace Ignis.Tests.UI
 {
     // --- ECS Implementation for Tests ---
     public class TestNode
