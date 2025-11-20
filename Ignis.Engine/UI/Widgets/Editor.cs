@@ -11,14 +11,14 @@ namespace Ignis.Engine.UI.Widgets
     /// PropertyGrid - Inspector for editing object properties.
     /// Key widget for game engine editors.
     /// </summary>
-    public class PropertyGrid : ViewComponent, Core.IViewContainer
+    public class PropertyGrid : ViewComponent, IViewContainer
     {
         private readonly Panel _container;
         private readonly List<IView> _properties = new();
 
         public PropertyGrid()
         {
-            _container = new Panel()
+            _container = new Panel
             {
                 BackgroundColor = new Color(37, 37, 38)
             };
@@ -30,7 +30,7 @@ namespace Ignis.Engine.UI.Widgets
 
         public void AddProperty(string label, IView editor)
         {
-            var row = new Panel()
+            var row = new Panel
             {
                 BackgroundColor = Color.Transparent
             };
@@ -38,7 +38,7 @@ namespace Ignis.Engine.UI.Widgets
             row.Layout.Height = Units.Pixels(32);
             row.Layout.PaddingBottom = Units.Pixels(4);
 
-            var labelView = new Elements.Text(null) { Content = label, Color = Color.LightGray };
+            var labelView = new Text() { Content = label, Color = Color.LightGray };
             labelView.Layout.Width = Units.Pixels(100);
             labelView.Layout.PaddingTop = Units.Pixels(6);
 
@@ -85,7 +85,7 @@ namespace Ignis.Engine.UI.Widgets
     /// Hierarchy - Scene hierarchy tree view.
     /// Shows parent-child relationships of game objects.
     /// </summary>
-    public class Hierarchy<T> : ViewComponent, Core.IViewContainer where T : notnull
+    public class Hierarchy<T> : ViewComponent, IViewContainer where T : notnull
     {
         private readonly TreeView<T> _treeView;
         private readonly Signal<T?> _selectedItem;
@@ -128,7 +128,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// ColorPicker - RGB/HSV color selection widget.
     /// </summary>
-    public class ColorPicker : ViewComponent, Core.IViewContainer
+    public class ColorPicker : ViewComponent, IViewContainer
     {
         private readonly Signal<Color> _color;
         private readonly Panel _container;
@@ -142,7 +142,7 @@ namespace Ignis.Engine.UI.Widgets
             _color = color;
 
             // Build UI: Preview box + RGB sliders or HSV picker
-            var preview = new Panel()
+            var preview = new Panel
             {
                 BackgroundColor = color.Value,
                 BorderColor = Color.White,
@@ -185,18 +185,18 @@ namespace Ignis.Engine.UI.Widgets
 
         private IView CreateColorSlider(string label, Signal<float> value, Action<float> onChange)
         {
-            var row = new Panel()
+            var row = new Panel
             {
                 BackgroundColor = Color.Transparent
             };
             row.Layout.LayoutType = LayoutType.Row;
             row.Layout.Height = Units.Pixels(28);
 
-            var labelView = new Elements.Text(null) { Content = label, Color = Color.White };
+            var labelView = new Text() { Content = label, Color = Color.White };
             labelView.Layout.Width = Units.Pixels(20);
             labelView.Layout.PaddingTop = Units.Pixels(4);
 
-            var slider = new Slider(value, 0f, 1f);
+            var slider = new Slider(value);
             slider.Layout.Width = Units.Stretch(1);
 
             var valueDisplay = new ReactiveText(
@@ -247,7 +247,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// Vector3Field - Editor for 3D vectors (Position, Rotation, Scale).
     /// </summary>
-    public class Vector3Field : ViewComponent, Core.IViewContainer
+    public class Vector3Field : ViewComponent, IViewContainer
     {
         private readonly Signal<Vector3> _vector;
         private readonly Panel _container;
@@ -256,7 +256,7 @@ namespace Ignis.Engine.UI.Widgets
         {
             _vector = vector;
 
-            var labelView = new Elements.Text(font) { Content = label, Color = Color.White };
+            var labelView = new Text(font) { Content = label, Color = Color.White };
             labelView.Layout.Width = Units.Pixels(80);
             labelView.Layout.PaddingTop = Units.Pixels(6);
 
@@ -282,7 +282,7 @@ namespace Ignis.Engine.UI.Widgets
 
         private IView CreateAxisField(string axis, Computed<float> value, Action<float> onChange)
         {
-            var container = new Panel()
+            var container = new Panel
             {
                 BackgroundColor = Color.Transparent
             };
@@ -290,7 +290,7 @@ namespace Ignis.Engine.UI.Widgets
             container.Layout.Width = Units.Stretch(1);
             container.Layout.PaddingLeft = Units.Pixels(4);
 
-            var axisLabel = new Elements.Text(null) { Content = axis, Color = GetAxisColor(axis) };
+            var axisLabel = new Text() { Content = axis, Color = GetAxisColor(axis) };
             axisLabel.Layout.Width = Units.Pixels(12);
             axisLabel.Layout.PaddingTop = Units.Pixels(6);
 
@@ -338,7 +338,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// AssetBrowser - Grid/list view of project assets.
     /// </summary>
-    public class AssetBrowser<T> : ViewComponent, Core.IViewContainer where T : notnull
+    public class AssetBrowser<T> : ViewComponent, IViewContainer where T : notnull
     {
         private readonly SignalList<T> _assets;
         private readonly Func<T, string> _nameFunc;
@@ -365,7 +365,7 @@ namespace Ignis.Engine.UI.Widgets
         private IView AssetTile(T asset)
         {
             var icon = new Icon(_iconFunc(asset), 64);
-            var label = new Elements.Text(null) 
+            var label = new Text() 
             { 
                 Content = _nameFunc(asset), 
                 Color = Color.White 
@@ -411,7 +411,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// Console - Output log for messages, warnings, and errors.
     /// </summary>
-    public class Console : ViewComponent, Core.IViewContainer
+    public class Console : ViewComponent, IViewContainer
     {
         private readonly SignalList<LogEntry> _entries;
         private readonly ScrollView _scrollView;
@@ -429,14 +429,14 @@ namespace Ignis.Engine.UI.Widgets
 
         private IView CreateLogEntry(LogEntry entry)
         {
-            var icon = new Elements.Text(null) 
+            var icon = new Text() 
             { 
                 Content = GetLogIcon(entry.Level), 
                 Color = GetLogColor(entry.Level) 
             };
             icon.Layout.Width = Units.Pixels(20);
 
-            var message = new Elements.Text(null) 
+            var message = new Text() 
             { 
                 Content = entry.Message, 
                 Color = GetLogColor(entry.Level) 

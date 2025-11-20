@@ -20,21 +20,22 @@ namespace Ignis.Engine.UI.Core
         public PrimitiveBatch? PrimitiveBatch { get; }
         public SpriteFont? DefaultFont => _defaultFont;
 
-        public UIContext(GraphicsDevice? graphicsDevice)
+        public UIContext(GraphicsDevice? graphicsDevice, SpriteFont? defaultFont = null)
         {
             _graphicsDevice = graphicsDevice;
+            _defaultFont = defaultFont;
             if (graphicsDevice != null)
             {
                 PrimitiveBatch = new PrimitiveBatch(graphicsDevice);
-                _defaultFont = CreateDefaultFont(graphicsDevice);
             }
         }
 
-        private SpriteFont? CreateDefaultFont(GraphicsDevice graphicsDevice)
+        /// <summary>
+        /// Sets the default font for the UI context.
+        /// </summary>
+        public void SetDefaultFont(SpriteFont font)
         {
-            // TODO: Create a basic runtime font or load a default font asset
-            // For now, return null and handle gracefully in Text rendering
-            return null;
+            _defaultFont = font;
         }
 
         /// <summary>
@@ -75,19 +76,16 @@ namespace Ignis.Engine.UI.Core
             // Calculate layout with viewport as constraint
             LayoutEngine.Layout(_root, this, this, viewport.Width, viewport.Height);
 
-            // Begin primitive batch for shape rendering
+            // Start both batches - primitives render independently, text uses SpriteBatch
             PrimitiveBatch?.Begin();
-
-            // Begin SpriteBatch for text/texture rendering
             spriteBatch.Begin();
 
-            // Draw the tree
+            // Single pass - draw the entire tree
+            // Widgets use PrimitiveBatch for shapes, SpriteBatch for text
             DrawView(spriteBatch, _root);
 
-            // End SpriteBatch
+            // End both batches
             spriteBatch.End();
-
-            // End primitive batch and flush
             PrimitiveBatch?.End();
         }
 
@@ -99,7 +97,7 @@ namespace Ignis.Engine.UI.Core
             var bounds = GetBounds(view);
             view.Draw(spriteBatch, bounds);
 
-            // Draw children if this is a container
+            // Recursively draw children
             if (view is IViewContainer container)
             {
                 foreach (var child in container.GetChildren())

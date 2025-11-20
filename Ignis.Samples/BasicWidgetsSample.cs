@@ -18,7 +18,7 @@ public class BasicWidgetsSample : IgnisGame
 {
     private UIContext? _uiContext;
     private SpriteBatch? _spriteBatch;
-    
+
     // Reactive state
     private readonly Signal<string?> _playerName = new("Player");
     private readonly Signal<int> _health = new(100);
@@ -34,24 +34,102 @@ public class BasicWidgetsSample : IgnisGame
     {
     }
 
+    protected override void LoadContent()
+    {
+        base.LoadContent();
+
+        // Get content path
+        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
+        var fontSpriteFontPath = Path.Combine(contentPath, "DefaultFont.spritefont");
+        var fontXnbPath = Path.Combine(contentPath, "DefaultFont.xnb");
+
+        // Generate the .spritefont file if it doesn't exist
+        if (!File.Exists(fontSpriteFontPath))
+        {
+            System.Console.WriteLine("Generating DefaultFont.spritefont...");
+            GenerateDefaultFontFile(fontSpriteFontPath);
+        }
+
+        // Build the content if .xnb doesn't exist
+        if (!File.Exists(fontXnbPath))
+        {
+            System.Console.WriteLine($"Building DefaultFont.xnb with MGCB...");
+            System.Console.WriteLine($"  Source: {fontSpriteFontPath}");
+            System.Console.WriteLine($"  Target: {fontXnbPath}");
+            var success = ContentBuilder.BuildFont(contentPath, "DefaultFont.spritefont");
+
+            if (!success)
+            {
+                System.Console.WriteLine("⚠ Warning: Could not build .xnb file automatically.");
+                System.Console.WriteLine("  Text will not be visible.");
+                return;
+            }
+            
+            System.Console.WriteLine($"✓ Build complete. Checking for XNB at: {fontXnbPath}");
+            System.Console.WriteLine($"  XNB exists: {File.Exists(fontXnbPath)}");
+        }
+        else
+        {
+            System.Console.WriteLine($"✓ Font XNB already exists at: {fontXnbPath}");
+        }
+
+        // Try to load the compiled font
+        try
+        {
+            System.Console.WriteLine($"Loading font from Content.RootDirectory: {Content.RootDirectory}");
+            var font = Content.Load<SpriteFont>("DefaultFont");
+            _uiContext?.SetDefaultFont(font);
+            System.Console.WriteLine($"✓ Font loaded successfully! LineSpacing: {font.LineSpacing}, DefaultChar: {font.DefaultCharacter}");
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"⚠ Warning: Could not load DefaultFont: {ex.Message}");
+            System.Console.WriteLine($"  Stack trace: {ex.StackTrace}");
+            System.Console.WriteLine("  Text will not be visible.");
+        }
+    }
+
+    private static void GenerateDefaultFontFile(string path)
+    {
+        var fontContent = @"
+<?xml version=""1.0"" encoding=""utf-8""?>
+<XnaContent xmlns:Graphics=""Microsoft.Xna.Framework.Content.Pipeline.Graphics"">
+  <Asset Type=""Graphics:FontDescription"">
+    <FontName>Arial</FontName>
+    <Size>14</Size>
+    <Spacing>0</Spacing>
+    <UseKerning>true</UseKerning>
+    <Style>Regular</Style>
+    <CharacterRegions>
+      <CharacterRegion>
+        <Start>&#32;</Start>
+        <End>&#126;</End>
+      </CharacterRegion>
+    </CharacterRegions>
+  </Asset>
+</XnaContent>";
+        File.WriteAllText(path, fontContent);
+        System.Console.WriteLine($"Created {path}");
+    }
+
     protected override void Initialize()
     {
         base.Initialize();
-        
+
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
-        
+
+        System.Console.WriteLine("=== Basic Widgets Sample ===");
+        System.Console.WriteLine("Initializing UI...");
+
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
-        
-        System.Console.WriteLine("=== Basic Widgets Sample ===");
+
         System.Console.WriteLine("Demonstrating reactive UI updates.");
         System.Console.WriteLine("Watch console for reactive changes!");
-        System.Console.WriteLine("NOTE: Text rendering requires SpriteFont assets.");
-        System.Console.WriteLine("      Currently showing placeholder boxes for text.");
         System.Console.WriteLine("================================");
-        
+
         // Demonstrate reactive effects
         SetupReactiveLogging();
     }
@@ -64,7 +142,7 @@ public class BasicWidgetsSample : IgnisGame
         // TextField
         var nameField = new TextField(_playerName);
         nameField.Layout.Width = Units.Pixels(300);
-        
+
         var nameRow = CreateRow("Player Name:", nameField);
 
         // NumberField
@@ -72,7 +150,7 @@ public class BasicWidgetsSample : IgnisGame
             "Health",
             _health,
             x => Math.Min(100, x + 10), // Increment (max 100)
-            x => Math.Max(0, x - 10)    // Decrement (min 0)
+            x => Math.Max(0, x - 10) // Decrement (min 0)
         );
         healthField.Layout.Width = Units.Pixels(300);
 
@@ -85,7 +163,7 @@ public class BasicWidgetsSample : IgnisGame
             Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%")
         );
         volumeLabel.Layout.PaddingTop = Units.Pixels(10);
-        
+
         var volumeSlider = new Slider(_volume, 0f, 1f);
         volumeSlider.Layout.Width = Units.Pixels(300);
         volumeSlider.Layout.PaddingTop = Units.Pixels(5);
@@ -109,7 +187,7 @@ public class BasicWidgetsSample : IgnisGame
             BorderColor = new Color(63, 63, 70),
             BorderThickness = 2f
         };
-        
+
         contentPanel.Layout.LayoutType = LayoutType.Column;
         contentPanel.Layout.Width = Units.Pixels(500);
         contentPanel.Layout.Height = Units.Auto; // Size to content
@@ -206,7 +284,7 @@ public class BasicWidgetsSample : IgnisGame
         {
             var health = _health.Value;
             System.Console.WriteLine($"[REACTIVE] Health changed to: {health}");
-            
+
             // Auto-update alive status when health reaches 0
             if (health <= 0 && _isAlive.Value)
             {
@@ -232,15 +310,15 @@ public class BasicWidgetsSample : IgnisGame
     {
         base.Update(gameTime);
         _uiContext?.Update(gameTime);
-        
+
         // Simulate some automatic updates for demo purposes
         var totalSeconds = gameTime.TotalGameTime.TotalSeconds;
-        
+
         // Every 3 seconds, change something automatically
         if (totalSeconds % 3.0 < 0.016 && totalSeconds > 1.0)
         {
             System.Console.WriteLine("\n[AUTO] Triggering automatic update...");
-            
+
             // Cycle through some changes
             var cycle = (int)(totalSeconds / 3.0) % 4;
             switch (cycle)
@@ -261,6 +339,7 @@ public class BasicWidgetsSample : IgnisGame
                         _isAlive.Value = true;
                         System.Console.WriteLine("[AUTO] Resurrecting player!");
                     }
+
                     break;
             }
         }
@@ -269,7 +348,7 @@ public class BasicWidgetsSample : IgnisGame
     protected override void OnRenderUI(SpriteBatch spriteBatch)
     {
         base.OnRenderUI(spriteBatch);
-        
+
         if (_uiContext != null)
         {
             // Draw UI - PrimitiveBatch handles its own Begin/End internally
@@ -285,7 +364,7 @@ public class BasicWidgetsSample : IgnisGame
             _spriteBatch?.Dispose();
             _uiContext?.Dispose();
         }
+
         base.Dispose(disposing);
     }
 }
-

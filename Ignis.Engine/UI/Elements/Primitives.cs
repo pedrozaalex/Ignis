@@ -55,17 +55,25 @@ namespace Ignis.Engine.UI.Elements
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
             if (string.IsNullOrEmpty(_text))
-                return;
-
-            if (_font != null)
             {
-                spriteBatch.DrawString(_font, _text, new Vector2(bounds.X, bounds.Y), Color);
+                System.Console.WriteLine($"[Text.Draw] Empty text, skipping");
+                return;
+            }
+
+            // Priority: custom font > context default font
+            var fontToUse = _font ?? Context?.DefaultFont;
+            
+            System.Console.WriteLine($"[Text.Draw] Text='{_text}', Font={(fontToUse != null ? "Available" : "NULL")}, Color={Color}, Bounds={bounds}");
+            
+            if (fontToUse != null)
+            {
+                System.Console.WriteLine($"[Text.Draw] Calling spriteBatch.DrawString at ({bounds.X}, {bounds.Y})");
+                spriteBatch.DrawString(fontToUse, _text, new Vector2(bounds.X, bounds.Y), Color);
+                System.Console.WriteLine($"[Text.Draw] DrawString completed");
             }
             else
             {
-                // Fallback: Draw subtle placeholder to indicate text location
-                // Draw a thin border in a dark gray color
-                Context?.PrimitiveBatch?.DrawBorder(bounds, 1f, new Color(80, 80, 80, 128));
+                System.Console.WriteLine($"[Text.Draw] No font available, text won't render");
             }
         }
 
@@ -74,14 +82,16 @@ namespace Ignis.Engine.UI.Elements
             if (string.IsNullOrEmpty(_text))
                 return (0, 0);
 
-            if (_font != null)
+            // Priority: custom font > context default font > approximate
+            var fontToUse = _font ?? Context?.DefaultFont;
+            
+            if (fontToUse != null)
             {
-                var size = _font.MeasureString(_text);
+                var size = fontToUse.MeasureString(_text);
                 return (size.X, size.Y);
             }
             
-            // Fallback measurement when no font available
-            // Approximate: 8px per char width, 14px height
+            // Fallback measurement when no font available (approximate)
             return (_text.Length * 8f, 14f);
         }
     }

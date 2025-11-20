@@ -197,13 +197,18 @@ Ignis.UI employs a hybrid rendering strategy combining low-level primitive batch
     *   Widgets call `Context.PrimitiveBatch` directly—no SpriteBatch dependency for shapes.
 
 4.  **`UIContext` Draw Loop**:
-    *   **Sequence**:
+    *   **Concurrent Batching Strategy**:
         1. Calculate layout via `LayoutEngine.Layout()`
-        2. Begin primitive batch: `_primitiveBatch.Begin()`
-        3. Traverse view tree, each `IView.Draw()` adds primitives to batch
-        4. Text rendering via `SpriteBatch` (managed separately, interleaved as needed)
-        5. End primitive batch: `_primitiveBatch.End()` (flushes all geometry)
-    *   **Batching Strategy**: All shape primitives batched together, minimizing draw calls and state switches.
+        2. Start both batches: `PrimitiveBatch.Begin()` and `SpriteBatch.Begin()`
+        3. Traverse view tree once with `DrawView(spriteBatch, view)`
+        4. Each widget draws using appropriate batch:
+           - Panels, borders, sliders → `Context.PrimitiveBatch`
+           - Text, icons → `spriteBatch` parameter
+        5. End both batches: `spriteBatch.End()`, `PrimitiveBatch.End()`
+        
+    *   **Rationale**: Both batches are active simultaneously. PrimitiveBatch and SpriteBatch maintain independent state, so they don't conflict. PrimitiveBatch renders via `DrawUserIndexedPrimitives` while SpriteBatch handles its own texture-based rendering. Both accumulate their respective draw calls and flush when `End()` is called.
+    
+    *   **Performance**: Single tree traversal, two GPU submissions (one for primitives, one for text/textures) at end of frame.
 
 **Design Rationale**:
 *   **Decoupling**: Widgets no longer depend on SpriteBatch for shapes, enabling true procedural rendering.
