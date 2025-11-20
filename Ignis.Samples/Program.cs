@@ -12,6 +12,7 @@ Console.WriteLine("UI Widget Samples:");
 Console.WriteLine("  4. Basic Widgets - TextField, NumberField, Checkbox, Slider");
 Console.WriteLine("  5. Hierarchy & Lists - TreeView, Console, Dynamic Updates");
 Console.WriteLine("  6. Complete Editor Layout - Full Game Editor UI");
+Console.WriteLine("  7. Transform Inspector - Declarative UI with Signal.Lens()");
 Console.WriteLine();
 Console.Write("Select sample (1-6): ");
 
@@ -63,6 +64,15 @@ switch (choice)
     case "6":
         Console.WriteLine("\nStarting Complete Editor Layout Sample...\n");
         using (var game = new EditorWidgetSample())
+        {
+            game.Run();
+        }
+
+        break;
+    
+    case "7":
+        Console.WriteLine("\nStarting Transform Inspector Sample...\n");
+        using (var game = new TransformInspectorSample())
         {
             game.Run();
         }

@@ -74,6 +74,13 @@ Instead of managing a tree of objects manually, the UI is defined as **functions
     *   *Example*: `public IView Body() => Column(Label(nameSignal), Button("Click", onClick));`
 *   **Binding**: UI elements accept `Signal<T>` instead of raw values. They subscribe automatically.
 *   **Control Flow**: `Bind.If` and `Bind.For` replace C# `if/foreach` to handle DOM updates granularly without rebuilding the whole tree.
+*   **Fluent Styling**: Extension methods enable method chaining for styling without directly manipulating Layout properties.
+    *   *Example*: `Label("Hello").Width(200).Padding(10).Color(Color.Red)`
+    *   All `IView` instances support chaining methods: `.Width()`, `.Height()`, `.Padding()`, `.Align()`, etc.
+*   **Signal.Lens()**: Enables deep editing of value types (structs) without boilerplate.
+    *   *Example*: `var xSignal = positionSignal.Lens(v => v.X, (v, x) => new Vector3(x, v.Y, v.Z))`
+    *   Creates a bidirectional binding to a single field of a struct Signal
+    *   Changes to the lens Signal automatically propagate back to the parent Signal
 
 ### 4.5. ECS-to-UI Bridge
 Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
@@ -94,7 +101,12 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
 *   **Behavior**:
     *   `get`: Adds `CurrentObserver` to `_observers`. Returns `_value`.
     *   `set`: Updates `_value`. Iterates `_observers` calling `OnDependencyChanged()`.
-*   **API**: Implicit conversion operator to `T` (read-only convenience).
+*   **API**: 
+    *   Implicit conversion operator to `T` (read-only convenience).
+    *   `Lens<TField>(getter, setter)`: Creates a bidirectional binding to a field of the value.
+        *   Returns a `Signal<TField>` that reads from and writes to the parent Signal
+        *   Essential for editing struct components (Vector3, Quaternion, etc.) in UI without creating temporary objects
+        *   Example: `posSignal.Lens(v => v.X, (v, x) => v with { X = x })`
 
 #### Class: `Computed<T>`
 *   **State**: `Func<T> _computer`, `T _cache`, `bool _isDirty`.
@@ -133,14 +145,38 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
     *   `void Mount(UIContext context)` (Called when added to live tree)
     *   `void Unmount()` (Called when removed; cleans up Signal subscriptions)
 
+#### Static Class: `ViewExtensions` (Fluent Styling API)
+*   **Role**: Extension methods for declarative styling via method chaining
+*   **Methods**:
+    *   `IView Width(this IView view, float pixels)` / `Width(Units width)`
+    *   `IView Height(this IView view, float pixels)` / `Height(Units height)`
+    *   `IView Padding(this IView view, float padding)` - All sides
+    *   `IView Padding(float horizontal, float vertical)` - Axis-specific
+    *   `IView PaddingLeft/Right/Top/Bottom(float padding)` - Individual sides
+    *   `IView Align/AlignCenter/AlignLeft/AlignRight()`
+    *   `IView Left/Right/Top/Bottom(float pixels)` - Absolute positioning
+*   **Design**: All methods return the view for chaining. Internally modify `view.Layout` properties.
+
 #### Static Class: `Elements` (The Builder API)
 *   **Methods**:
     *   `IView Column(params IView[] children)`
     *   `IView Row(params IView[] children)`
-    *   `IView Label(Signal<string> text)`
+    *   `IView Label(string text)` / `Label(Signal<string>)` / `Label(Computed<string>)`
     *   `IView Button(string label, Action onClick)`
     *   `IView FloatField(string label, Signal<float> value)`
-*   **Design**: These return concrete implementations (e.g., `LabelView`) that create `Effect`s in their `Mount` method to keep their internal state synced with the input Signals.
+    *   `Panel Panel(params IView[] children)` - Returns Panel with children (traditional)
+    *   `Panel Panel()` - Returns empty Panel for children-last fluent API (recommended)
+    *   `IView Rule(Color?, float thickness)` - Horizontal separator
+    *   `IView Spacer(float size)` - Fixed-size empty space
+    *   `IView Window(string title, params IView[] content)` - Titled container
+*   **Design**: These return concrete implementations (e.g., `ReactiveText`) that create `Effect`s in their `Mount` method to keep their internal state synced with the input Signals.
+*   **Children-Last Pattern**: Panel supports `.Children(...)` method for declaring children after styling:
+    ```csharp
+    Panel()
+        .Background(color)
+        .Padding(20)
+        .Children(content)  // Children declared last for better readability
+    ```
 
 #### Class: `Bind` (Control Flow)
 *   **`Bind.If(Signal<bool> condition, Func<IView> trueBuilder, Func<IView> falseBuilder)`**:

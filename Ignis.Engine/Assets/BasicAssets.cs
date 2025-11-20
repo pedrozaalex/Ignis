@@ -35,7 +35,7 @@ public class BinaryAsset : Asset
     /// <summary>
     /// The loaded binary data
     /// </summary>
-    public byte[] Data { get; private set; } = Array.Empty<byte>();
+    public byte[] Data { get; private set; } = [];
     
     /// <summary>
     /// Load binary data from file
@@ -50,7 +50,7 @@ public class BinaryAsset : Asset
     
     public override void Dispose()
     {
-        Data = Array.Empty<byte>();
+        Data = [];
     }
 }
 

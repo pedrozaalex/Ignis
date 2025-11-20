@@ -4,9 +4,11 @@ using Ignis.Engine.UI;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Widgets;
+using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReactiveEffect = Ignis.Engine.Reactive.Effect;
+using static Ignis.Engine.UI.Elements.Elements;
 
 namespace Ignis.Samples;
 
@@ -66,7 +68,7 @@ public class BasicWidgetsSample : IgnisGame
                 System.Console.WriteLine("  Text will not be visible.");
                 return;
             }
-            
+
             System.Console.WriteLine($"✓ Build complete. Checking for XNB at: {fontXnbPath}");
             System.Console.WriteLine($"  XNB exists: {File.Exists(fontXnbPath)}");
         }
@@ -81,7 +83,8 @@ public class BasicWidgetsSample : IgnisGame
             System.Console.WriteLine($"Loading font from Content.RootDirectory: {Content.RootDirectory}");
             var font = Content.Load<SpriteFont>("DefaultFont");
             _uiContext?.SetDefaultFont(font);
-            System.Console.WriteLine($"✓ Font loaded successfully! LineSpacing: {font.LineSpacing}, DefaultChar: {font.DefaultCharacter}");
+            System.Console.WriteLine(
+                $"✓ Font loaded successfully! LineSpacing: {font.LineSpacing}, DefaultChar: {font.DefaultCharacter}");
         }
         catch (Exception ex)
         {
@@ -117,7 +120,7 @@ public class BasicWidgetsSample : IgnisGame
     protected override void Initialize()
     {
         base.Initialize(); // This calls LoadContent internally
-        
+
         // Create UIContext BEFORE base.Initialize() would be better, but we need GraphicsDevice
         // So we create it here and manually load the font afterwards
         _spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -128,15 +131,15 @@ public class BasicWidgetsSample : IgnisGame
 
         System.Console.WriteLine("=== Basic Widgets Sample ===");
         System.Console.WriteLine("Initializing UI...");
-        
+
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
-        
+
         System.Console.WriteLine("Demonstrating reactive UI updates.");
         System.Console.WriteLine("Watch console for reactive changes!");
         System.Console.WriteLine("================================");
-        
+
         // Demonstrate reactive effects
         SetupReactiveLogging();
     }
@@ -158,139 +161,73 @@ public class BasicWidgetsSample : IgnisGame
 
     private IView BuildUI()
     {
-        var titleLabel = new Label("Basic Widgets Demo", null, new Color(100, 200, 255));
-        titleLabel.Layout.PaddingBottom = Units.Pixels(20);
+        // Content panel
+        var contentPanel = Panel()
+            .Background(new Color(37, 37, 38))
+            .Border(new Color(63, 63, 70), 2f)
+            .Width(500)
+            .Height(Units.Auto)
+            .Children(
+                Column(
+                    // Title
+                    Label("Basic Widgets Demo", null, new Color(100, 200, 255))
+                        .PaddingBottom(20),
 
-        // TextField
-        var nameField = new TextField(_playerName);
-        nameField.Layout.Width = Units.Pixels(300);
+                    // Player Name Row
+                    Row(
+                        Label("Player Name:", null, Color.LightGray)
+                            .Width(120)
+                            .PaddingTop(6),
+                        new TextField(_playerName)
+                            .Width(300)
+                    ),
 
-        var nameRow = CreateRow("Player Name:", nameField);
+                    // Health Field
+                    new NumberField<int>(
+                        "Health",
+                        _health,
+                        x => Math.Min(100, x + 10),
+                        x => Math.Max(0, x - 10)
+                    ).Width(300),
 
-        // NumberField
-        var healthField = new NumberField<int>(
-            "Health",
-            _health,
-            x => Math.Min(100, x + 10), // Increment (max 100)
-            x => Math.Max(0, x - 10) // Decrement (min 0)
-        );
-        healthField.Layout.Width = Units.Pixels(300);
+                    // Alive Checkbox
+                    new Checkbox("Is Alive", _isAlive)
+                        .PaddingTop(10),
 
-        // Checkbox
-        var aliveCheckbox = new Checkbox("Is Alive", _isAlive);
-        aliveCheckbox.Layout.PaddingTop = Units.Pixels(10);
+                    // Volume Label
+                    Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%"))
+                        .PaddingTop(10),
 
-        // Slider
-        var volumeLabel = new Label(
-            Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%")
-        );
-        volumeLabel.Layout.PaddingTop = Units.Pixels(10);
+                    // Volume Slider
+                    new Slider(_volume, 0f, 1f)
+                        .Width(300)
+                        .PaddingTop(100),
 
-        var volumeSlider = new Slider(_volume, 0f, 1f);
-        volumeSlider.Layout.Width = Units.Pixels(300);
-        volumeSlider.Layout.PaddingTop = Units.Pixels(5);
-
-        // Status panel showing current state
-        var statusPanel = CreateStatusPanel();
-        statusPanel.Layout.PaddingTop = Units.Pixels(30);
-
-        // Main content panel
-        var contentPanel = new Panel(
-            titleLabel,
-            nameRow,
-            healthField,
-            aliveCheckbox,
-            volumeLabel,
-            volumeSlider,
-            statusPanel
-        )
-        {
-            BackgroundColor = new Color(37, 37, 38),
-            BorderColor = new Color(63, 63, 70),
-            BorderThickness = 2f
-        };
-
-        contentPanel.Layout.LayoutType = LayoutType.Column;
-        contentPanel.Layout.Width = Units.Pixels(500);
-        contentPanel.Layout.Height = Units.Auto; // Size to content
-        contentPanel.Layout.PaddingLeft = Units.Pixels(30);
-        contentPanel.Layout.PaddingRight = Units.Pixels(30);
-        contentPanel.Layout.PaddingTop = Units.Pixels(30);
-        contentPanel.Layout.PaddingBottom = Units.Pixels(30);
+                    // Status Panel - children last
+                    Panel()
+                        .Background(new Color(45, 45, 48))
+                        .Border(new Color(0, 122, 204))
+                        .Padding(15, 10)
+                        .PaddingTop(30)
+                        .Children(
+                            Label("Current State (Reactive)", null, new Color(255, 200, 100))
+                                .PaddingBottom(10),
+                            Label(Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")),
+                            Label(Computed<string>.From(() => $"Health: {_health.Value}/100")),
+                            Label(Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")),
+                            Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%"))
+                        )
+                )
+                .Padding(30)
+            );
 
         // Wrapper to center content
-        var wrapper = new Panel(contentPanel)
-        {
-            BackgroundColor = new Color(25, 25, 28) // Slightly darker background
-        };
-        wrapper.Layout.LayoutType = LayoutType.Column;
-        wrapper.Layout.Width = Units.Stretch(1); // Fill viewport width
-        wrapper.Layout.Height = Units.Stretch(1); // Fill viewport height
-        wrapper.Layout.Alignment = Alignment.Center; // Center children
-
-        return wrapper;
-    }
-
-    private IView CreateRow(string label, IView content)
-    {
-        var labelView = new Label(label, null, Color.LightGray);
-        labelView.Layout.Width = Units.Pixels(120);
-        labelView.Layout.PaddingTop = Units.Pixels(6);
-        labelView.Layout.PaddingBottom = Units.Pixels(10);
-
-        var row = new Panel(labelView, content)
-        {
-            BackgroundColor = Color.Transparent
-        };
-        row.Layout.LayoutType = LayoutType.Row;
-
-        return row;
-    }
-
-    private IView CreateStatusPanel()
-    {
-        var title = new Label("Current State (Reactive)", null, new Color(255, 200, 100));
-        title.Layout.PaddingBottom = Units.Pixels(10);
-
-        // These labels automatically update when signals change!
-        var nameStatus = new Label(
-            Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")
-        );
-        nameStatus.Layout.PaddingBottom = Units.Pixels(5);
-
-        var healthStatus = new Label(
-            Computed<string>.From(() => $"Health: {_health.Value}/100")
-        );
-        healthStatus.Layout.PaddingBottom = Units.Pixels(5);
-
-        var aliveStatus = new Label(
-            Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")
-        );
-        aliveStatus.Layout.PaddingBottom = Units.Pixels(5);
-
-        var volumeStatus = new Label(
-            Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%")
-        );
-
-        var statusPanel = new Panel(
-            title,
-            nameStatus,
-            healthStatus,
-            aliveStatus,
-            volumeStatus
-        )
-        {
-            BackgroundColor = new Color(45, 45, 48),
-            BorderColor = new Color(0, 122, 204),
-            BorderThickness = 1f
-        };
-        statusPanel.Layout.LayoutType = LayoutType.Column;
-        statusPanel.Layout.PaddingLeft = Units.Pixels(15);
-        statusPanel.Layout.PaddingRight = Units.Pixels(15);
-        statusPanel.Layout.PaddingTop = Units.Pixels(10);
-        statusPanel.Layout.PaddingBottom = Units.Pixels(10);
-
-        return statusPanel;
+        return Panel()
+            .Background(new Color(25, 25, 28))
+            .Width(Units.Stretch(1))
+            .Height(Units.Stretch(1))
+            .Align(Alignment.Center)
+            .Children(contentPanel);
     }
 
     private void SetupReactiveLogging()

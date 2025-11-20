@@ -10,7 +10,7 @@ namespace Ignis.Engine.UI.Widgets
     /// </summary>
     public class Panel : ViewComponent, Core.IViewContainer
     {
-        private readonly List<IView> _children = new();
+        private readonly List<IView> _children = [];
 
         public Color BackgroundColor { get; set; } = new Color(45, 45, 48); // Dark gray (VS theme)
         public Color BorderColor { get; set; } = new Color(63, 63, 70);
@@ -21,6 +21,35 @@ namespace Ignis.Engine.UI.Widgets
         {
             _children.AddRange(children);
             Layout.LayoutType = LayoutType.Column;
+        }
+
+        // Fluent styling methods
+        public Panel Background(Color color)
+        {
+            BackgroundColor = color;
+            return this;
+        }
+
+        public Panel Border(Color color, float thickness = 1f)
+        {
+            BorderColor = color;
+            BorderThickness = thickness;
+            return this;
+        }
+
+        public Panel Rounded(float radius)
+        {
+            CornerRadius = radius;
+            return this;
+        }
+
+        public Panel Children(params IView[] children)
+        {
+            foreach (var child in children)
+            {
+                AddChild(child);
+            }
+            return this;
         }
 
         public void AddChild(IView child)

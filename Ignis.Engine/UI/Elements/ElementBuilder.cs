@@ -1,5 +1,9 @@
 using Ignis.Engine.Reactive;
+using Ignis.Engine.UI;
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
+using Ignis.Engine.UI.Widgets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -33,17 +37,34 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a text label with static text.
         /// </summary>
-        public static IView Label(string text, SpriteFont? font = null)
+        public static IView Label(string text, SpriteFont? font = null, Color? color = null)
         {
-            return new Text(font) { Content = text };
+            var textView = new Text(font) { Content = text };
+            if (color.HasValue)
+                textView.Color = color.Value;
+            return textView;
         }
 
         /// <summary>
         /// Creates a text label bound to a signal.
         /// </summary>
-        public static IView Label(Signal<string> textSignal, SpriteFont? font = null)
+        public static IView Label(Signal<string> textSignal, SpriteFont? font = null, Color? color = null)
         {
-            return new ReactiveText(textSignal, font);
+            var reactiveText = new ReactiveText(textSignal, font);
+            if (color.HasValue)
+                reactiveText.Color = color.Value;
+            return reactiveText;
+        }
+
+        /// <summary>
+        /// Creates a text label bound to a computed value.
+        /// </summary>
+        public static IView Label(Computed<string> textComputed, SpriteFont? font = null, Color? color = null)
+        {
+            var reactiveText = new ReactiveText(textComputed, font);
+            if (color.HasValue)
+                reactiveText.Color = color.Value;
+            return reactiveText;
         }
 
         /// <summary>
@@ -58,11 +79,19 @@ namespace Ignis.Engine.UI.Elements
         }
 
         /// <summary>
-        /// Creates a button (simplified - just a box with text for now).
+        /// Creates a button.
         /// </summary>
         public static IView Button(string label, Action onClick, SpriteFont? font = null)
         {
             return new ButtonView(label, onClick, font);
+        }
+
+        /// <summary>
+        /// Creates a button with enabled state signal.
+        /// </summary>
+        public static IView Button(string label, Action onClick, Signal<bool>? isEnabled, SpriteFont? font = null)
+        {
+            return new ButtonView(label, onClick, font) { IsEnabled = isEnabled };
         }
 
         /// <summary>
@@ -71,6 +100,36 @@ namespace Ignis.Engine.UI.Elements
         public static IView FloatField(string label, Signal<float> value, SpriteFont? font = null)
         {
             return new FloatFieldView(label, value, font);
+        }
+
+        /// <summary>
+        /// Creates a horizontal separator line.
+        /// </summary>
+        public static IView Rule(Color? color = null, float thickness = 1f)
+        {
+            var box = new Box(color ?? new Color(63, 63, 70));
+            box.Layout.Height = Units.Pixels(thickness);
+            box.Layout.Width = Units.Stretch(1);
+            return box;
+        }
+
+        /// <summary>
+        /// Creates a scroll view container.
+        /// </summary>
+        public static IView ScrollView(params IView[] children)
+        {
+            var container = new Container(children);
+            container.Layout.LayoutType = LayoutType.Column;
+            // TODO: Add actual scrolling behavior when input system is ready
+            return container;
+        }
+
+        /// <summary>
+        /// Creates a window with title and content.
+        /// </summary>
+        public static IView Window(string title, params IView[] content)
+        {
+            return new Widgets.Window(title, Column(content));
         }
 
         /// <summary>
@@ -96,115 +155,128 @@ namespace Ignis.Engine.UI.Elements
             box.Layout.Height = Units.Pixels(size);
             return box;
         }
-    }
 
-    /// <summary>
-    /// Text that automatically updates when a signal changes.
-    /// </summary>
-    internal class ReactiveText : Text
-    {
-        private readonly Func<string> _textGetter;
-
-        public ReactiveText(Signal<string> textSignal, SpriteFont? font) : base(font)
+        /// <summary>
+        /// Creates a panel (styled container) with optional styling.
+        /// </summary>
+        public static Panel Panel(params IView[] children)
         {
-            _textGetter = () => textSignal.Value;
+            return new Panel(children);
         }
 
-        public ReactiveText(Computed<string> textComputed, SpriteFont? font) : base(font)
+        /// <summary>
+        /// Creates an empty panel for fluent children-last API.
+        /// </summary>
+        public static Panel Panel()
         {
-            _textGetter = () => textComputed.Value;
-        }
-
-        protected override void OnMount()
-        {
-            CreateEffect(() =>
-            {
-                Content = _textGetter();
-            });
-        }
-    }
-
-    /// <summary>
-    /// Simple button view.
-    /// </summary>
-    internal class ButtonView : ViewComponent, Core.IViewContainer
-    {
-        private readonly IView _content;
-
-        public ButtonView(string label, Action onClick, SpriteFont? font)
-        {
-            
-            // Build button as a colored box with text
-            var background = new Box(new Color(100, 100, 200));
-            background.Layout.Width = Units.Pixels(100);
-            background.Layout.Height = Units.Pixels(30);
-            
-            var text = new Text(font) { Content = label, Color = Color.White };
-            
-            _content = new Container(background, text);
-            _content.Layout.LayoutType = LayoutType.Column;
-            _content.Layout.Alignment = Alignment.Center;
-        }
-
-        protected override void OnMount()
-        {
-            _content.Mount(Context!);
-        }
-
-        protected override void OnUnmount()
-        {
-            _content.Unmount();
-        }
-
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
-        {
-            // TODO: Handle click detection
-        }
-
-        public IEnumerable<IView> GetChildren()
-        {
-            yield return _content;
-        }
-    }
-
-    /// <summary>
-    /// Float input field (simplified - displays value and increment/decrement buttons).
-    /// </summary>
-    internal class FloatFieldView : ViewComponent, Core.IViewContainer
-    {
-        private readonly IView _content;
-
-        public FloatFieldView(string label, Signal<float> value, SpriteFont? font)
-        {
-            // Build as: [Label] [Value] [+] [-]
-            var labelText = new Text(font) { Content = label };
-            var valueText = new ReactiveText(
-                Computed<string>.From(() => value.Value.ToString("F2")),
-                font
-            );
-
-            _content = new Container(labelText, valueText);
-            _content.Layout.LayoutType = LayoutType.Row;
-        }
-
-        protected override void OnMount()
-        {
-            _content.Mount(Context!);
-        }
-
-        protected override void OnUnmount()
-        {
-            _content.Unmount();
-        }
-
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
-        {
-        }
-
-        public IEnumerable<IView> GetChildren()
-        {
-            yield return _content;
+            return new Panel();
         }
     }
 }
 
+/// <summary>
+/// Text that automatically updates when a signal changes.
+/// </summary>
+public class ReactiveText : Text
+{
+    private readonly Func<string> _textGetter;
+
+    public ReactiveText(Signal<string> textSignal, SpriteFont? font) : base(font)
+    {
+        _textGetter = () => textSignal.Value;
+    }
+
+    public ReactiveText(Computed<string> textComputed, SpriteFont? font) : base(font)
+    {
+        _textGetter = () => textComputed.Value;
+    }
+
+    protected override void OnMount()
+    {
+        CreateEffect(() => { Content = _textGetter(); });
+    }
+}
+
+/// <summary>
+/// Simple button view.
+/// </summary>
+public class ButtonView : ViewComponent, IViewContainer
+{
+    private readonly IView _content;
+
+    public Signal<bool>? IsEnabled { get; set; }
+
+    public ButtonView(string label, Action onClick, SpriteFont? font)
+    {
+        // Build button as a colored box with text
+        var background = new Box(new Color(100, 100, 200));
+        background.Layout.Width = Units.Pixels(100);
+        background.Layout.Height = Units.Pixels(30);
+
+        var text = new Text(font) { Content = label, Color = Color.White };
+
+        _content = new Container(background, text);
+        _content.Layout.LayoutType = LayoutType.Column;
+        _content.Layout.Alignment = Alignment.Center;
+    }
+
+    protected override void OnMount()
+    {
+        _content.Mount(Context!);
+    }
+
+    protected override void OnUnmount()
+    {
+        _content.Unmount();
+    }
+
+    public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+    {
+        // TODO: Handle click detection
+    }
+
+    public IEnumerable<IView> GetChildren()
+    {
+        yield return _content;
+    }
+}
+
+/// <summary>
+/// Float input field (simplified - displays value and increment/decrement buttons).
+/// </summary>
+public class FloatFieldView : ViewComponent, IViewContainer
+{
+    private readonly IView _content;
+
+    public FloatFieldView(string label, Signal<float> value, SpriteFont? font)
+    {
+        // Build as: [Label] [Value] [+] [-]
+        var labelText = new Text(font) { Content = label };
+        var valueText = new ReactiveText(
+            Computed<string>.From(() => value.Value.ToString("F2")),
+            font
+        );
+
+        _content = new Container(labelText, valueText);
+        _content.Layout.LayoutType = LayoutType.Row;
+    }
+
+    protected override void OnMount()
+    {
+        _content.Mount(Context!);
+    }
+
+    protected override void OnUnmount()
+    {
+        _content.Unmount();
+    }
+
+    public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+    {
+    }
+
+    public IEnumerable<IView> GetChildren()
+    {
+        yield return _content;
+    }
+}

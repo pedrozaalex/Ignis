@@ -25,7 +25,7 @@ namespace Ignis.Engine.ECS.Bridge
     public class ComponentSignal<T> : IObserver where T : struct, IComponent
     {
         private readonly Entity _entity;
-        private readonly List<IObserver> _observers = new();
+        private readonly List<IObserver> _observers = [];
         private T _cachedValue;
 
         public ComponentSignal(Entity entity)

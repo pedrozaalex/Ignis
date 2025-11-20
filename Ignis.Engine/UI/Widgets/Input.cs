@@ -274,7 +274,7 @@ namespace Ignis.Engine.UI.Widgets
                 thumbSize,
                 thumbSize
             );
-            batch.DrawFilledRectangle(thumbBounds, ThumbColor);
+            batch.DrawCircle(thumbBounds.Center.ToVector2(), (float)thumbSize / 2, ThumbColor);
         }
     }
 

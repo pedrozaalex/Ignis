@@ -14,7 +14,7 @@ namespace Ignis.Engine.UI.Widgets
     public class PropertyGrid : ViewComponent, IViewContainer
     {
         private readonly Panel _container;
-        private readonly List<IView> _properties = new();
+        private readonly List<IView> _properties = [];
 
         public PropertyGrid()
         {

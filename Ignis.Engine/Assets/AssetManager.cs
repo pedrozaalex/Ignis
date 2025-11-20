@@ -144,10 +144,10 @@ public class AssetManager : IDisposable
         try
         {
             // Call the asset's Load method via reflection if it exists
-            var loadMethod = typeof(T).GetMethod("Load", new[] { typeof(string) });
+            var loadMethod = typeof(T).GetMethod("Load", [typeof(string)]);
             if (loadMethod != null)
             {
-                loadMethod.Invoke(asset, new object[] { GetFullPath(normalizedPath) });
+                loadMethod.Invoke(asset, [GetFullPath(normalizedPath)]);
             }
             else
             {

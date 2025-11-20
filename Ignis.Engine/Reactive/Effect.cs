@@ -7,7 +7,7 @@ namespace Ignis.Engine.Reactive
     public class Effect : IObserver, IDisposable
     {
         private readonly Action _effect;
-        private readonly List<Signal<object>> _dependencies = new();
+        private readonly List<Signal<object>> _dependencies = [];
         private bool _isDisposed;
 
         public Effect(Action effect)

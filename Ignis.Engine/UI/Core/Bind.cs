@@ -19,6 +19,14 @@ namespace Ignis.Engine.UI.Core
         }
 
         /// <summary>
+        /// Conditionally renders one of two views based on a computed value.
+        /// </summary>
+        public static IView If(Computed<bool> condition, Func<IView> trueBuilder, Func<IView>? falseBuilder = null)
+        {
+            return new ConditionalViewComputed(condition, trueBuilder, falseBuilder);
+        }
+
+        /// <summary>
         /// Renders a list of views from a SignalList, efficiently updating only changed items.
         /// </summary>
         public static IView For<T>(SignalList<T> list, Func<T, IView> builder)
@@ -73,11 +81,58 @@ namespace Ignis.Engine.UI.Core
             }
         }
 
+        private class ConditionalViewComputed : ViewComponent, IViewContainer
+        {
+            private readonly Computed<bool> _condition;
+            private readonly Func<IView> _trueBuilder;
+            private readonly Func<IView>? _falseBuilder;
+            private IView? _currentChild;
+
+            public ConditionalViewComputed(Computed<bool> condition, Func<IView> trueBuilder, Func<IView>? falseBuilder)
+            {
+                _condition = condition;
+                _trueBuilder = trueBuilder;
+                _falseBuilder = falseBuilder;
+            }
+
+            protected override void OnMount()
+            {
+                CreateEffect(() =>
+                {
+                    // Unmount old child
+                    if (_currentChild != null)
+                    {
+                        _currentChild.Unmount();
+                    }
+
+                    // Build new child based on condition
+                    _currentChild = _condition.Value ? _trueBuilder() : _falseBuilder?.Invoke();
+
+                    // Mount new child
+                    if (_currentChild != null && Context != null)
+                    {
+                        _currentChild.Mount(Context);
+                    }
+                });
+            }
+
+            public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+            {
+                // The child will be drawn by UIContext
+            }
+
+            public IEnumerable<IView> GetChildren()
+            {
+                if (_currentChild != null)
+                    yield return _currentChild;
+            }
+        }
+
         private class ListView<T> : ViewComponent, IViewContainer
         {
             private readonly SignalList<T> _list;
             private readonly Func<T, IView> _builder;
-            private readonly List<IView> _children = new();
+            private readonly List<IView> _children = [];
 
             public ListView(SignalList<T> list, Func<T, IView> builder)
             {

@@ -8,7 +8,7 @@ namespace Ignis.Tests.UI
     {
         public int Id;
         public int? Parent;
-        public List<int> Children = new();
+        public List<int> Children = [];
         public bool Visible = true;
         public LayoutType LayoutType = LayoutType.Column;
         public PositionType PositionType = PositionType.Relative;
@@ -39,8 +39,8 @@ namespace Ignis.Tests.UI
         public Units RowGap = Units.Pixels(0);
         public Units ColGap = Units.Pixels(0);
         
-        public List<Units> GridRows = new();
-        public List<Units> GridColumns = new();
+        public List<Units> GridRows = [];
+        public List<Units> GridColumns = [];
         public int RowStart = 0;
         public int RowSpan = 1;
         public int ColumnStart = 0;
@@ -407,8 +407,8 @@ namespace Ignis.Tests.UI
             w.Nodes[root].Width = Units.Pixels(200);
             w.Nodes[root].Height = Units.Pixels(200);
             w.Nodes[root].LayoutType = LayoutType.Grid;
-            w.Nodes[root].GridRows = new List<Units> { Units.Stretch(1), Units.Stretch(1) };
-            w.Nodes[root].GridColumns = new List<Units> { Units.Stretch(1), Units.Stretch(1) };
+            w.Nodes[root].GridRows = [Units.Stretch(1), Units.Stretch(1)];
+            w.Nodes[root].GridColumns = [Units.Stretch(1), Units.Stretch(1)];
             
             var child = w.Add(root);
             w.Nodes[child].RowStart = 1;

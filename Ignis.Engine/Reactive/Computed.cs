@@ -9,7 +9,7 @@ namespace Ignis.Engine.Reactive
         private readonly Func<T> _computer;
         private T _cache;
         private bool _isDirty = true;
-        private readonly List<IObserver> _observers = new();
+        private readonly List<IObserver> _observers = [];
 
         public Computed(Func<T> computer)
         {

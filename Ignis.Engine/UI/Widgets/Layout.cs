@@ -60,7 +60,7 @@ namespace Ignis.Engine.UI.Widgets
     /// </summary>
     public class TabView : ViewComponent, IViewContainer
     {
-        private readonly List<(string title, IView content)> _tabs = new();
+        private readonly List<(string title, IView content)> _tabs = [];
         private readonly Signal<int> _selectedIndex;
         private readonly Panel _tabBar;
         private readonly Panel _contentArea;
@@ -257,7 +257,7 @@ namespace Ignis.Engine.UI.Widgets
     public class MenuBar : ViewComponent, IViewContainer
     {
         private readonly Panel _container;
-        private readonly List<Menu> _menus = new();
+        private readonly List<Menu> _menus = [];
 
         public Color BackgroundColor
         {
@@ -309,7 +309,7 @@ namespace Ignis.Engine.UI.Widgets
     public class Menu : ViewComponent, IViewContainer
     {
         private readonly string _title;
-        private readonly List<MenuItem> _items = new();
+        private readonly List<MenuItem> _items = [];
         private readonly Signal<bool> _isOpen = new Signal<bool>(false);
         private readonly Panel _container;
 

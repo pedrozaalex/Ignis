@@ -12,7 +12,7 @@ namespace Ignis.Engine.UI.Abstractions
     public abstract class ViewComponent : IView
     {
         private UIContext? _context;
-        private readonly List<ReactiveEffect> _effects = new();
+        private readonly List<ReactiveEffect> _effects = [];
 
         public IViewLayout Layout { get; } = new ViewLayout();
 

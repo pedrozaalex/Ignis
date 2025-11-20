@@ -140,7 +140,7 @@ namespace Ignis.Engine.UI.Core
         {
             if (node is IViewContainer container)
                 return container.GetChildren();
-            return Enumerable.Empty<object>();
+            return [];
         }
 
         public bool IsVisible(object node) => (node as IView)?.Layout.Visible ?? true;
@@ -176,8 +176,8 @@ namespace Ignis.Engine.UI.Core
         public Units GetRowGap(object node) => Units.Pixels(0);
         public Units GetColumnGap(object node) => Units.Pixels(0);
 
-        public List<Units> GetGridRows(object node) => new();
-        public List<Units> GetGridColumns(object node) => new();
+        public List<Units> GetGridRows(object node) => [];
+        public List<Units> GetGridColumns(object node) => [];
         public int GetRowStart(object node) => 0;
         public int GetRowSpan(object node) => 1;
         public int GetColumnStart(object node) => 0;

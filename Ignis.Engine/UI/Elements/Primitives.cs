@@ -1,6 +1,8 @@
+using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 
 namespace Ignis.Engine.UI.Elements
 {
@@ -90,7 +92,7 @@ namespace Ignis.Engine.UI.Elements
     /// </summary>
     public class Container : ViewComponent, Core.IViewContainer
     {
-        private readonly List<IView> _children = new();
+        private readonly List<IView> _children = [];
 
         public Container(params IView[] children)
         {

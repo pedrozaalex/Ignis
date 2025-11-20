@@ -85,10 +85,10 @@ public class SignalListTests
         Assert.Equal(3, list.Count);
 
         list.Insert(1, 10);
-        Assert.Equal(new[] { 1, 10, 2, 3 }, list.Items);
+        Assert.Equal([1, 10, 2, 3], list.Items);
 
         list.RemoveAt(2);
-        Assert.Equal(new[] { 1, 10, 3 }, list.Items);
+        Assert.Equal([1, 10, 3], list.Items);
 
         Assert.Contains(10, list.Items);
         Assert.Equal(1, list.IndexOf(10));

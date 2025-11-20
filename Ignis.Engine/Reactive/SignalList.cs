@@ -6,7 +6,7 @@ namespace Ignis.Engine.Reactive
     /// </summary>
     public class SignalList<T>
     {
-        private readonly List<T> _items = new();
+        private readonly List<T> _items = [];
 
         public event Action<T, int>? ItemAdded;
         public event Action<T, int>? ItemRemoved;
