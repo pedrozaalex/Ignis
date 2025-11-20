@@ -179,7 +179,7 @@ namespace Ignis.Tests
             var node = w.Add(root);
             w.Nodes[node].Width = Units.Pixels(400);
             w.Nodes[node].Height = Units.Auto;
-            w.Nodes[node].ContentMeasurer = (wd, ht) => (wd!.Value, 100f);
+            w.Nodes[node].ContentMeasurer = (wd, ht) => (wd ?? 0, 100);
 
             LayoutEngine.Layout(root, w, w);
 

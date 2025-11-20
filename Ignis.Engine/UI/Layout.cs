@@ -104,10 +104,20 @@ namespace Ignis.Engine.UI
 
         public static void Layout(object root, ILayoutNode store, ILayoutCache cache)
         {
-            var w = store.GetWidth(root).ToPx(0, 0);
-            var h = store.GetHeight(root).ToPx(0, 0);
+            var widthUnits = store.GetWidth(root);
+            var heightUnits = store.GetHeight(root);
+            var w = widthUnits.ToPx(0, 0);
+            var h = heightUnits.ToPx(0, 0);
             cache.SetBounds(root, 0, 0, w, h);
-            Compute(root, LayoutType.Column, h, w, store, cache);
+            var result = Compute(root, LayoutType.Column, h, w, store, cache);
+            
+            // Update root bounds if auto-sized (Compute returns Main=height, Cross=width for Column layout)
+            if (widthUnits.IsAuto || heightUnits.IsAuto)
+            {
+                var resolvedW = widthUnits.IsAuto ? result.Cross : w;
+                var resolvedH = heightUnits.IsAuto ? result.Main : h;
+                cache.SetBounds(root, 0, 0, resolvedW, resolvedH);
+            }
         }
 
         private static Size Compute(object node, LayoutType parentLayoutType, float parentMain, float parentCross, ILayoutNode store, ILayoutCache cache)
@@ -119,7 +129,19 @@ namespace Ignis.Engine.UI
             
             var width = store.GetWidth(node);
             var height = store.GetHeight(node);
-
+            (float width, float height)? intrinsicSize = null;
+            float widthReference = parentLayoutType == LayoutType.Row ? parentMain : parentCross;
+            float heightReference = parentLayoutType == LayoutType.Column ? parentMain : parentCross;
+            float ResolveAutoMin(Units units, bool isWidthAxis, float referenceSize, object target)
+            {
+                if (!units.IsAuto) return units.ToPx(referenceSize, DefaultMin);
+                var content = target == node
+                    ? intrinsicSize ??= store.MeasureContent(node, null, null)
+                    : store.MeasureContent(target, null, null);
+                if (content.HasValue) return isWidthAxis ? content.Value.width : content.Value.height;
+                return DefaultMin;
+            }
+            
             // Determine main/cross units based on parent direction
             var main = parentLayoutType is LayoutType.Row or LayoutType.Grid ? width : height;
             var cross = parentLayoutType is LayoutType.Row or LayoutType.Grid ? height : width;
@@ -139,10 +161,10 @@ namespace Ignis.Engine.UI
             };
 
             // Constraints
-            var minW = store.GetMinWidth(node).ToPx(parentLayoutType == LayoutType.Row ? parentMain : parentCross, DefaultMin);
-            var maxW = store.GetMaxWidth(node).ToPx(parentLayoutType == LayoutType.Row ? parentMain : parentCross, DefaultMax);
-            var minH = store.GetMinHeight(node).ToPx(parentLayoutType == LayoutType.Column ? parentMain : parentCross, DefaultMin);
-            var maxH = store.GetMaxHeight(node).ToPx(parentLayoutType == LayoutType.Column ? parentMain : parentCross, DefaultMax);
+            var minW = ResolveAutoMin(store.GetMinWidth(node), true, widthReference, node);
+            var maxW = store.GetMaxWidth(node).ToPx(widthReference, DefaultMax);
+            var minH = ResolveAutoMin(store.GetMinHeight(node), false, heightReference, node);
+            var maxH = store.GetMaxHeight(node).ToPx(heightReference, DefaultMax);
 
             float minMain = parentLayoutType is LayoutType.Row or LayoutType.Grid ? minW : minH;
             float maxMain = parentLayoutType is LayoutType.Row or LayoutType.Grid ? maxW : maxH;
@@ -247,8 +269,26 @@ namespace Ignis.Engine.UI
                     {
                         // Cross stretch, main fixed. 
                         childComputedMain = childMain.ToPx(childParentMain, 0);
-                        // Clamp
-                        var cMin = (layoutType == LayoutType.Row ? store.GetMinWidth(child) : store.GetMinHeight(child)).ToPx(childParentMain, DefaultMin);
+                        
+                        // Get constraints - handle Auto properly
+                        var minMainUnits = (layoutType == LayoutType.Row ? store.GetMinWidth(child) : store.GetMinHeight(child));
+                        var cMin = DefaultMin;
+                        if (minMainUnits.IsAuto)
+                        {
+                            // MinAuto means content size
+                            var childWidth = layoutType == LayoutType.Row ? (float?)null : childComputedMain;
+                            var childHeight = layoutType == LayoutType.Column ? (float?)null : childComputedMain;
+                            var content = store.MeasureContent(child, childWidth, childHeight);
+                            if (content.HasValue)
+                            {
+                                cMin = layoutType == LayoutType.Row ? content.Value.width : content.Value.height;
+                            }
+                        }
+                        else
+                        {
+                            cMin = minMainUnits.ToPx(childParentMain, DefaultMin);
+                        }
+                        
                         var cMax = (layoutType == LayoutType.Row ? store.GetMaxWidth(child) : store.GetMaxHeight(child)).ToPx(childParentMain, DefaultMax);
                         childComputedMain = Math.Clamp(childComputedMain, cMin, cMax);
                         
@@ -306,7 +346,23 @@ namespace Ignis.Engine.UI
                 
                 if (childCross.IsStretch)
                 {
-                     var cMin = (layoutType == LayoutType.Row ? store.GetMinHeight(child) : store.GetMinWidth(child)).ToPx(childParentCross, DefaultMin);
+                     // Handle MinAuto properly for cross axis
+                     var minCrossUnits = (layoutType == LayoutType.Row ? store.GetMinHeight(child) : store.GetMinWidth(child));
+                     var cMin = DefaultMin;
+                     if (minCrossUnits.IsAuto)
+                     {
+                         // MinAuto means content size
+                         var content = store.MeasureContent(child, null, null);
+                         if (content.HasValue)
+                         {
+                             cMin = layoutType == LayoutType.Row ? content.Value.height : content.Value.width;
+                         }
+                     }
+                     else
+                     {
+                         cMin = minCrossUnits.ToPx(childParentCross, DefaultMin);
+                     }
+                     
                      var cMax = (layoutType == LayoutType.Row ? store.GetMaxHeight(child) : store.GetMaxWidth(child)).ToPx(childParentCross, DefaultMax);
                      d.cross = Math.Clamp(childParentCross, cMin, cMax);
                      childrenData[i] = d; // struct update
@@ -336,9 +392,74 @@ namespace Ignis.Engine.UI
                 }
                 else
                 {
-                    // Standard flex distribution when parent has fixed size
+                    // Standard flex distribution with constraint freezing
                     float freeSpace = Math.Max(0, childParentMain - childrenData.Sum(c => c.main + c.mainAfter));
+                    float activeFlex = mainFlexSum;
+                    bool constraintHit;
                     
+                    // Loop until no more constraints are hit
+                    do
+                    {
+                        constraintHit = false;
+                        
+                        for (int i = 0; i < childrenData.Count; i++)
+                        {
+                            var d = childrenData[i];
+                            if (d.frozen) continue;
+                            
+                            var childMain = layoutType == LayoutType.Row ? store.GetWidth(d.node) : store.GetHeight(d.node);
+                            
+                            if (childMain.Kind == UnitKind.Stretch)
+                            {
+                                float share = activeFlex > 0 ? (childMain.Value / activeFlex) * freeSpace : 0;
+                                
+                                // Get constraints - handle MinAuto properly
+                                var minMainUnits = (layoutType == LayoutType.Row ? store.GetMinWidth(d.node) : store.GetMinHeight(d.node));
+                                var cMin = DefaultMin;
+                                if (minMainUnits.IsAuto)
+                                {
+                                    // MinAuto means content size
+                                    var content = store.MeasureContent(d.node, null, null);
+                                    if (content.HasValue)
+                                    {
+                                        cMin = layoutType == LayoutType.Row ? content.Value.width : content.Value.height;
+                                    }
+                                }
+                                else
+                                {
+                                    cMin = minMainUnits.ToPx(childParentMain, DefaultMin);
+                                }
+                                
+                                var cMax = (layoutType == LayoutType.Row ? store.GetMaxWidth(d.node) : store.GetMaxHeight(d.node)).ToPx(childParentMain, DefaultMax);
+                                
+                                // Check if share violates constraints
+                                if (share < cMin)
+                                {
+                                    d.main = cMin;
+                                    d.frozen = true;
+                                    activeFlex -= childMain.Value;
+                                    freeSpace -= cMin; // Can go negative for overflow
+                                    constraintHit = true;
+                                }
+                                else if (share > cMax)
+                                {
+                                    d.main = cMax;
+                                    d.frozen = true;
+                                    activeFlex -= childMain.Value;
+                                    freeSpace -= cMax;
+                                    constraintHit = true;
+                                }
+                                else
+                                {
+                                    d.main = share;
+                                }
+                                
+                                childrenData[i] = d;
+                            }
+                        }
+                    } while (constraintHit && activeFlex > 0 && freeSpace > 0); // Stop if no free space left
+                    
+                    // Now compute the final layout for each stretched child
                     for (int i = 0; i < childrenData.Count; i++)
                     {
                         var d = childrenData[i];
@@ -346,9 +467,7 @@ namespace Ignis.Engine.UI
                         
                         if (childMain.Kind == UnitKind.Stretch)
                         {
-                            float share = (childMain.Value / mainFlexSum) * freeSpace;
-                            // Recalculate child layout with this main size
-                            var size = Compute(d.node, layoutType, share, d.cross, store, cache);
+                            var size = Compute(d.node, layoutType, d.main, d.cross, store, cache);
                             d.main = size.Main;
                             d.cross = size.Cross;
                             childrenData[i] = d;
@@ -416,7 +535,11 @@ namespace Ignis.Engine.UI
                     x = crossPos; y = currentMainPos; w = d.cross; h = d.main;
                 }
                 
-                cache.SetBounds(d.node, x + cache.GetPosX(node), y + cache.GetPosY(node), w, h);
+                // Apply relative positioning offsets (Left/Top/Right/Bottom) - these shift the node visually without affecting layout flow
+                float leftOffset = store.GetLeft(d.node).ToPx(layoutType == LayoutType.Row ? computedMain : computedCross, 0);
+                float topOffset = store.GetTop(d.node).ToPx(layoutType == LayoutType.Column ? computedMain : computedCross, 0);
+                
+                cache.SetBounds(d.node, x + cache.GetPosX(node) + leftOffset, y + cache.GetPosY(node) + topOffset, w, h);
                 currentMainPos += d.main + d.mainAfter;
             }
 
@@ -534,3 +657,11 @@ namespace Ignis.Engine.UI
         }
     }
 }
+
+
+
+
+
+
+
+
