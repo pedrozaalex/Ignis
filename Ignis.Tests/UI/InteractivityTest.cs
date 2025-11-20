@@ -85,27 +85,27 @@ namespace Ignis.Tests.UI
         }
 
         [Fact]
-        public void Focusable_ShouldSetLayoutProperty()
+        public void Focusable_ShouldEnableKeyboardEvents()
         {
             // Arrange
+            var keyPressed = false;
             var box = new Box(Color.White);
-
+            
             // Act
             box.Focusable();
+            box.OnKeyDown(evt =>
+            {
+                if (evt.Key == Keys.Space)
+                    keyPressed = true;
+            });
+
+            // Simulate key event on focusable element
+            var evt = new KeyboardEvent(Keys.Space, ModifierKeys.None, KeyboardEventType.Down);
+            box.EventHandlers.InvokeKeyDown(evt);
 
             // Assert
             Assert.True(box.Layout.Focusable);
-        }
-
-        [Fact]
-        public void ElementId_ShouldBeUnique()
-        {
-            // Arrange & Act
-            var box1 = new Box(Color.Red);
-            var box2 = new Box(Color.Blue);
-
-            // Assert
-            Assert.NotEqual(box1.Layout.ElementId, box2.Layout.ElementId);
+            Assert.True(keyPressed);
         }
 
         [Fact]
@@ -348,43 +348,25 @@ namespace Ignis.Tests.UI
         }
 
         [Fact]
-        public void KeyboardModifiers_ShouldCombineCorrectly()
+        public void MultipleShortcuts_OnSameElement_ShouldAllWork()
         {
             // Arrange
-            var modifiers = ModifierKeys.Control | ModifierKeys.Shift;
-
-            // Assert
-            Assert.True(modifiers.HasFlag(ModifierKeys.Control));
-            Assert.True(modifiers.HasFlag(ModifierKeys.Shift));
-            Assert.False(modifiers.HasFlag(ModifierKeys.Alt));
-        }
-
-        [Fact]
-        public void InputManager_FocusSignal_ShouldBeReadable()
-        {
-            // Arrange
-            var bounds = new Dictionary<long, Rectangle>();
-            var inputManager = new InputManager(bounds);
+            var saveCount = 0;
+            var undoCount = 0;
+            
+            var box = new Box(Color.Orange);
+            box.Shortcuts(s => s
+                .Bind("Ctrl+S", () => saveCount++)
+                .Bind("Ctrl+Z", () => undoCount++)
+            );
 
             // Act
-            var focusedId = inputManager.FocusedElementId.Value;
+            box.Shortcuts.TryHandle(Keys.S, ModifierKeys.Control);
+            box.Shortcuts.TryHandle(Keys.Z, ModifierKeys.Control);
 
             // Assert
-            Assert.Null(focusedId); // Initially no focus
-        }
-
-        [Fact]
-        public void InputManager_HoverSignal_ShouldBeReadable()
-        {
-            // Arrange
-            var bounds = new Dictionary<long, Rectangle>();
-            var inputManager = new InputManager(bounds);
-
-            // Act
-            var hoveredId = inputManager.HoveredElementId.Value;
-
-            // Assert
-            Assert.Null(hoveredId); // Initially no hover
+            Assert.Equal(1, saveCount);
+            Assert.Equal(1, undoCount);
         }
     }
 }

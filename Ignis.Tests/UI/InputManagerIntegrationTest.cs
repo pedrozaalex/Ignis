@@ -82,20 +82,22 @@ namespace Ignis.Tests.UI
         }
 
         [Fact]
-        public void InputManager_WithRoot_ShouldAllowUpdates()
+        public void InputManager_WithEmptyBounds_ShouldHandleUpdatesGracefully()
         {
-            // Arrange
+            // Arrange - No bounds registered
             var bounds = new Dictionary<long, Rectangle>();
             var inputManager = new InputManager(bounds);
-            var root = new Box(Color.Green);
+            var root = new Container();
             
             inputManager.SetRoot(root);
             
-            // Act - Update should not throw even with no input
+            // Act - Multiple updates with no views should not crash
+            inputManager.Update();
+            inputManager.Update();
             inputManager.Update();
             
-            // No exception means success
-            Assert.True(true);
+            // Assert - Focus should remain null when no views exist
+            Assert.Null(inputManager.FocusedElementId.Value);
         }
 
         [Fact]
@@ -107,6 +109,9 @@ namespace Ignis.Tests.UI
                 .OnClick(() => clickCount++);
             
             var container = new Container(button);
+            
+            // Verify hierarchy
+            Assert.Contains(button, container.GetChildren());
             
             // Simulate click
             var evt = new PointerEvent(Vector2.Zero, 0, PointerType.Mouse, PointerEventType.Up);
@@ -136,33 +141,31 @@ namespace Ignis.Tests.UI
         }
 
         [Fact]
-        public void FocusSignal_ShouldBeInitiallyNull()
+        public void InputManager_ReactiveSignals_NotifyOnStateChange()
         {
             // Arrange
             var bounds = new Dictionary<long, Rectangle>();
             var inputManager = new InputManager(bounds);
             
-            // Assert
-            Assert.Null(inputManager.FocusedElementId.Value);
-            Assert.Null(inputManager.HoveredElementId.Value);
-        }
-
-        [Fact]
-        public void ElementIds_AreUniqueAcrossViews()
-        {
-            // Arrange
-            var view1 = new Box(Color.Red);
-            var view2 = new Box(Color.Blue);
-            var view3 = new Panel();
+            var focusChangeCount = 0;
+            var hoverChangeCount = 0;
             
-            var id1 = view1.Layout.ElementId;
-            var id2 = view2.Layout.ElementId;
-            var id3 = view3.Layout.ElementId;
+            // Track changes with Effects
+            new Effect(() =>
+            {
+                _ = inputManager.FocusedElementId.Value;
+                focusChangeCount++;
+            });
             
-            // Assert all unique
-            Assert.NotEqual(id1, id2);
-            Assert.NotEqual(id2, id3);
-            Assert.NotEqual(id1, id3);
+            new Effect(() =>
+            {
+                _ = inputManager.HoveredElementId.Value;
+                hoverChangeCount++;
+            });
+            
+            // Assert - Effects should have run once initially
+            Assert.Equal(1, focusChangeCount);
+            Assert.Equal(1, hoverChangeCount);
         }
     }
 }

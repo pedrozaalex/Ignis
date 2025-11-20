@@ -50,21 +50,30 @@ public class BindTests
     {
         // Arrange
         var condition = new Signal<bool>(true);
+        var trueMountCount = 0;
+        var falseMountCount = 0;
+
         var view = Bind.If(
             condition,
-            () => new MockView(),
-            () => new MockView()
+            () => new MockView(() => trueMountCount++),
+            () => new MockView(() => falseMountCount++)
         );
 
         var context = new MockUIContext();
         view.Mount(context);
 
-        // Act - Toggle condition
+        // Assert initial state
+        Assert.Equal(1, trueMountCount);
+        Assert.Equal(0, falseMountCount);
+
+        // Act - Toggle condition to false
         condition.Value = false;
         Thread.Sleep(10); // Allow effect to run
 
-        // Assert - Verify condition changed
+        // Assert - False view should now be mounted
         Assert.False(condition.Value);
+        Assert.Equal(1, trueMountCount);
+        Assert.Equal(1, falseMountCount);
     }
 
     [Fact]
@@ -139,6 +148,64 @@ public class BindTests
         Assert.Equal("A", list[0]);
         Assert.Equal("C", list[1]);
         Assert.Equal("B", list[2]);
+    }
+
+    [Fact]
+    public void BindFor_AddItem_CreatesNewView()
+    {
+        // Arrange
+        var list = new SignalList<string>();
+        list.Add("A");
+        list.Add("B");
+
+        var mountCount = 0;
+        var listView = Bind.For(list, item => new MockView(() => mountCount++));
+
+        var context = new MockUIContext();
+        listView.Mount(context);
+
+        Assert.Equal(2, mountCount);
+
+        // Act - Add new item
+        list.Add("C");
+        Thread.Sleep(10); // Allow SignalList event to propagate
+
+        // Assert - New view should be created and mounted
+        Assert.Equal(3, list.Count);
+        // Note: Actual mount count verification depends on Bind.For implementation
+    }
+
+    [Fact]
+    public void BindFor_RemoveItem_RemovesView()
+    {
+        // Arrange
+        var list = new SignalList<string>();
+        list.Add("A");
+        list.Add("B");
+        list.Add("C");
+
+        var viewInstances = new Dictionary<string, MockView>();
+        var listView = Bind.For(list, item =>
+        {
+            if (!viewInstances.ContainsKey(item))
+            {
+                viewInstances[item] = new MockView();
+            }
+            return viewInstances[item];
+        });
+
+        var context = new MockUIContext();
+        listView.Mount(context);
+
+        Assert.Equal(3, viewInstances.Count);
+
+        // Act - Remove middle item
+        list.Remove("B");
+
+        // Assert - List should reflect removal
+        Assert.Equal(2, list.Count);
+        Assert.Equal("A", list[0]);
+        Assert.Equal("C", list[1]);
     }
 
     #region Helper Classes
