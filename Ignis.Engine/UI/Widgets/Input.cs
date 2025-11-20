@@ -1,5 +1,6 @@
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -73,7 +74,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// NumberField - Numeric input with increment/decrement buttons.
     /// </summary>
-    public class NumberField<T> : ViewComponent, Core.IViewContainer where T : struct
+    public class NumberField<T> : ViewComponent, IViewContainer where T : struct
     {
         private readonly Signal<T> _value;
         private readonly IView _container;
@@ -109,21 +110,17 @@ namespace Ignis.Engine.UI.Widgets
             Layout.Height = Units.Pixels(30);
         }
 
-        private IView CreateButton(string label, Action onClick)
+        private static IView CreateButton(string label, Action onClick)
         {
-            var btn = new Panel(new Text(null) { Content = label, Color = Color.White })
-            {
-                BackgroundColor = new Color(62, 62, 66),
-                BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
-            };
-            btn.Layout.Width = Units.Pixels(25);
-            btn.Layout.Height = Units.Pixels(25);
-            btn.Layout.Alignment = Alignment.Center;
-            btn.Layout.PaddingTop = Units.Pixels(4);
-            btn.Layout.PaddingLeft = Units.Pixels(8);
-            // TODO: Wire up onClick when input system is ready
-            return btn;
+            return new Panel(new Text { Content = label, Color = Color.White })
+                .Background(new Color(62, 62, 66))
+                .Border(new Color(63, 63, 70))
+                .Width(Units.Pixels(25))
+                .Height(Units.Pixels(25))
+                .AlignCenter()
+                .PaddingTop(4)
+                .PaddingLeft(8)
+                .OnClick(onClick);
         }
 
         protected override void OnMount()
@@ -149,7 +146,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// Checkbox - Boolean toggle.
     /// </summary>
-    public class Checkbox : ViewComponent, Core.IViewContainer
+    public class Checkbox : ViewComponent, IViewContainer
     {
         private readonly Signal<bool> _isChecked;
         private readonly IView _container;
@@ -158,7 +155,7 @@ namespace Ignis.Engine.UI.Widgets
         {
             _isChecked = isChecked;
 
-            var box = new Panel()
+            var box = new Panel
             {
                 BackgroundColor = new Color(51, 51, 55),
                 BorderColor = new Color(63, 63, 70),

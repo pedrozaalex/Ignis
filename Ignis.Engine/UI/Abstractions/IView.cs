@@ -65,6 +65,10 @@ namespace Ignis.Engine.UI.Abstractions
         Alignment Alignment { get; set; }
         
         bool Visible { get; set; }
+        
+        // Interactivity
+        bool Focusable { get; set; }
+        long ElementId { get; set; }
     }
 
     /// <summary>
@@ -72,6 +76,8 @@ namespace Ignis.Engine.UI.Abstractions
     /// </summary>
     public class ViewLayout : IViewLayout
     {
+        private static long _nextElementId = 1;
+        
         public Units Width { get; set; } = Units.Auto;
         public Units Height { get; set; } = Units.Auto;
         public Units MinWidth { get; set; } = Units.Auto;
@@ -97,6 +103,9 @@ namespace Ignis.Engine.UI.Abstractions
         public Alignment Alignment { get; set; } = Alignment.TopLeft;
         
         public bool Visible { get; set; } = true;
+        
+        public bool Focusable { get; set; } = false;
+        public long ElementId { get; set; } = System.Threading.Interlocked.Increment(ref _nextElementId);
     }
 }
 

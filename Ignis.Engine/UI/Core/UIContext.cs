@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Graphics;
+using Ignis.Engine.UI.Input;
 
 namespace Ignis.Engine.UI.Core
 {
@@ -14,13 +15,17 @@ namespace Ignis.Engine.UI.Core
         private readonly GraphicsDevice? _graphicsDevice;
         private IView? _root;
         private readonly Dictionary<object, Rectangle> _bounds = new();
+        private readonly Dictionary<long, Rectangle> _boundsById = new();
         private bool _isDisposed;
         private SpriteFont? _defaultFont;
         private readonly int _instanceId;
         private static int _nextInstanceId = 0;
+        
+        private readonly InputManager _inputManager;
 
         public PrimitiveBatch? PrimitiveBatch { get; }
         public SpriteFont? DefaultFont => _defaultFont;
+        public InputManager Input => _inputManager;
 
         public UIContext(GraphicsDevice? graphicsDevice, SpriteFont? defaultFont = null)
         {
@@ -33,6 +38,9 @@ namespace Ignis.Engine.UI.Core
             {
                 PrimitiveBatch = new PrimitiveBatch(graphicsDevice);
             }
+            
+            // InputManager shares the same bounds dictionary indexed by element ID
+            _inputManager = new InputManager(_boundsById);
         }
 
         /// <summary>
@@ -57,6 +65,7 @@ namespace Ignis.Engine.UI.Core
 
             _root = view;
             _root.Mount(this);
+            _inputManager.SetRoot(_root);
         }
 
         /// <summary>
@@ -64,9 +73,8 @@ namespace Ignis.Engine.UI.Core
         /// </summary>
         public void Update(GameTime gameTime)
         {
-            // TODO: Handle input (mouse, keyboard)
-            // TODO: Poll ComponentSignals if using polling strategy
-            // TODO: Update ReactiveQueries
+            // Process input events
+            _inputManager.Update();
         }
 
         /// <summary>
@@ -125,7 +133,14 @@ namespace Ignis.Engine.UI.Core
         // ILayoutCache implementation
         public void SetBounds(object node, float posX, float posY, float width, float height)
         {
-            _bounds[node] = new Rectangle((int)posX, (int)posY, (int)width, (int)height);
+            var rect = new Rectangle((int)posX, (int)posY, (int)width, (int)height);
+            _bounds[node] = rect;
+            
+            // Also store by element ID for InputManager
+            if (node is IView view)
+            {
+                _boundsById[view.Layout.ElementId] = rect;
+            }
         }
 
         float ILayoutCache.GetWidth(object node) => _bounds.TryGetValue(node, out var rect) ? rect.Width : 0;

@@ -1,5 +1,6 @@
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReactiveEffect = Ignis.Engine.Reactive.Effect;
@@ -15,6 +16,8 @@ namespace Ignis.Engine.UI.Abstractions
         private readonly List<ReactiveEffect> _effects = [];
 
         public IViewLayout Layout { get; } = new ViewLayout();
+        public EventHandlers EventHandlers { get; } = new();
+        public ShortcutCollection Shortcuts { get; } = new();
 
         protected UIContext? Context => _context;
 
