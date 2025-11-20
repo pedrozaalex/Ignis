@@ -52,11 +52,12 @@ namespace Ignis.Engine.UI.Graphics
                 throw new InvalidOperationException("End must be called before Begin can be called again.");
 
             // Set up orthographic projection for 2D rendering
+            // FIX: Changed ZNear from 0 to -1 to prevent clipping of geometry at Z=0
             var viewport = _graphicsDevice.Viewport;
             _basicEffect.World = transformMatrix ?? Matrix.Identity;
             _basicEffect.View = Matrix.Identity;
             _basicEffect.Projection = Matrix.CreateOrthographicOffCenter(
-                0, viewport.Width, viewport.Height, 0, 0, 1);
+                0, viewport.Width, viewport.Height, 0, -1f, 1f);
 
             _vertexCount = 0;
             _indexCount = 0;
@@ -83,24 +84,45 @@ namespace Ignis.Engine.UI.Graphics
             if (_vertexCount == 0 || _indexCount == 0)
                 return;
 
-            // Apply effect and draw
-            foreach (var pass in _basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                _graphicsDevice.DrawUserIndexedPrimitives(
-                    PrimitiveType.TriangleList,
-                    _vertices,
-                    0,
-                    _vertexCount,
-                    _indices,
-                    0,
-                    _indexCount / 3
-                );
-            }
+            // FIX: Explicitly set render states to ensure visibility.
+            // SpriteBatch might have set CullCounterClockwise, which could hide our primitives.
+            // We don't need to restore these because SpriteBatch.End() resets its own state before drawing.
+            var prevRasterizer = _graphicsDevice.RasterizerState;
+            var prevBlend = _graphicsDevice.BlendState;
+            var prevDepth = _graphicsDevice.DepthStencilState;
 
-            // Reset counters
-            _vertexCount = 0;
-            _indexCount = 0;
+            _graphicsDevice.RasterizerState = RasterizerState.CullNone;
+            _graphicsDevice.BlendState = BlendState.AlphaBlend;
+            _graphicsDevice.DepthStencilState = DepthStencilState.None;
+
+            try
+            {
+                // Apply effect and draw
+                foreach (var pass in _basicEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    _graphicsDevice.DrawUserIndexedPrimitives(
+                        PrimitiveType.TriangleList,
+                        _vertices,
+                        0,
+                        _vertexCount,
+                        _indices,
+                        0,
+                        _indexCount / 3
+                    );
+                }
+            }
+            finally
+            {
+                // Reset counters
+                _vertexCount = 0;
+                _indexCount = 0;
+                
+                // Optionally restore states if needed, though usually safe not to in this batching context
+                // _graphicsDevice.RasterizerState = prevRasterizer;
+                // _graphicsDevice.BlendState = prevBlend;
+                // _graphicsDevice.DepthStencilState = prevDepth;
+            }
         }
 
         /// <summary>
@@ -351,4 +373,3 @@ namespace Ignis.Engine.UI.Graphics
         }
     }
 }
-

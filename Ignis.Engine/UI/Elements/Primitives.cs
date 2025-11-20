@@ -45,7 +45,7 @@ namespace Ignis.Engine.UI.Elements
             set => _text = value;
         }
 
-        public Color Color { get; set; } = Color.Black;
+        public Color Color { get; set; } = Color.White;
 
         public Text(SpriteFont? font = null)
         {
@@ -55,25 +55,14 @@ namespace Ignis.Engine.UI.Elements
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
             if (string.IsNullOrEmpty(_text))
-            {
-                System.Console.WriteLine($"[Text.Draw] Empty text, skipping");
                 return;
-            }
 
             // Priority: custom font > context default font
             var fontToUse = _font ?? Context?.DefaultFont;
             
-            System.Console.WriteLine($"[Text.Draw] Text='{_text}', Font={(fontToUse != null ? "Available" : "NULL")}, Color={Color}, Bounds={bounds}");
-            
             if (fontToUse != null)
             {
-                System.Console.WriteLine($"[Text.Draw] Calling spriteBatch.DrawString at ({bounds.X}, {bounds.Y})");
                 spriteBatch.DrawString(fontToUse, _text, new Vector2(bounds.X, bounds.Y), Color);
-                System.Console.WriteLine($"[Text.Draw] DrawString completed");
-            }
-            else
-            {
-                System.Console.WriteLine($"[Text.Draw] No font available, text won't render");
             }
         }
 

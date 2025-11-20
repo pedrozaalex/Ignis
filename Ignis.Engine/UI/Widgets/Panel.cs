@@ -14,7 +14,7 @@ namespace Ignis.Engine.UI.Widgets
 
         public Color BackgroundColor { get; set; } = new Color(45, 45, 48); // Dark gray (VS theme)
         public Color BorderColor { get; set; } = new Color(63, 63, 70);
-        public float BorderThickness { get; set; } = 1f;
+        public float BorderThickness { get; set; } = 0f;
         public float CornerRadius { get; set; } = 0f;
         
         public Panel(params IView[] children)

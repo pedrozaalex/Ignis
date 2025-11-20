@@ -16,12 +16,17 @@ namespace Ignis.Engine.UI.Core
         private readonly Dictionary<object, Rectangle> _bounds = new();
         private bool _isDisposed;
         private SpriteFont? _defaultFont;
+        private readonly int _instanceId;
+        private static int _nextInstanceId = 0;
 
         public PrimitiveBatch? PrimitiveBatch { get; }
         public SpriteFont? DefaultFont => _defaultFont;
 
         public UIContext(GraphicsDevice? graphicsDevice, SpriteFont? defaultFont = null)
         {
+            _instanceId = System.Threading.Interlocked.Increment(ref _nextInstanceId);
+            System.Console.WriteLine($"[UIContext #{_instanceId}] Created");
+            
             _graphicsDevice = graphicsDevice;
             _defaultFont = defaultFont;
             if (graphicsDevice != null)
@@ -36,6 +41,8 @@ namespace Ignis.Engine.UI.Core
         public void SetDefaultFont(SpriteFont font)
         {
             _defaultFont = font;
+            System.Console.WriteLine($"[UIContext #{_instanceId}] SetDefaultFont called. Font is now: {(_defaultFont != null ? "SET" : "NULL")}");
+            System.Console.WriteLine($"[UIContext #{_instanceId}] Font details: LineSpacing={_defaultFont?.LineSpacing}");
         }
 
         /// <summary>
@@ -70,6 +77,12 @@ namespace Ignis.Engine.UI.Core
             if (_root == null || _graphicsDevice == null)
                 return;
 
+            // Debug: Check font state at draw time
+            if (_defaultFont == null)
+            {
+                System.Console.WriteLine($"[UIContext #{_instanceId}.Draw] WARNING: DefaultFont is NULL at draw time!");
+            }
+
             // Get viewport dimensions for layout constraint
             var viewport = _graphicsDevice.Viewport;
 
@@ -85,8 +98,10 @@ namespace Ignis.Engine.UI.Core
             DrawView(spriteBatch, _root);
 
             // End both batches
-            spriteBatch.End();
+            // FIX: PrimitiveBatch must end (flush to GPU) BEFORE SpriteBatch.
+            // This ensures backgrounds/panels are drawn first, and Text is drawn on top.
             PrimitiveBatch?.End();
+            spriteBatch.End();
         }
 
         private void DrawView(SpriteBatch spriteBatch, IView view)
@@ -192,4 +207,3 @@ namespace Ignis.Engine.UI.Core
         IEnumerable<IView> GetChildren();
     }
 }
-

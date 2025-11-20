@@ -1,3 +1,4 @@
+
 using Ignis.Engine.Core;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
@@ -41,6 +42,9 @@ public class HierarchyWidgetSample : IgnisGame
         
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
+
+        // Load font for UI (Critical for text visibility)
+        LoadFontForUI();
         
         // Setup initial scene
         InitializeScene();
@@ -54,6 +58,36 @@ public class HierarchyWidgetSample : IgnisGame
         
         LogInfo("Hierarchy Widget Sample initialized");
         LogInfo("Watch the hierarchy and console update reactively!");
+    }
+
+    private void LoadFontForUI()
+    {
+        try
+        {
+            // Assumes DefaultFont has been built by BasicWidgetsSample or Content pipeline
+            var font = Content.Load<SpriteFont>("DefaultFont");
+            
+            try 
+            {
+                if (!font.DefaultCharacter.HasValue) 
+                {
+                    font.DefaultCharacter = '?'; 
+                }
+            }
+            catch 
+            {
+                // Some fonts might not have '?' either, but Arial usually does.
+            }
+
+            
+            _uiContext?.SetDefaultFont(font);
+            Console.WriteLine($"✓ Font set in UIContext");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠ Could not load font: {ex.Message}");
+            Console.WriteLine("  Text may not be visible.");
+        }
     }
 
     private void InitializeScene()
@@ -332,9 +366,9 @@ public class HierarchyWidgetSample : IgnisGame
         
         if (_uiContext != null)
         {
-            spriteBatch.Begin();
+            // UIContext.Draw handles Begin/End internally now to ensure correct draw order
+            // of primitives vs text. Do NOT wrap this in spriteBatch.Begin/End.
             _uiContext.Draw(spriteBatch);
-            spriteBatch.End();
         }
     }
 
@@ -348,4 +382,3 @@ public class HierarchyWidgetSample : IgnisGame
         base.Dispose(disposing);
     }
 }
-

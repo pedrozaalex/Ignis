@@ -32,6 +32,8 @@ public class BasicWidgetsSample : IgnisGame
         WindowHeight = 600
     }))
     {
+        // Create UIContext early so it's available in LoadContent
+        // Note: GraphicsDevice won't be available yet, will be set in Initialize
     }
 
     protected override void LoadContent()
@@ -114,24 +116,44 @@ public class BasicWidgetsSample : IgnisGame
 
     protected override void Initialize()
     {
-        base.Initialize();
-
+        base.Initialize(); // This calls LoadContent internally
+        
+        // Create UIContext BEFORE base.Initialize() would be better, but we need GraphicsDevice
+        // So we create it here and manually load the font afterwards
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
 
+        // Load font now that UIContext exists
+        LoadFontForUI();
+
         System.Console.WriteLine("=== Basic Widgets Sample ===");
         System.Console.WriteLine("Initializing UI...");
-
+        
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
-
+        
         System.Console.WriteLine("Demonstrating reactive UI updates.");
         System.Console.WriteLine("Watch console for reactive changes!");
         System.Console.WriteLine("================================");
-
+        
         // Demonstrate reactive effects
         SetupReactiveLogging();
+    }
+
+    private void LoadFontForUI()
+    {
+        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
+        try
+        {
+            var font = Content.Load<SpriteFont>("DefaultFont");
+            _uiContext?.SetDefaultFont(font);
+            System.Console.WriteLine($"✓ Font set in UIContext");
+        }
+        catch (Exception ex)
+        {
+            System.Console.WriteLine($"⚠ Could not load font: {ex.Message}");
+        }
     }
 
     private IView BuildUI()
