@@ -167,17 +167,16 @@ public class BasicWidgetsSample : IgnisGame
             .Border(new Color(63, 63, 70), 2f)
             .Width(500)
             .Height(Units.Auto)
+            .Padding(30)
             .Children(
                 Column(
                     // Title
-                    Label("Basic Widgets Demo", null, new Color(100, 200, 255))
-                        .PaddingBottom(20),
+                    Label("Basic Widgets Demo", null, new Color(100, 200, 255)),
 
                     // Player Name Row
                     Row(
                         Label("Player Name:", null, Color.LightGray)
-                            .Width(120)
-                            .PaddingTop(6),
+                            .Width(120),
                         new TextField(_playerName)
                             .Width(300)
                     ),
@@ -191,34 +190,29 @@ public class BasicWidgetsSample : IgnisGame
                     ).Width(300),
 
                     // Alive Checkbox
-                    new Checkbox("Is Alive", _isAlive)
-                        .PaddingTop(10),
+                    new Checkbox("Is Alive", _isAlive),
 
                     // Volume Label
-                    Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%"))
-                        .PaddingTop(10),
+                    Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%")),
 
                     // Volume Slider
                     new Slider(_volume, 0f, 1f)
-                        .Width(300)
-                        .PaddingTop(100),
+                        .Width(300),
 
-                    // Status Panel - children last
+                    // Status Panel
                     Panel()
                         .Background(new Color(45, 45, 48))
                         .Border(new Color(0, 122, 204))
-                        .Padding(15, 10)
-                        .PaddingTop(30)
+                        .Padding(15)
+                        .Gap(5)
                         .Children(
-                            Label("Current State (Reactive)", null, new Color(255, 200, 100))
-                                .PaddingBottom(10),
+                            Label("Current State (Reactive)", null, new Color(255, 200, 100)),
                             Label(Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")),
                             Label(Computed<string>.From(() => $"Health: {_health.Value}/100")),
                             Label(Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")),
                             Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%"))
                         )
                 )
-                .Padding(30)
             );
 
         // Wrapper to center content

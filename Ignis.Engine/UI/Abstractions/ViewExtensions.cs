@@ -166,6 +166,26 @@ namespace Ignis.Engine.UI.Abstractions
             view.Layout.Bottom = Units.Pixels(pixels);
             return view;
         }
+
+        // Gaps
+        public static T Gap<T>(this T view, float gap) where T : IView
+        {
+            view.Layout.RowGap = Units.Pixels(gap);
+            view.Layout.ColumnGap = Units.Pixels(gap);
+            return view;
+        }
+
+        public static T RowGap<T>(this T view, float gap) where T : IView
+        {
+            view.Layout.RowGap = Units.Pixels(gap);
+            return view;
+        }
+
+        public static T ColumnGap<T>(this T view, float gap) where T : IView
+        {
+            view.Layout.ColumnGap = Units.Pixels(gap);
+            return view;
+        }
     }
 }
 

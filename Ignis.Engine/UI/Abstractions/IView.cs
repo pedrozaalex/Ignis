@@ -57,6 +57,9 @@ namespace Ignis.Engine.UI.Abstractions
         Units PaddingTop { get; set; }
         Units PaddingBottom { get; set; }
         
+        Units RowGap { get; set; }
+        Units ColumnGap { get; set; }
+        
         LayoutType LayoutType { get; set; }
         PositionType PositionType { get; set; }
         Alignment Alignment { get; set; }
@@ -85,6 +88,9 @@ namespace Ignis.Engine.UI.Abstractions
         public Units PaddingRight { get; set; } = Units.Pixels(0);
         public Units PaddingTop { get; set; } = Units.Pixels(0);
         public Units PaddingBottom { get; set; } = Units.Pixels(0);
+        
+        public Units RowGap { get; set; } = Units.Pixels(8);
+        public Units ColumnGap { get; set; } = Units.Pixels(8);
         
         public LayoutType LayoutType { get; set; } = LayoutType.Column;
         public PositionType PositionType { get; set; } = PositionType.Relative;

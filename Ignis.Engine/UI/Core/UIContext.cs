@@ -173,8 +173,8 @@ namespace Ignis.Engine.UI.Core
         public Units GetChildLeft(object node) => Units.Auto;
         public Units GetChildTop(object node) => Units.Auto;
         
-        public Units GetRowGap(object node) => Units.Pixels(0);
-        public Units GetColumnGap(object node) => Units.Pixels(0);
+        public Units GetRowGap(object node) => ((IView)node).Layout.RowGap;
+        public Units GetColumnGap(object node) => ((IView)node).Layout.ColumnGap;
 
         public List<Units> GetGridRows(object node) => [];
         public List<Units> GetGridColumns(object node) => [];
