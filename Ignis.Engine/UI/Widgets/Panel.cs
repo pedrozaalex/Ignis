@@ -1,0 +1,163 @@
+using Ignis.Engine.UI.Abstractions;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+
+namespace Ignis.Engine.UI.Widgets
+{
+    /// <summary>
+    /// Panel - A styled container with optional background, border, and corner radius.
+    /// Foundation for most editor UI elements.
+    /// </summary>
+    public class Panel : ViewComponent, Core.IViewContainer
+    {
+        private readonly List<IView> _children = new();
+
+        public Color BackgroundColor { get; set; } = new Color(45, 45, 48); // Dark gray (VS theme)
+        public Color BorderColor { get; set; } = new Color(63, 63, 70);
+        public float BorderThickness { get; set; } = 1f;
+        public float CornerRadius { get; set; } = 0f;
+        
+        public Panel(params IView[] children)
+        {
+            _children.AddRange(children);
+            Layout.LayoutType = LayoutType.Column;
+        }
+
+        public void AddChild(IView child)
+        {
+            _children.Add(child);
+            if (Context != null)
+            {
+                child.Mount(Context);
+            }
+        }
+
+        public void RemoveChild(IView child)
+        {
+            child.Unmount();
+            _children.Remove(child);
+        }
+
+        protected override void OnMount()
+        {
+            foreach (var child in _children)
+            {
+                child.Mount(Context!);
+            }
+        }
+
+        protected override void OnUnmount()
+        {
+            foreach (var child in _children)
+            {
+                child.Unmount();
+            }
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+            if (Context == null) return;
+
+            var primitiveBatch = Context.PrimitiveBatch;
+
+            // Draw background
+            if (BackgroundColor.A > 0)
+            {
+                if (CornerRadius > 0)
+                {
+                    primitiveBatch.DrawRoundedRectangle(bounds, CornerRadius, BackgroundColor);
+                }
+                else
+                {
+                    primitiveBatch.DrawFilledRectangle(bounds, BackgroundColor);
+                }
+            }
+
+            // Draw border
+            if (BorderThickness > 0 && BorderColor.A > 0)
+            {
+                primitiveBatch.DrawBorder(bounds, BorderThickness, BorderColor);
+            }
+        }
+
+        public IEnumerable<IView> GetChildren() => _children;
+    }
+
+    /// <summary>
+    /// Window - A draggable, resizable panel with a title bar.
+    /// </summary>
+    public class Window : Panel
+    {
+        private readonly IView _titleBar;
+        private readonly IView _content;
+
+        public string Title { get; set; }
+        public bool IsResizable { get; set; } = true;
+        public bool IsDraggable { get; set; } = true;
+
+        public Window(string title, IView content) : base()
+        {
+            Title = title;
+            _content = content;
+
+            // Create title bar
+            var titleLabel = new Elements.Text(null) { Content = title, Color = Color.White };
+            _titleBar = new Panel(titleLabel)
+            {
+                BackgroundColor = new Color(37, 37, 38),
+                BorderColor = new Color(63, 63, 70)
+            };
+            _titleBar.Layout.Height = Units.Pixels(30);
+            _titleBar.Layout.Width = Units.Stretch(1);
+            _titleBar.Layout.PaddingLeft = Units.Pixels(10);
+            _titleBar.Layout.PaddingTop = Units.Pixels(7);
+
+            // Add to layout
+            AddChild(_titleBar);
+            AddChild(_content);
+
+            // Style
+            BackgroundColor = new Color(45, 45, 48);
+            BorderColor = new Color(63, 63, 70);
+            BorderThickness = 1f;
+            Layout.Width = Units.Pixels(400);
+            Layout.Height = Units.Pixels(300);
+        }
+    }
+
+    /// <summary>
+    /// Splitter - Divides space between two views with a draggable divider.
+    /// </summary>
+    public class Splitter : Panel
+    {
+        private readonly IView _first;
+        private readonly IView _second;
+        private readonly bool _isVertical;
+
+        public float SplitRatio { get; set; } = 0.5f;
+        public float DividerThickness { get; set; } = 4f;
+        public Color DividerColor { get; set; } = new Color(63, 63, 70);
+
+        public Splitter(IView first, IView second, bool isVertical = false) : base()
+        {
+            _first = first;
+            _second = second;
+            _isVertical = isVertical;
+
+            Layout.LayoutType = isVertical ? LayoutType.Column : LayoutType.Row;
+
+            // Configure first panel
+            _first.Layout.Width = isVertical ? Units.Stretch(1) : Units.Percentage(SplitRatio * 100);
+            _first.Layout.Height = isVertical ? Units.Percentage(SplitRatio * 100) : Units.Stretch(1);
+
+            // Configure second panel
+            _second.Layout.Width = isVertical ? Units.Stretch(1) : Units.Percentage((1 - SplitRatio) * 100);
+            _second.Layout.Height = isVertical ? Units.Percentage((1 - SplitRatio) * 100) : Units.Stretch(1);
+
+            AddChild(_first);
+            // TODO: Add divider view
+            AddChild(_second);
+        }
+    }
+}
+

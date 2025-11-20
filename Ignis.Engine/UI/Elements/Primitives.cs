@@ -13,9 +13,7 @@ namespace Ignis.Engine.UI.Elements
     /// </summary>
     public class Box : ViewComponent
     {
-#pragma warning disable IDE0051 // Remove unused private members - Used for future rendering
         public Color Color { get; set; } = Color.White;
-#pragma warning restore IDE0051
 
         public Box()
         {
@@ -28,9 +26,8 @@ namespace Ignis.Engine.UI.Elements
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            // Draw a filled rectangle
-            // Note: SpriteBatch needs a 1x1 white texture to draw shapes
-            // For now, we'll skip actual drawing - this would need a PrimitiveBatch as per architecture
+            // Draw using PrimitiveBatch
+            Context?.PrimitiveBatch?.DrawFilledRectangle(bounds, Color);
         }
     }
 
@@ -57,19 +54,35 @@ namespace Ignis.Engine.UI.Elements
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            if (_font != null && !string.IsNullOrEmpty(_text))
+            if (string.IsNullOrEmpty(_text))
+                return;
+
+            if (_font != null)
             {
                 spriteBatch.DrawString(_font, _text, new Vector2(bounds.X, bounds.Y), Color);
+            }
+            else
+            {
+                // Fallback: Draw subtle placeholder to indicate text location
+                // Draw a thin border in a dark gray color
+                Context?.PrimitiveBatch?.DrawBorder(bounds, 1f, new Color(80, 80, 80, 128));
             }
         }
 
         public override (float width, float height)? Measure(float? availableWidth, float? availableHeight)
         {
-            if (_font == null || string.IsNullOrEmpty(_text))
-                return null;
+            if (string.IsNullOrEmpty(_text))
+                return (0, 0);
 
-            var size = _font.MeasureString(_text);
-            return (size.X, size.Y);
+            if (_font != null)
+            {
+                var size = _font.MeasureString(_text);
+                return (size.X, size.Y);
+            }
+            
+            // Fallback measurement when no font available
+            // Approximate: 8px per char width, 14px height
+            return (_text.Length * 8f, 14f);
         }
     }
 

@@ -165,17 +165,51 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
 #### 5.4. Module: Ignis.Engine.UI (Rendering Strategy)
 
 **Rendering Architecture: The Hybrid Approach**
-Ignis.UI will NOT rely solely on `SpriteBatch`. To support modern styling (rounded corners, dynamic borders) without texture assets, we employ a hybrid strategy:
+Ignis.UI employs a hybrid rendering strategy combining low-level primitive batching with traditional sprite rendering to support modern UI styling without requiring texture assets.
 
-1.  **`PrimitiveBatch` (Custom)**:
-    *   Responsible for drawing "Shapes" (Panels, Buttons, Sliders, Borders).
-    *   Generates `VertexPositionColor` triangles on the CPU.
-    *   Allows procedural styling: `CornerRadius`, `BorderThickness`, `GradientBackground`.
-2.  **`SpriteBatch` (Standard)**:
-    *   Responsible for drawing Text (`SpriteFont`) and textured Icons.
-3.  **`UIContext` Draw Loop**:
-    *   The context manages a "Command List" of draw instructions.
-    *   It batches sequential shapes together and sequential text together to minimize `DrawIndexedPrimitives` calls and render state switches.
+1.  **`PrimitiveBatch` (Low-Level Primitive Renderer)**:
+    *   **Role**: GPU-accelerated shape renderer using dynamic vertex/index buffers.
+    *   **Architecture**: Owns `VertexPositionColor[]` and `int[]` buffers, batches primitives between `Begin()`/`End()` calls.
+    *   **API**: 
+        *   `Begin(Matrix?)` - Initializes batch with orthographic projection
+        *   `DrawFilledRectangle(Rectangle, Color)` - Draws solid quads
+        *   `DrawBorder(Rectangle, float, Color)` - Draws rectangle outlines
+        *   `DrawLine(Vector2, Vector2, float, Color)` - Draws lines as quads
+        *   `DrawTriangle(Vector2, Vector2, Vector2, Color)` - Direct triangle rendering
+        *   `DrawCircle(Vector2, float, Color, int)` - Triangle-fan circle approximation
+        *   `DrawRoundedRectangle(Rectangle, float, Color)` - Composites rectangles and circle segments
+        *   `End()` - Flushes batched geometry to GPU via `DrawUserIndexedPrimitives`
+    *   **Performance**: Automatic buffer growth, flushes at 65k vertices or buffer capacity.
+    *   **Effect**: Uses `BasicEffect` with vertex colors, orthographic projection.
+
+2.  **`SpriteBatch` (Standard Text & Texture Rendering)**:
+    *   Responsible for drawing Text (`SpriteFont`) and textured Icons/Images.
+    *   Managed by MonoGame, handles its own batching and texture switches.
+
+3.  **Widget Layer Composition**:
+    *   **High-level widgets** (ProgressBar, Slider, Checkbox, Panel) now compose low-level primitives.
+    *   Example: `ProgressBar.Draw()` calls:
+        ```csharp
+        batch.DrawFilledRectangle(bounds, BackgroundColor);
+        batch.DrawFilledRectangle(fillBounds, FillColor);
+        batch.DrawBorder(bounds, 1f, BorderColor);
+        ```
+    *   Widgets call `Context.PrimitiveBatch` directly—no SpriteBatch dependency for shapes.
+
+4.  **`UIContext` Draw Loop**:
+    *   **Sequence**:
+        1. Calculate layout via `LayoutEngine.Layout()`
+        2. Begin primitive batch: `_primitiveBatch.Begin()`
+        3. Traverse view tree, each `IView.Draw()` adds primitives to batch
+        4. Text rendering via `SpriteBatch` (managed separately, interleaved as needed)
+        5. End primitive batch: `_primitiveBatch.End()` (flushes all geometry)
+    *   **Batching Strategy**: All shape primitives batched together, minimizing draw calls and state switches.
+
+**Design Rationale**:
+*   **Decoupling**: Widgets no longer depend on SpriteBatch for shapes, enabling true procedural rendering.
+*   **Flexibility**: Easy to add gradients, per-vertex colors, or custom shapes (arcs, polygons).
+*   **Performance**: Single `DrawUserIndexedPrimitives` call per frame for all UI shapes (typical case).
+*   **Extensibility**: Future support for textured primitives, anti-aliasing, or custom shaders via `BasicEffect` replacement.
 
 ---
 

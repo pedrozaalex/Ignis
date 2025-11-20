@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Graphics;
 
 namespace Ignis.Engine.UI.Core
 {
@@ -8,15 +9,32 @@ namespace Ignis.Engine.UI.Core
     /// UIContext - The Root Renderer and coordinator for the UI system.
     /// Manages the view tree, layout calculation, and rendering.
     /// </summary>
-    public class UIContext : ILayoutNode, ILayoutCache
+    public class UIContext : ILayoutNode, ILayoutCache, IDisposable
     {
-        private readonly GraphicsDevice _graphicsDevice;
+        private readonly GraphicsDevice? _graphicsDevice;
         private IView? _root;
         private readonly Dictionary<object, Rectangle> _bounds = new();
+        private bool _isDisposed;
+        private SpriteFont? _defaultFont;
 
-        public UIContext(GraphicsDevice graphicsDevice)
+        public PrimitiveBatch? PrimitiveBatch { get; }
+        public SpriteFont? DefaultFont => _defaultFont;
+
+        public UIContext(GraphicsDevice? graphicsDevice)
         {
             _graphicsDevice = graphicsDevice;
+            if (graphicsDevice != null)
+            {
+                PrimitiveBatch = new PrimitiveBatch(graphicsDevice);
+                _defaultFont = CreateDefaultFont(graphicsDevice);
+            }
+        }
+
+        private SpriteFont? CreateDefaultFont(GraphicsDevice graphicsDevice)
+        {
+            // TODO: Create a basic runtime font or load a default font asset
+            // For now, return null and handle gracefully in Text rendering
+            return null;
         }
 
         /// <summary>
@@ -48,14 +66,29 @@ namespace Ignis.Engine.UI.Core
         /// </summary>
         public void Draw(SpriteBatch spriteBatch)
         {
-            if (_root == null)
+            if (_root == null || _graphicsDevice == null)
                 return;
 
-            // Calculate layout
-            LayoutEngine.Layout(_root, this, this);
+            // Get viewport dimensions for layout constraint
+            var viewport = _graphicsDevice.Viewport;
+
+            // Calculate layout with viewport as constraint
+            LayoutEngine.Layout(_root, this, this, viewport.Width, viewport.Height);
+
+            // Begin primitive batch for shape rendering
+            PrimitiveBatch?.Begin();
+
+            // Begin SpriteBatch for text/texture rendering
+            spriteBatch.Begin();
 
             // Draw the tree
             DrawView(spriteBatch, _root);
+
+            // End SpriteBatch
+            spriteBatch.End();
+
+            // End primitive batch and flush
+            PrimitiveBatch?.End();
         }
 
         private void DrawView(SpriteBatch spriteBatch, IView view)
@@ -140,6 +173,16 @@ namespace Ignis.Engine.UI.Core
         public (float width, float height)? MeasureContent(object node, float? knownWidth, float? knownHeight)
         {
             return (node as IView)?.Measure(knownWidth, knownHeight);
+        }
+
+        public void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                PrimitiveBatch?.Dispose();
+                _root?.Unmount();
+                _isDisposed = true;
+            }
         }
     }
 

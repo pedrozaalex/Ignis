@@ -102,12 +102,28 @@ namespace Ignis.Engine.UI
         private const float DefaultMin = -float.MaxValue;
         private const float DefaultMax = float.MaxValue;
 
-        public static void Layout(object root, ILayoutNode store, ILayoutCache cache)
+        public static void Layout(object root, ILayoutNode store, ILayoutCache cache, float viewportWidth = 0, float viewportHeight = 0)
         {
             var widthUnits = store.GetWidth(root);
             var heightUnits = store.GetHeight(root);
-            var w = widthUnits.ToPx(0, 0);
-            var h = heightUnits.ToPx(0, 0);
+            
+            // Use viewport dimensions for stretch/percentage calculations
+            var w = widthUnits.Kind switch
+            {
+                UnitKind.Pixels => widthUnits.Value,
+                UnitKind.Percentage => viewportWidth * (widthUnits.Value / 100f),
+                UnitKind.Stretch => viewportWidth,
+                _ => viewportWidth // Auto uses viewport as constraint
+            };
+            
+            var h = heightUnits.Kind switch
+            {
+                UnitKind.Pixels => heightUnits.Value,
+                UnitKind.Percentage => viewportHeight * (heightUnits.Value / 100f),
+                UnitKind.Stretch => viewportHeight,
+                _ => viewportHeight // Auto uses viewport as constraint
+            };
+            
             cache.SetBounds(root, 0, 0, w, h);
             var result = Compute(root, LayoutType.Column, h, w, store, cache);
             
@@ -125,7 +141,7 @@ namespace Ignis.Engine.UI
             var layoutType = store.GetLayoutType(node);
             
             // Helper to swap main/cross based on layout type
-            float Main(Units u) => parentLayoutType == LayoutType.Column ? u.ToPx(parentMain, 0) : u.ToPx(parentMain, 0); 
+            // float Main(Units u) => parentLayoutType == LayoutType.Column ? u.ToPx(parentMain, 0) : u.ToPx(parentMain, 0); 
             
             var width = store.GetWidth(node);
             var height = store.GetHeight(node);

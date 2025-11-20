@@ -1,7 +1,8 @@
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
-using Xunit;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Ignis.Tests.UI;
 
@@ -24,8 +25,16 @@ public class BindTests
         // Act
         var conditionalView = Bind.If(
             condition,
-            () => { trueViewCreated = true; return trueView; },
-            () => { falseViewCreated = true; return falseView; }
+            () =>
+            {
+                trueViewCreated = true;
+                return trueView;
+            },
+            () =>
+            {
+                falseViewCreated = true;
+                return falseView;
+            }
         );
 
         var context = new MockUIContext();
@@ -72,11 +81,12 @@ public class BindTests
         // Act
         var listView = Bind.For(list, item =>
         {
-            if (!viewInstances.ContainsKey(item))
-            {
-                viewInstances[item] = new MockView();
-            }
-            return viewInstances[item];
+            if (viewInstances.TryGetValue(item, out var value)) return value;
+
+            value = new MockView();
+            viewInstances[item] = value;
+
+            return value;
         });
 
         var context = new MockUIContext();
@@ -102,11 +112,12 @@ public class BindTests
 
         var listView = Bind.For(list, item =>
         {
-            if (!viewInstances.ContainsKey(item))
-            {
-                viewInstances[item] = new MockView();
-            }
-            return viewInstances[item];
+            if (viewInstances.TryGetValue(item, out var value)) return value;
+
+            value = new MockView();
+            viewInstances[item] = value;
+
+            return value;
         });
 
         var context = new MockUIContext();
@@ -146,8 +157,8 @@ public class BindTests
             _onMount?.Invoke();
         }
 
-        public override void Draw(Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch,
-            Microsoft.Xna.Framework.Rectangle bounds)
+        public override void Draw(SpriteBatch spriteBatch,
+            Rectangle bounds)
         {
             // No-op for testing
         }
@@ -163,4 +174,3 @@ public class BindTests
 
     #endregion
 }
-

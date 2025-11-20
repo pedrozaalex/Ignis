@@ -2,11 +2,18 @@
 
 Console.WriteLine("Ignis Engine Samples");
 Console.WriteLine("====================");
-Console.WriteLine("1. Phase 1: Transform System (Visual)");
-Console.WriteLine("2. Phase 2: Asset Manager (Console)");
-Console.WriteLine("3. Phase 3: Spinning Cube with Orbiting Camera (Visual)");
 Console.WriteLine();
-Console.Write("Select sample (1-3): ");
+Console.WriteLine("ECS & Graphics Samples:");
+Console.WriteLine("  1. Phase 1: Transform System (Visual)");
+Console.WriteLine("  2. Phase 2: Asset Manager (Console)");
+Console.WriteLine("  3. Phase 3: Spinning Cube with Orbiting Camera (Visual)");
+Console.WriteLine();
+Console.WriteLine("UI Widget Samples:");
+Console.WriteLine("  4. Basic Widgets - TextField, NumberField, Checkbox, Slider");
+Console.WriteLine("  5. Hierarchy & Lists - TreeView, Console, Dynamic Updates");
+Console.WriteLine("  6. Complete Editor Layout - Full Game Editor UI");
+Console.WriteLine();
+Console.Write("Select sample (1-6): ");
 
 var choice = Console.ReadLine();
 
@@ -35,9 +42,36 @@ switch (choice)
 
         break;
 
+    case "4":
+        Console.WriteLine("\nStarting Basic Widgets Sample...\n");
+        using (var game = new BasicWidgetsSample())
+        {
+            game.Run();
+        }
+
+        break;
+
+    case "5":
+        Console.WriteLine("\nStarting Hierarchy Widget Sample...\n");
+        using (var game = new HierarchyWidgetSample())
+        {
+            game.Run();
+        }
+
+        break;
+
+    case "6":
+        Console.WriteLine("\nStarting Complete Editor Layout Sample...\n");
+        using (var game = new EditorWidgetSample())
+        {
+            game.Run();
+        }
+
+        break;
+
     default:
-        Console.WriteLine("Invalid choice. Running default (Phase 1)...");
-        using (var game = new HelloGame())
+        Console.WriteLine("Invalid choice. Running Basic Widgets Sample...");
+        using (var game = new BasicWidgetsSample())
         {
             game.Run();
         }
