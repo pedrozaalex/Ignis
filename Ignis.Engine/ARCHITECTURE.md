@@ -161,6 +161,22 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
         1.  Calculates Flexbox-style layout (measure/arrange).
         2.  Draws the tree via `SpriteBatch`.
 
+
+#### 5.4. Module: Ignis.Engine.UI (Rendering Strategy)
+
+**Rendering Architecture: The Hybrid Approach**
+Ignis.UI will NOT rely solely on `SpriteBatch`. To support modern styling (rounded corners, dynamic borders) without texture assets, we employ a hybrid strategy:
+
+1.  **`PrimitiveBatch` (Custom)**:
+    *   Responsible for drawing "Shapes" (Panels, Buttons, Sliders, Borders).
+    *   Generates `VertexPositionColor` triangles on the CPU.
+    *   Allows procedural styling: `CornerRadius`, `BorderThickness`, `GradientBackground`.
+2.  **`SpriteBatch` (Standard)**:
+    *   Responsible for drawing Text (`SpriteFont`) and textured Icons.
+3.  **`UIContext` Draw Loop**:
+    *   The context manages a "Command List" of draw instructions.
+    *   It batches sequential shapes together and sequential text together to minimize `DrawIndexedPrimitives` calls and render state switches.
+
 ---
 
 ## 6. Testing Strategy
