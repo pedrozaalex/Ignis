@@ -1,10 +1,10 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Engine", "Ignis.Engine\Ignis.Engine.csproj", "{7F2D0EF2-FEA7-4172-869D-249FE36DA379}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ignis.Engine", "Ignis.Engine\Ignis.Engine.csproj", "{7F2D0EF2-FEA7-4172-869D-249FE36DA379}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Samples", "Ignis.Samples\Ignis.Samples.csproj", "{2C52650A-4546-4AC0-B910-C5BFBA573435}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ignis.Samples", "Ignis.Samples\Ignis.Samples.csproj", "{2C52650A-4546-4AC0-B910-C5BFBA573435}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Tests", "Ignis.Tests\Ignis.Tests.csproj", "{D8DEC201-0DB3-4218-AE83-F8F8C16178A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ignis.Tests", "Ignis.Tests\Ignis.Tests.csproj", "{D8DEC201-0DB3-4218-AE83-F8F8C16178A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,7 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using Ignis.Engine.Assets;
-using Ignis.Engine.ECS.Components;
+using Ignis.Engine.Graphics.Systems;
 
 namespace Ignis.Engine.Core;
 

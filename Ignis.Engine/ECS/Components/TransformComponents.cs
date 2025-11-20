@@ -8,17 +8,12 @@ namespace Ignis.Engine.ECS.Components;
 /// This is read-only and calculated by TransformSystem
 /// Note: Uses Friflo's built-in Position, Rotation, and Scale3 components for local transforms
 /// </summary>
-public struct WorldTransform : IComponent
+public struct WorldTransform(Matrix4x4 value) : IComponent
 {
     /// <summary>
     /// The world transformation matrix
     /// </summary>
-    public Matrix4x4 Value;
-    
-    public WorldTransform(Matrix4x4 value)
-    {
-        Value = value;
-    }
+    public Matrix4x4 Value = value;
 }
 
 /// <summary>

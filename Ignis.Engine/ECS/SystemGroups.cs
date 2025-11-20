@@ -6,7 +6,7 @@ namespace Ignis.Engine.ECS;
 public enum SystemGroup
 {
     /// <summary>
-    /// Input processing (Phase 5)
+    /// Input processing
     /// </summary>
     Input,
     

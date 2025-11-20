@@ -3,44 +3,49 @@
 ## 1. Project Overview
 **Ignis** is a high-performance, data-oriented **3D game engine** built on the .NET ecosystem. It combines the battle-tested rendering and platform capabilities of **MonoGame** with the high-performance data handling of **Friflo.Engine.ECS**.
 
-The engine is designed with a strict separation of concerns to enable **Headless Testing**: logic runs independently of graphics context, allowing the 3D simulation (physics, AI, transforms) to be verified without opening a window.
+The engine is designed with a strict separation of concerns to enable **Headless Testing**: logic runs independently of graphics context.
 
 ## 2. Technology Stack
 *   **Core Framework**: .NET 8.0+
-*   **Logic / Data**: [Friflo.Engine.ECS](https://friflo.gitbook.io/friflo.engine.ecs) (Archetype-based Entity Component System)
-*   **Graphics / Platform**: [MonoGame 3.8.1+](https://monogame.net/) (Windowing, Graphics Device, Audio, Input, HLSL Shaders)
-*   **Serialization**: `Friflo.Json.Fliox` (For ECS state debugging and saving)
-*   **UI**: Custom Native UI Framework (2D Screen-Space Overlay)
+*   **Logic / Data**: [Friflo.Engine.ECS](https://friflo.gitbook.io/friflo.engine.ecs)
+*   **Graphics / Platform**: [MonoGame 3.8.1+](https://monogame.net/)
+    *   *Usage*: We leverage `Microsoft.Xna.Framework.Graphics.Model` for mesh data and `BasicEffect` for standard lighting/texturing to ensure robust, cross-platform rendering out of the box.
+*   **UI**: Custom Native UI Framework (Retained Mode)
 
 ---
 
-## 3. Project Layout & File Structure (Phase 1 + 3)
+## 3. Project Layout & File Structure
 The solution (`Ignis.sln`) adheres to the following physical directory structure.
 
 ```text
 Ignis/
 ├── Ignis.Engine/                       # [Class Library] The Core Runtime
-│   ├── Ignis.Engine.csproj             # Dependencies: MonoGame.DesktopGL, Friflo.Engine.ECS
+│   ├── Ignis.Engine.csproj
 │   ├── Core/
-│   │   ├── EngineSettings.cs           # Configuration POCO
-│   │   ├── IgnisApp.cs                 # Headless Core (manages Friflo World)
-│   │   └── IgnisGame.cs                # MonoGame Wrapper (manages GraphicsDevice)
+│   │   ├── IgnisApp.cs                 # Headless Core
+│   │   └── IgnisGame.cs                # MonoGame Wrapper
 │   ├── ECS/
-│   │   ├── Archetypes.cs               # Standard Archetypes (e.g., GameObject)
+│   │   ├── Archetypes.cs
+│   │   ├── Components/                 # Transform components
+│   │   └── Systems/                    # TransformSystem
+│   ├── Graphics/                       # (Phase 3)
 │   │   ├── Components/
-│   │   │   ├── ComponentTypes.cs       # (General Registry)
-│   │   │   └── TransformComponents.cs  # WorldTransform (Matrix), TransformDirty (Tag)
+│   │   │   ├── MeshComponent.cs        # Holds Model reference
+│   │   │   ├── MaterialComponent.cs    # Color, Texture overrides
+│   │   │   └── CameraComponent.cs      # FOV, Near/Far planes
 │   │   ├── Systems/
-│   │   │   └── TransformSystem.cs      # Recursive World Matrix Calculation
-│   │   └── SystemGroups.cs             # Enums/Constants for system sorting
-│   ├── Graphics/                       # (Reserved for Phase 3: Meshes, Camera3D)
+│   │   │   ├── RenderSystem.cs         # The Draw Loop
+│   │   │   └── CameraSystem.cs         # View/Proj Matrix calculation
+│   │   └── Lighting/
+│   │       └── LightSettings.cs        # Ambient/Directional structs
 │   ├── Input/                          # (Reserved for Phase 5)
 │   └── UI/                             # (Reserved for Phase 4)
 │
-├── Ignis.Samples/                      # [Console App] Sandbox/Reference Game
-│   └── SampleGame.cs                   # Concrete implementation
+├── Ignis.Samples/                      # [Console App] Sandbox
+│   ├── Content/                        # MonoGame Content Builder (.mgcb)
+│   └── SampleGame.cs
 │
-├── Ignis.Tests/                        # [xUnit] Unit & Integration Suite
+├── Ignis.Tests/                        # [xUnit] Suite
 └── Ignis.sln
 ```
 
@@ -49,34 +54,27 @@ Ignis/
 ## 4. Core Architecture Modules
 
 ### 4.1. The "Headless" Core (`IgnisApp`)
-*   **Role**: Manages the ECS World (`EntityStore`) and the 3D simulation loop.
-*   **Usage**: Used by `IgnisGame` (Visual) and `Ignis.Tests` (Headless).
+Manages the ECS World and Simulation loop.
 
 ### 4.2. Scene Graph & Transform System
-To support 3D hierarchy efficiently, we employ a **Reactive Dirty Propagation** strategy using Friflo's built-in components and event system.
+Handles `Position`, `Rotation`, `Scale` $\to$ `WorldTransform` matrix propagation via reactive dirty flags.
 
-*   **Data**:
-    *   **Built-in Components**: `Position` (Vec3), `Rotation` (Quat), `Scale3` (Vec3).
-    *   **`WorldTransform`**: The calculated Matrix4x4 used for rendering. Read-only.
-    *   **`TransformDirty` (Tag)**: Added automatically via event hooks when built-in components change.
-*   **Archetype**:
-    *   **`GameObject`**: An archetype ensuring `Position`, `Rotation`, `Scale3`, `WorldTransform`, and `TransformDirty` are present on creation.
-*   **Reactivity (`IgnisApp` Setup)**:
-    *   Register `store.OnComponentChanged` events for `Position`, `Rotation`, and `Scale3`.
-    *   **Handler**: When any of these change, add the `TransformDirty` tag to the entity.
-*   **Logic (`TransformSystem`)**:
-    1.  **Identify Roots**: Query all entities that have `WorldTransform` but *no* Parent.
-    2.  **Parallel Recursion**: Iterate over Roots.
-    3.  **Optimization**:
-        *   If `parentIsDirty` is `true`, we **must** recalculate the child.
-        *   If `parentIsDirty` is `false` AND `child.Has<TransformDirty>()` is `false`, **skip** calculation and recurse to grandchildren.
-        *   **Completion**: After recalculating, remove the `TransformDirty` tag.
+### 4.3. 3D Rendering Pipeline (Phase 3)
+The rendering system connects ECS data to the MonoGame Graphics Device.
 
-### 4.3. The Visual Wrapper (`IgnisGame`)
-*   **Role**: Inherits from MonoGame’s `Game` class.
-*   **Lifecycle**:
-    *   `Update()`: Polls input $\to$ Steps `IgnisApp`.
-    *   `Draw()`: Clears screen $\to$ Render 3D World (using `WorldTransform` matrices) $\to$ Render 2D UI Overlay.
+*   **Philosophy**: The `IgnisApp` (Simulation) knows *nothing* about pixels. The `RenderSystem` (Presentation) reads the ECS state and issues draw calls to the GPU.
+*   **Asset Strategy**:
+    *   Components do not load files. They hold references to MonoGame `Model` or `Texture2D` objects that were loaded by the Game's `ContentManager`.
+*   **Camera Architecture**:
+    *   The camera is an Entity with a `CameraComponent` and standard `Transform`.
+    *   This allows the camera to be parented to a player, animated via physics, or scripted easily.
+*   **Render Loop**:
+    1.  **Camera Resolve**: Find the active `CameraComponent`. Calculate `View` and `Projection`.
+    2.  **Query**: Fetch all entities with (`MeshComponent` + `WorldTransform`).
+    3.  **Draw**: Iterate entities. Apply `World` (from Entity), `View`, `Projection` (from Camera) to the Mesh's `BasicEffect`. Call `ModelMesh.Draw()`.
+
+### 4.4. Custom UI Framework (Phase 4)
+2D Overlay system (Retained Mode).
 
 ---
 
@@ -84,100 +82,108 @@ To support 3D hierarchy efficiently, we employ a **Reactive Dirty Propagation** 
 
 ### 5.1. Module: Ignis.Engine.Core
 
-#### Class: `IgnisApp`
-*   **File**: `Ignis.Engine/Core/IgnisApp.cs`
-*   **Requirements**:
-    *   **Properties**: `EntityStore World`, `SystemGroup SimulationRoot`.
-    *   **Constructor**:
-        *   Instantiate `World`.
-        *   **Event Registration**:
-            ```csharp
-            World.OnComponentChanged<Position>(OnTransformChanged);
-            World.OnComponentChanged<Rotation>(OnTransformChanged);
-            World.OnComponentChanged<Scale3>(OnTransformChanged);
-            ```
-        *   **Method `OnTransformChanged`**: `eventArgs.Entity.AddTag<TransformDirty>();`
-    *   **Method `Update(double dt)`**: Execute `SimulationRoot`.
-
 #### Class: `IgnisGame`
-*   **File**: `Ignis.Engine/Core/IgnisGame.cs`
-*   **Requirements**:
-    *   Standard MonoGame setup (`GraphicsDeviceManager`).
-    *   **Draw Logic**:
-        1.  Reset Render State.
-        2.  Call `OnRender3D` (virtual).
-        3.  Call `OnRenderUI` (virtual).
+*   **Integration**:
+    *   Holds an instance of `RenderSystem`.
+    *   **LoadContent**: Passes the `GraphicsDevice` to `RenderSystem` initialization.
+    *   **Draw**: Calls `_renderSystem.Draw(_app.World)`.
 
-### 5.2. Module: Ignis.Engine.ECS
+### 5.2. Module: Ignis.Engine.Graphics (Phase 3 Requirement)
 
-#### File: `ECS/Archetypes.cs`
-*   **Static Class**: `Archetypes`
-*   **Requirements**:
-    *   Define standard definitions for entity creation.
-    *   `public static Archetype GameObject => ...` (Includes `Position`, `Rotation`, `Scale3`, `WorldTransform`, `TransformDirty`).
-    *   *Rationale*: Ensures new entities don't default to (0,0,0) without the ability to move.
+#### Class: `MeshComponent` (Struct)
+*   **Purpose**: Links an entity to a 3D visual.
+*   **Data**:
+    *   `public Model ModelRef;` (Reference to loaded MonoGame Model)
+    *   `public bool CastShadows;`
+*   *Note*: Keeping `ModelRef` allows us to leverage MonoGame's pipeline for FBX/GLTF import, bone handling, and sub-meshes without writing a custom parser.
 
-#### File: `ECS/Components/TransformComponents.cs`
-*   **Struct**: `public struct WorldTransform : IComponent`
-    *   `Matrix4x4 Value`.
-*   **Struct**: `public struct TransformDirty : ITag { }`
-    *   *Note*: Used to flag entities needing update.
+#### Class: `MaterialComponent` (Struct)
+*   **Purpose**: Overrides default model properties.
+*   **Data**:
+    *   `public Color Color;` (Tint)
+    *   `public Texture2D Texture;` (Optional override)
+    *   `public float SpecularPower;`
+    *   `public bool EnableLighting;`
 
-#### File: `ECS/Systems/TransformSystem.cs`
-*   **Class**: `public class TransformSystem : QuerySystem`
-*   **Role**: Implements the hierarchy traversal.
-*   **Requirements**:
-    *   **Query**: Entities with `WorldTransform` and **without** `Parent` (Roots).
-    *   **Method `OnUpdate()`**:
-        *   Iterate Roots.
-        *   Call `ProcessNode(entity, Matrix4x4.Identity, false)`.
-    *   **Method `ProcessNode(Entity entity, Matrix parentMatrix, bool parentDirty)`**:
-        1.  `bool isSelfDirty = entity.HasTag<TransformDirty>()`.
-        2.  `bool needsUpdate = parentDirty || isSelfDirty`.
-        3.  If `needsUpdate`:
-            *   **Read Native**: `var pos = entity.Position; var rot = entity.Rotation; var scale = entity.Scale3;`
-            *   Calculate `localMatrix = Matrix.CreateScale(scale) * Matrix.CreateFromQuaternion(rot) * Matrix.CreateTranslation(pos)`.
-            *   `worldMatrix = localMatrix * parentMatrix`.
-            *   `entity.GetComponent<WorldTransform>().Value = worldMatrix`.
-            *   `entity.RemoveTag<TransformDirty>()`.
-        4.  **Recurse**: `foreach (var child in entity.Children) ProcessNode(child, worldMatrix, needsUpdate)`.
+#### Class: `CameraComponent` (Struct)
+*   **Purpose**: Defines the "Lens".
+*   **Data**:
+    *   `public float FieldOfView;` (Default: 60 degrees)
+    *   `public float NearPlane;` (Default: 0.1f)
+    *   `public float FarPlane;` (Default: 1000f)
+    *   `public float AspectRatio;`
+    *   `public bool IsActive;` (To switch between cameras)
+    *   **Transient Data**: `public Matrix ViewMatrix;`, `public Matrix ProjectionMatrix;` (Calculated by System).
+
+#### Class: `CameraSystem`
+*   **Role**: Calculates matrices based on Transform.
+*   **Logic**:
+    *   Query: Entities with `CameraComponent` + `Position` + `Rotation`.
+    *   Loop:
+        *   `Target = Position + Vector3.Transform(Vector3.Forward, Rotation)`
+        *   `Up = Vector3.Transform(Vector3.Up, Rotation)`
+        *   `View = Matrix.CreateLookAt(Position, Target, Up)`
+        *   `Projection = Matrix.CreatePerspectiveFieldOfView(FOV, Aspect, Near, Far)`
+    *   *Note*: This runs in `IgnisApp.Update` (Simulation) so logic (like "Is object visible?") can use the frustum.
+
+#### Class: `RenderSystem`
+*   **Role**: The bridge to GPU.
+*   **Dependencies**: `GraphicsDevice`.
+*   **Method `Draw(EntityStore world)`**:
+    1.  **Find Camera**: Query `CameraComponent`. Find the first with `IsActive == true`. (Fallback to default if none).
+    2.  **Global Settings**: Set `GraphicsDevice.DepthStencilState = DepthStencilState.Default`.
+    3.  **Query Renderables**: `world.Query<MeshComponent, WorldTransform>()`.
+    4.  **Iterate**:
+        *   Get `Model` from `MeshComponent`.
+        *   Get `World` matrix from `WorldTransform`.
+        *   Get `Material` (optional).
+        *   **Model Loop**: `foreach (var mesh in model.Meshes)`
+            *   `foreach (BasicEffect effect in mesh.Effects)`
+                *   `effect.World = mesh.ParentBone.Transform * worldMatrix`
+                *   `effect.View = camera.View`
+                *   `effect.Projection = camera.Projection`
+                *   `effect.EnableDefaultLighting()` (if enabled)
+                *   Apply `MaterialComponent` overrides (Color/Texture).
+            *   `mesh.Draw()`
 
 ### 5.3. Module: Ignis.Samples
 
 #### Class: `SampleGame`
-*   **Requirements**:
-    *   **Setup**:
-        *   Create `Root` using `Archetypes.GameObject`.
-        *   Create `Child` using `Archetypes.GameObject`. `Root.AddChild(Child)`.
-        *   Set `Child.Position = new Vector3(10, 0, 0)`.
-    *   **Update**:
-        *   Modify `Root.Rotation` every frame.
-    *   **Verification**:
-        *   Observe `Child` orbiting via its `WorldTransform` matrix.
+*   **LoadContent**:
+    *   `var cubeModel = Content.Load<Model>("Cube");`
+*   **OnSetup**:
+    *   **Camera**: Create Entity `Cam`. Add `CameraComponent`, `Position` (0, 5, 15), `Rotation` (Look at 0,0,0).
+    *   **Object**: Create Entity `Cube`. Add `MeshComponent { ModelRef = cubeModel }`, `WorldTransform`.
+*   **Verification**:
+    *   Running the sample shows a 3D Cube.
+    *   Moving the `Cam` entity in `Update` changes the view.
 
 ---
 
 ## 6. Testing Strategy
 
 ### Unit Tests (`Ignis.Tests`)
-*   **Event Reactivity**:
-    1.  Create entity `A` (GameObject).
-    2.  Assert `A` has `TransformDirty` (initial state).
-    3.  Run `TransformSystem` (should clear dirty tag).
-    4.  Set `A.Position = new Vector3(1,1,1)`.
-    5.  Assert `A` has `TransformDirty` tag again (proving event listener works).
-*   **Hierarchy Propagation**:
-    1.  Create chain `Root -> Child`.
-    2.  Move `Root`.
-    3.  Run System.
-    4.  Assert `Child.WorldTransform` contains the translation.
+*   **Camera Math**:
+    *   Create Camera at (0,0,10) looking at (0,0,0).
+    *   Run `CameraSystem`.
+    *   Assert `ViewMatrix` translation component corresponds to -10 Z.
+*   **Missing Asset Handling**:
+    *   Create entity with `MeshComponent` but `ModelRef = null`.
+    *   (Integration test) Ensure `RenderSystem` checks for null and doesn't crash, perhaps logging a warning.
 
 ### Visual Verification
-*   **Solar System**: Run `Ignis.Samples`. Create a "Sun", "Earth", and "Moon" hierarchy. Rotating the Sun should carry the Earth, and rotating the Earth should carry the Moon, confirming matrix multiplication order and recursion.
+*   **Primitives**: Load a Cube, Sphere, and Torus. Arrange them in a line.
+*   **Lighting**: Enable default lighting. Verify faces are shaded differently based on orientation.
+*   **Camera**: Rotate the camera entity around the scene.
 
 ## 7. Roadmap
+
 1.  **Phase 1**: Core Skeleton & Headless Setup.
-2.  **Phase 2**: **Test Suite** (Focus on Event listeners and Dirty Flag logic).
-3.  **Phase 3**: **Transform System** (Recursive calculation using built-in components).
-4.  **Phase 4**: **3D Rendering** (Mesh/Shader).
-5.  **Phase 5**: **UI Overlay**.
+2.  **Phase 2**: Test Suite (Hierarchy & Event logic).
+3.  **Phase 3 (Rendering)**:
+    *   **3.1**: Implement `CameraComponent` and `CameraSystem` (Math logic).
+    *   **3.2**: Implement `MeshComponent` and `MaterialComponent`.
+    *   **3.3**: Implement `RenderSystem` using MonoGame `Model.Draw`.
+    *   **3.4**: Visual Sample: Spinning Cube with Orbiting Camera.
+4.  **Phase 4**: UI Framework.
+5.  **Phase 5**: Input & Interaction.
