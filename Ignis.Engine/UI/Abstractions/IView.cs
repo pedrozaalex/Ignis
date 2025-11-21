@@ -1,3 +1,4 @@
+using Ignis.Engine.UI.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -16,7 +17,7 @@ namespace Ignis.Engine.UI.Abstractions
         /// <summary>
         /// Called when the view is added to the live tree. Use to set up Signal subscriptions.
         /// </summary>
-        void Mount(Core.UIContext context);
+        void Mount(UIContext context);
 
         /// <summary>
         /// Called when the view is removed from the tree. Clean up subscriptions here.
@@ -105,7 +106,7 @@ namespace Ignis.Engine.UI.Abstractions
         public bool Visible { get; set; } = true;
         
         public bool Focusable { get; set; } = false;
-        public long ElementId { get; set; } = System.Threading.Interlocked.Increment(ref _nextElementId);
+        public long ElementId { get; set; } = Interlocked.Increment(ref _nextElementId);
     }
 }
 

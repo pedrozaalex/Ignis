@@ -1,8 +1,8 @@
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Graphics;
 using Ignis.Engine.UI.Input;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Ignis.Engine.UI.Core
 {
@@ -19,7 +19,7 @@ namespace Ignis.Engine.UI.Core
         private bool _isDisposed;
         private SpriteFont? _defaultFont;
         private readonly int _instanceId;
-        private static int _nextInstanceId = 0;
+        private static int _nextInstanceId;
         
         private readonly InputManager _inputManager;
 
@@ -29,8 +29,8 @@ namespace Ignis.Engine.UI.Core
 
         public UIContext(GraphicsDevice? graphicsDevice, SpriteFont? defaultFont = null)
         {
-            _instanceId = System.Threading.Interlocked.Increment(ref _nextInstanceId);
-            System.Console.WriteLine($"[UIContext #{_instanceId}] Created");
+            _instanceId = Interlocked.Increment(ref _nextInstanceId);
+            Console.WriteLine($"[UIContext #{_instanceId}] Created");
             
             _graphicsDevice = graphicsDevice;
             _defaultFont = defaultFont;
@@ -49,8 +49,8 @@ namespace Ignis.Engine.UI.Core
         public void SetDefaultFont(SpriteFont font)
         {
             _defaultFont = font;
-            System.Console.WriteLine($"[UIContext #{_instanceId}] SetDefaultFont called. Font is now: {(_defaultFont != null ? "SET" : "NULL")}");
-            System.Console.WriteLine($"[UIContext #{_instanceId}] Font details: LineSpacing={_defaultFont?.LineSpacing}");
+            Console.WriteLine($"[UIContext #{_instanceId}] SetDefaultFont called. Font is now: {(_defaultFont != null ? "SET" : "NULL")}");
+            Console.WriteLine($"[UIContext #{_instanceId}] Font details: LineSpacing={_defaultFont?.LineSpacing}");
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Ignis.Engine.UI.Core
             // Debug: Check font state at draw time
             if (_defaultFont == null)
             {
-                System.Console.WriteLine($"[UIContext #{_instanceId}.Draw] WARNING: DefaultFont is NULL at draw time!");
+                Console.WriteLine($"[UIContext #{_instanceId}.Draw] WARNING: DefaultFont is NULL at draw time!");
             }
 
             // Get viewport dimensions for layout constraint

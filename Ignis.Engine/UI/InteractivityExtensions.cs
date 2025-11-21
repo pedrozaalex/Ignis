@@ -1,4 +1,3 @@
-using System;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Input;
 

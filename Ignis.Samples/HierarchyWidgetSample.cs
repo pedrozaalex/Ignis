@@ -43,8 +43,11 @@ public class HierarchyWidgetSample : IgnisGame
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
 
-        // Load font for UI (Critical for text visibility)
-        LoadFontForUI();
+        // Use the automatically loaded default font
+        if (DefaultFont != null)
+        {
+            _uiContext.SetDefaultFont(DefaultFont);
+        }
         
         // Setup initial scene
         InitializeScene();
@@ -60,46 +63,27 @@ public class HierarchyWidgetSample : IgnisGame
         LogInfo("Watch the hierarchy and console update reactively!");
     }
 
-    private void LoadFontForUI()
-    {
-        try
-        {
-            // Assumes DefaultFont has been built by BasicWidgetsSample or Content pipeline
-            var font = Content.Load<SpriteFont>("DefaultFont");
-            
-            try 
-            {
-                if (!font.DefaultCharacter.HasValue) 
-                {
-                    font.DefaultCharacter = '?'; 
-                }
-            }
-            catch 
-            {
-                // Some fonts might not have '?' either, but Arial usually does.
-            }
-
-            
-            _uiContext?.SetDefaultFont(font);
-            Console.WriteLine($"✓ Font set in UIContext");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠ Could not load font: {ex.Message}");
-            Console.WriteLine("  Text may not be visible.");
-        }
-    }
 
     private void InitializeScene()
     {
-        var root = new TreeNode<string>("Scene Root", 0);
-        root.IsExpanded.Value = true;
+        var root = new TreeNode<string>("Scene Root", 0)
+        {
+            IsExpanded =
+            {
+                Value = true
+            }
+        };
 
         var camera = new TreeNode<string>("Main Camera", 1);
         var light = new TreeNode<string>("Directional Light", 1);
         
-        var player = new TreeNode<string>("Player", 1);
-        player.IsExpanded.Value = true;
+        var player = new TreeNode<string>("Player", 1)
+        {
+            IsExpanded =
+            {
+                Value = true
+            }
+        };
         player.AddChild(new TreeNode<string>("Mesh Renderer", 2));
         player.AddChild(new TreeNode<string>("Collider", 2));
         player.AddChild(new TreeNode<string>("Script", 2));
@@ -123,10 +107,13 @@ public class HierarchyWidgetSample : IgnisGame
         // Main split view
         var splitter = new Splitter(hierarchyPanel, rightPanel, isVertical: false)
         {
-            SplitRatio = 0.5f
+            SplitRatio = 0.5f,
+            Layout =
+            {
+                Width = Units.Stretch(1),
+                Height = Units.Stretch(1)
+            }
         };
-        splitter.Layout.Width = Units.Stretch(1);
-        splitter.Layout.Height = Units.Stretch(1);
 
         return splitter;
     }
@@ -139,16 +126,24 @@ public class HierarchyWidgetSample : IgnisGame
             _sceneNodes,
             name => name,
             _selectedNode
-        );
-        hierarchy.Layout.Height = Units.Stretch(1);
+        )
+        {
+            Layout =
+            {
+                Height = Units.Stretch(1)
+            }
+        };
 
         var panel = new Panel(title, hierarchy)
         {
             BackgroundColor = new Color(37, 37, 38),
             BorderColor = new Color(63, 63, 70),
-            BorderThickness = 1f
+            BorderThickness = 1f,
+            Layout =
+            {
+                LayoutType = LayoutType.Column
+            }
         };
-        panel.Layout.LayoutType = LayoutType.Column;
 
         return panel;
     }
@@ -171,13 +166,23 @@ public class HierarchyWidgetSample : IgnisGame
         var title = CreateTitle("Controls");
 
         // Selection info
-        var selectionLabel = new Label("Selected:", null, Color.LightGray);
-        selectionLabel.Layout.PaddingBottom = Units.Pixels(5);
+        var selectionLabel = new Label("Selected:", null, Color.LightGray)
+        {
+            Layout =
+            {
+                PaddingBottom = Units.Pixels(5)
+            }
+        };
 
         var selectedName = new Label(
             Computed<string>.From(() => _selectedNode.Value ?? "(none)")
-        );
-        selectedName.Layout.PaddingBottom = Units.Pixels(20);
+        )
+        {
+            Layout =
+            {
+                PaddingBottom = Units.Pixels(20)
+            }
+        };
 
         // Buttons (Note: Clicks not wired yet, but showing structure)
         var buttonPanel = CreateButtonPanel();
@@ -191,11 +196,14 @@ public class HierarchyWidgetSample : IgnisGame
         {
             BackgroundColor = new Color(37, 37, 38),
             BorderColor = new Color(63, 63, 70),
-            BorderThickness = 1f
+            BorderThickness = 1f,
+            Layout =
+            {
+                LayoutType = LayoutType.Column,
+                PaddingLeft = Units.Pixels(15),
+                PaddingRight = Units.Pixels(15)
+            }
         };
-        container.Layout.LayoutType = LayoutType.Column;
-        container.Layout.PaddingLeft = Units.Pixels(15);
-        container.Layout.PaddingRight = Units.Pixels(15);
 
         return container;
     }
@@ -214,9 +222,12 @@ public class HierarchyWidgetSample : IgnisGame
             clearLogsButton
         )
         {
-            BackgroundColor = Color.Transparent
+            BackgroundColor = Color.Transparent,
+            Layout =
+            {
+                LayoutType = LayoutType.Column
+            }
         };
-        panel.Layout.LayoutType = LayoutType.Column;
 
         return panel;
     }
@@ -229,13 +240,16 @@ public class HierarchyWidgetSample : IgnisGame
         {
             BackgroundColor = new Color(0, 122, 204),
             BorderColor = new Color(0, 100, 180),
-            BorderThickness = 1f
+            BorderThickness = 1f,
+            Layout =
+            {
+                Width = Units.Pixels(150),
+                Height = Units.Pixels(32),
+                PaddingLeft = Units.Pixels(15),
+                PaddingTop = Units.Pixels(8),
+                PaddingBottom = Units.Pixels(10)
+            }
         };
-        button.Layout.Width = Units.Pixels(150);
-        button.Layout.Height = Units.Pixels(32);
-        button.Layout.PaddingLeft = Units.Pixels(15);
-        button.Layout.PaddingTop = Units.Pixels(8);
-        button.Layout.PaddingBottom = Units.Pixels(10);
 
         return button;
     }
@@ -244,24 +258,37 @@ public class HierarchyWidgetSample : IgnisGame
     {
         var title = CreateTitle("Console");
 
-        var consoleWidget = new Ignis.Engine.UI.Widgets.Console(_logEntries);
-        consoleWidget.Layout.Height = Units.Stretch(1);
+        var consoleWidget = new Ignis.Engine.UI.Widgets.Console(_logEntries)
+        {
+            Layout =
+            {
+                Height = Units.Stretch(1)
+            }
+        };
 
         // Stats
         var statsLabel = new Label(
             Computed<string>.From(() => $"Entries: {_logEntries.Count}")
-        );
-        statsLabel.Layout.Height = Units.Pixels(25);
-        statsLabel.Layout.PaddingLeft = Units.Pixels(10);
-        statsLabel.Layout.PaddingTop = Units.Pixels(5);
+        )
+        {
+            Layout =
+            {
+                Height = Units.Pixels(25),
+                PaddingLeft = Units.Pixels(10),
+                PaddingTop = Units.Pixels(5)
+            }
+        };
 
         var panel = new Panel(title, consoleWidget, statsLabel)
         {
             BackgroundColor = new Color(37, 37, 38),
             BorderColor = new Color(63, 63, 70),
-            BorderThickness = 1f
+            BorderThickness = 1f,
+            Layout =
+            {
+                LayoutType = LayoutType.Column
+            }
         };
-        panel.Layout.LayoutType = LayoutType.Column;
 
         return panel;
     }
@@ -272,11 +299,14 @@ public class HierarchyWidgetSample : IgnisGame
 
         var panel = new Panel(label)
         {
-            BackgroundColor = new Color(45, 45, 48)
+            BackgroundColor = new Color(45, 45, 48),
+            Layout =
+            {
+                Height = Units.Pixels(30),
+                PaddingLeft = Units.Pixels(10),
+                PaddingTop = Units.Pixels(7)
+            }
         };
-        panel.Layout.Height = Units.Pixels(30);
-        panel.Layout.PaddingLeft = Units.Pixels(10);
-        panel.Layout.PaddingTop = Units.Pixels(7);
 
         return panel;
     }

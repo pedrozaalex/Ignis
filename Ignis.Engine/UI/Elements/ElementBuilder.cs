@@ -129,7 +129,7 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Window(string title, params IView[] content)
         {
-            return new Widgets.Window(title, Column(content));
+            return new Window(title, Column(content));
         }
 
         /// <summary>

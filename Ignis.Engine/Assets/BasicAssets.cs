@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Ignis.Engine.Assets;
 
 /// <summary>
@@ -73,7 +75,7 @@ public class JsonAsset<T> : Asset where T : class
             throw new FileNotFoundException($"JSON file not found: {filePath}");
             
         var json = File.ReadAllText(filePath);
-        Data = System.Text.Json.JsonSerializer.Deserialize<T>(json);
+        Data = JsonSerializer.Deserialize<T>(json);
         
         if (Data == null)
             throw new InvalidOperationException($"Failed to deserialize JSON from {filePath}");

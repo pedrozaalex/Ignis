@@ -45,7 +45,7 @@ public class TransformSystem : QuerySystem<WorldTransform>
     
     protected override void OnUpdate()
     {
-        Query.ForEachEntity((ref WorldTransform worldTransform, Entity entity) =>
+        Query.ForEachEntity((ref worldTransform, entity) =>
         {
             // Only process root entities (those without a parent)
             if (entity.Parent.IsNull)

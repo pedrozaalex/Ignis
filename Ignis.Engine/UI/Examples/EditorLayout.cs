@@ -53,7 +53,7 @@ namespace Ignis.Engine.UI.Examples
 
         private IView CreateMenuBar()
         {
-            var menuBar = new MenuBar()
+            var menuBar = new MenuBar
             {
                 BackgroundColor = new Color(45, 45, 48)
             };
@@ -150,7 +150,7 @@ namespace Ignis.Engine.UI.Examples
             var titleBar = CreatePanelTitle("Scene");
 
             // Scene viewport (placeholder - actual 3D rendering happens here)
-            var viewport = new Panel()
+            var viewport = new Panel
             {
                 BackgroundColor = new Color(30, 30, 35)
             };
@@ -250,7 +250,7 @@ namespace Ignis.Engine.UI.Examples
 
         private IView CreateConsoleControls()
         {
-            var clearButton = new Text(null) { Content = "Clear", Color = Color.White };
+            var clearButton = new Text() { Content = "Clear", Color = Color.White };
             clearButton.Layout.PaddingLeft = Units.Pixels(8);
             clearButton.Layout.PaddingTop = Units.Pixels(6);
             // TODO: Wire up click to clear console
@@ -275,7 +275,7 @@ namespace Ignis.Engine.UI.Examples
 
         private IView CreatePanelTitle(string title)
         {
-            var titleLabel = new Text(null) { Content = title, Color = Color.White };
+            var titleLabel = new Text() { Content = title, Color = Color.White };
 
             var panel = new Panel(titleLabel)
             {

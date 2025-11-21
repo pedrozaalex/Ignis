@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework.Input;
 
 namespace Ignis.Engine.UI.Input
@@ -31,7 +29,7 @@ namespace Ignis.Engine.UI.Input
     /// </summary>
     public class ShortcutBuilder
     {
-        private readonly List<Shortcut> _shortcuts = new();
+        private readonly List<Shortcut> _shortcuts = [];
 
         public ShortcutBuilder Bind(string combo, Action action)
         {
@@ -93,7 +91,7 @@ namespace Ignis.Engine.UI.Input
     /// </summary>
     public class ShortcutCollection
     {
-        private readonly List<Shortcut> _shortcuts = new();
+        private readonly List<Shortcut> _shortcuts = [];
 
         public void Add(Shortcut shortcut) => _shortcuts.Add(shortcut);
         

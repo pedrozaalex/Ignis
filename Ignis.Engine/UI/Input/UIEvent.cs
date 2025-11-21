@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace Ignis.Engine.UI.Input
 {
@@ -52,13 +53,13 @@ namespace Ignis.Engine.UI.Input
     /// </summary>
     public class KeyboardEvent : UIEvent
     {
-        public Microsoft.Xna.Framework.Input.Keys Key { get; }
+        public Keys Key { get; }
         public ModifierKeys Modifiers { get; }
         public KeyboardEventType EventType { get; }
         public char? Character { get; }
 
         public KeyboardEvent(
-            Microsoft.Xna.Framework.Input.Keys key, 
+            Keys key, 
             ModifierKeys modifiers, 
             KeyboardEventType eventType,
             char? character = null)

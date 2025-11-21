@@ -1,21 +1,19 @@
-using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 
 namespace Ignis.Engine.UI.Elements
 {
     /// <summary>
     /// Basic primitive views.
     /// </summary>
-    
     /// <summary>
     /// A simple colored box.
     /// </summary>
     public class Box : ViewComponent
     {
-        public Color Color { get; set; } = Color.White;
+        private Color Color { get; set; } = Color.White;
 
         public Box()
         {
@@ -36,61 +34,45 @@ namespace Ignis.Engine.UI.Elements
     /// <summary>
     /// Text label view.
     /// </summary>
-    public class Text : ViewComponent
+    public class Text(SpriteFont? font = null) : ViewComponent
     {
-        private readonly SpriteFont? _font;
-        private string _text = "";
-        
-        public string Content
-        {
-            get => _text;
-            set => _text = value;
-        }
+        public string Content { get; set; } = "";
 
         public Color Color { get; set; } = Color.White;
 
-        public Text(SpriteFont? font = null)
-        {
-            _font = font;
-        }
-
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            if (string.IsNullOrEmpty(_text))
+            if (string.IsNullOrEmpty(Content))
                 return;
 
             // Priority: custom font > context default font
-            var fontToUse = _font ?? Context?.DefaultFont;
-            
+            var fontToUse = font ?? Context?.DefaultFont;
+
             if (fontToUse != null)
             {
-                spriteBatch.DrawString(fontToUse, _text, new Vector2(bounds.X, bounds.Y), Color);
+                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color);
             }
         }
 
         public override (float width, float height)? Measure(float? availableWidth, float? availableHeight)
         {
-            if (string.IsNullOrEmpty(_text))
+            if (string.IsNullOrEmpty(Content))
                 return (0, 0);
 
             // Priority: custom font > context default font > approximate
-            var fontToUse = _font ?? Context?.DefaultFont;
-            
-            if (fontToUse != null)
-            {
-                var size = fontToUse.MeasureString(_text);
-                return (size.X, size.Y);
-            }
-            
-            // Fallback measurement when no font available (approximate)
-            return (_text.Length * 8f, 14f);
+            var fontToUse = font ?? Context?.DefaultFont;
+
+            if (fontToUse == null) return (Content.Length * 8f, 14f);
+
+            var size = fontToUse.MeasureString(Content);
+            return (size.X, size.Y);
         }
     }
 
     /// <summary>
     /// Container that lays out children in a column or row.
     /// </summary>
-    public class Container : ViewComponent, Core.IViewContainer
+    public class Container : ViewComponent, IViewContainer
     {
         private readonly List<IView> _children = [];
 
@@ -132,4 +114,3 @@ namespace Ignis.Engine.UI.Elements
         public IEnumerable<IView> GetChildren() => _children;
     }
 }
-

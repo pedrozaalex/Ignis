@@ -1,3 +1,4 @@
+using Ignis.Engine.Assets;
 using Ignis.Engine.Graphics.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +19,11 @@ public class IgnisGame : Game
     /// The headless core application
     /// </summary>
     public IgnisApp App { get; }
+    
+    /// <summary>
+    /// The default font for UI rendering. Automatically loaded during LoadContent().
+    /// </summary>
+    public SpriteFont? DefaultFont { get; private set; }
 
     public IgnisGame(IgnisApp? app = null)
     {
@@ -47,6 +53,10 @@ public class IgnisGame : Game
         App.SimulationRoot.Add(new CameraSystem(GraphicsDevice));
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _renderSystem = new RenderSystem(GraphicsDevice);
+
+        // Automatically load default font for UI rendering
+        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
+        DefaultFont = DefaultFontProvider.EnsureAndLoadDefaultFont(Content, contentPath);
 
         App.LoadContent();
     }

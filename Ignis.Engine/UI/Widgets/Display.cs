@@ -1,5 +1,6 @@
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -9,7 +10,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// Label - Styled text display with optional icon.
     /// </summary>
-    public class Label : ViewComponent, Core.IViewContainer
+    public class Label : ViewComponent, IViewContainer
     {
         private readonly IView _container;
 
@@ -137,7 +138,7 @@ namespace Ignis.Engine.UI.Widgets
     {
         public Color Color { get; set; } = new Color(63, 63, 70);
         public float Thickness { get; set; } = 1f;
-        public bool IsVertical { get; set; } = false;
+        public bool IsVertical { get; set; }
 
         public Separator(bool isVertical = false)
         {
@@ -197,7 +198,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// Tooltip - Popup help text.
     /// </summary>
-    public class Tooltip : ViewComponent, Core.IViewContainer
+    public class Tooltip : ViewComponent, IViewContainer
     {
         private readonly IView _content;
         private readonly Signal<bool> _isVisible;
@@ -250,7 +251,7 @@ namespace Ignis.Engine.UI.Widgets
     /// <summary>
     /// Badge - Small notification indicator.
     /// </summary>
-    public class Badge : ViewComponent, Core.IViewContainer
+    public class Badge : ViewComponent, IViewContainer
     {
         private readonly IView _container;
 

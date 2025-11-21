@@ -1,4 +1,6 @@
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -8,14 +10,14 @@ namespace Ignis.Engine.UI.Widgets
     /// Panel - A styled container with optional background, border, and corner radius.
     /// Foundation for most editor UI elements.
     /// </summary>
-    public class Panel : ViewComponent, Core.IViewContainer
+    public class Panel : ViewComponent, IViewContainer
     {
         private readonly List<IView> _children = [];
 
         public Color BackgroundColor { get; set; } = new Color(45, 45, 48); // Dark gray (VS theme)
         public Color BorderColor { get; set; } = new Color(63, 63, 70);
-        public float BorderThickness { get; set; } = 0f;
-        public float CornerRadius { get; set; } = 0f;
+        public float BorderThickness { get; set; }
+        public float CornerRadius { get; set; }
         
         public Panel(params IView[] children)
         {
@@ -124,13 +126,13 @@ namespace Ignis.Engine.UI.Widgets
         public bool IsResizable { get; set; } = true;
         public bool IsDraggable { get; set; } = true;
 
-        public Window(string title, IView content) : base()
+        public Window(string title, IView content)
         {
             Title = title;
             _content = content;
 
             // Create title bar
-            var titleLabel = new Elements.Text(null) { Content = title, Color = Color.White };
+            var titleLabel = new Text() { Content = title, Color = Color.White };
             _titleBar = new Panel(titleLabel)
             {
                 BackgroundColor = new Color(37, 37, 38),
@@ -167,7 +169,7 @@ namespace Ignis.Engine.UI.Widgets
         public float DividerThickness { get; set; } = 4f;
         public Color DividerColor { get; set; } = new Color(63, 63, 70);
 
-        public Splitter(IView first, IView second, bool isVertical = false) : base()
+        public Splitter(IView first, IView second, bool isVertical = false)
         {
             _first = first;
             _second = second;

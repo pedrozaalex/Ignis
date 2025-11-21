@@ -1,5 +1,3 @@
-using Ignis.Engine.Assets;
-
 namespace Ignis.Engine.Assets;
 
 /// <summary>

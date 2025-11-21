@@ -1,7 +1,6 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using Ignis.Engine.Assets;
-using Ignis.Engine.Graphics.Systems;
 
 namespace Ignis.Engine.Core;
 
@@ -44,7 +43,7 @@ public class IgnisApp
         World = new EntityStore();
         
         // Create Asset Manager
-        AssetManager = new AssetManager("Content");
+        AssetManager = new AssetManager();
         
         // TODO: Event-driven reactivity will be implemented when we understand Friflo's event system better
         // For now, TransformSystem will check all entities with WorldTransform component

@@ -1,12 +1,10 @@
-using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using Ignis.Engine.Core;
 using Ignis.Engine.ECS.Components;
 using Ignis.Engine.Graphics.Components;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Position = Friflo.Engine.ECS.Position;
-using Rotation = Friflo.Engine.ECS.Rotation;
+using Vector3 = System.Numerics.Vector3;
 
 namespace Ignis.Engine.Graphics.Systems;
 
@@ -24,16 +22,16 @@ public class CameraSystem(GraphicsDevice graphicsDevice) : QuerySystem<CameraCom
             wt.Value.ExtractRotation(out var rot);
             
             // Calculate the target point (forward direction from rotation)
-            var forward = System.Numerics.Vector3.Transform(System.Numerics.Vector3.UnitZ, rot);
+            var forward = Vector3.Transform(Vector3.UnitZ, rot);
             var target = pos + forward;
             
             // Calculate the up vector
-            var up = System.Numerics.Vector3.Transform(System.Numerics.Vector3.UnitY, rot);
+            var up = Vector3.Transform(Vector3.UnitY, rot);
             
             // Convert to XNA vectors
-            var xnaPosition = new Vector3(pos.X, pos.Y, pos.Z);
-            var xnaTarget = new Vector3(target.X, target.Y, target.Z);
-            var xnaUp = new Vector3(up.X, up.Y, up.Z);
+            var xnaPosition = new Microsoft.Xna.Framework.Vector3(pos.X, pos.Y, pos.Z);
+            var xnaTarget = new Microsoft.Xna.Framework.Vector3(target.X, target.Y, target.Z);
+            var xnaUp = new Microsoft.Xna.Framework.Vector3(up.X, up.Y, up.Z);
             
             // Create view matrix
             camera.ViewMatrix =  Matrix.CreateLookAt(xnaPosition, xnaTarget, xnaUp);

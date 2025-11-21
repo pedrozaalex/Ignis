@@ -41,6 +41,11 @@ public class TransformInspectorSample : IgnisGame
         _rotationNonZero = Computed<bool>.From(() => _rotation.Value != Vector3.Zero);
     }
 
+    protected override void LoadContent()
+    {
+        base.LoadContent(); // Automatically loads default font
+    }
+
     protected override void Initialize()
     {
         base.Initialize();
@@ -48,7 +53,11 @@ public class TransformInspectorSample : IgnisGame
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
 
-        LoadFont();
+        // Use the automatically loaded default font
+        if (DefaultFont != null)
+        {
+            _uiContext.SetDefaultFont(DefaultFont);
+        }
 
         System.Console.WriteLine("=== Transform Inspector Sample ===");
         System.Console.WriteLine("Demonstrating Declarative UI with Signal.Lens()");
@@ -60,49 +69,6 @@ public class TransformInspectorSample : IgnisGame
         SetupReactiveLogging();
     }
 
-    private void LoadFont()
-    {
-        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
-        var fontSpriteFontPath = Path.Combine(contentPath, "DefaultFont.spritefont");
-
-        if (!File.Exists(fontSpriteFontPath))
-        {
-            GenerateDefaultFontFile(fontSpriteFontPath);
-            ContentBuilder.BuildFont(contentPath, "DefaultFont.spritefont");
-        }
-
-        try
-        {
-            var font = Content.Load<SpriteFont>("DefaultFont");
-            _uiContext?.SetDefaultFont(font);
-            System.Console.WriteLine("✓ Font loaded successfully");
-        }
-        catch (Exception ex)
-        {
-            System.Console.WriteLine($"⚠ Could not load font: {ex.Message}");
-        }
-    }
-
-    private static void GenerateDefaultFontFile(string path)
-    {
-        var fontContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
-<XnaContent xmlns:Graphics=""Microsoft.Xna.Framework.Content.Pipeline.Graphics"">
-  <Asset Type=""Graphics:FontDescription"">
-    <FontName>Arial</FontName>
-    <Size>14</Size>
-    <Spacing>0</Spacing>
-    <UseKerning>true</UseKerning>
-    <Style>Regular</Style>
-    <CharacterRegions>
-      <CharacterRegion>
-        <Start>&#32;</Start>
-        <End>&#126;</End>
-      </CharacterRegion>
-    </CharacterRegions>
-  </Asset>
-</XnaContent>";
-        File.WriteAllText(path, fontContent);
-    }
 
     /// <summary>
     /// The Declarative UI Layout - This is the key demo!

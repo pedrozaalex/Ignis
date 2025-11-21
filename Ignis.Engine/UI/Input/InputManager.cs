@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
+using Ignis.Engine.UI.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -293,7 +291,7 @@ namespace Ignis.Engine.UI.Input
                 return null;
 
             // Check children first (depth-first)
-            if (root is Core.IViewContainer container)
+            if (root is IViewContainer container)
             {
                 // Reverse order to respect Z-index (last child is on top)
                 foreach (var child in container.GetChildren().Reverse())
@@ -315,7 +313,7 @@ namespace Ignis.Engine.UI.Input
             if (root.Layout.ElementId == id)
                 return root;
 
-            if (root is Core.IViewContainer container)
+            if (root is IViewContainer container)
             {
                 foreach (var child in container.GetChildren())
                 {
@@ -333,7 +331,7 @@ namespace Ignis.Engine.UI.Input
         /// </summary>
         private IView? FindParent(IView target, IView root)
         {
-            if (root is Core.IViewContainer container)
+            if (root is IViewContainer container)
             {
                 foreach (var child in container.GetChildren())
                 {

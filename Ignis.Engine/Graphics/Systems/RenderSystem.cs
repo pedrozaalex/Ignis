@@ -1,9 +1,11 @@
+using System.Numerics;
 using Friflo.Engine.ECS;
 using Ignis.Engine.ECS.Components;
 using Ignis.Engine.Graphics.Components;
 using Ignis.Engine.Graphics.Lighting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace Ignis.Engine.Graphics.Systems;
 
@@ -203,7 +205,7 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
     /// <summary>
     /// Converts System.Numerics.Matrix4x4 to Microsoft.Xna.Framework.Matrix
     /// </summary>
-    private static Matrix ConvertToXnaMatrix(System.Numerics.Matrix4x4 matrix)
+    private static Matrix ConvertToXnaMatrix(Matrix4x4 matrix)
     {
         return new Matrix(
             matrix.M11, matrix.M12, matrix.M13, matrix.M14,

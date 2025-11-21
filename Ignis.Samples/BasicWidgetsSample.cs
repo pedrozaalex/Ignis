@@ -40,94 +40,26 @@ public class BasicWidgetsSample : IgnisGame
 
     protected override void LoadContent()
     {
-        base.LoadContent();
-
-        // Get content path
-        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
-        var fontSpriteFontPath = Path.Combine(contentPath, "DefaultFont.spritefont");
-        var fontXnbPath = Path.Combine(contentPath, "DefaultFont.xnb");
-
-        // Generate the .spritefont file if it doesn't exist
-        if (!File.Exists(fontSpriteFontPath))
-        {
-            System.Console.WriteLine("Generating DefaultFont.spritefont...");
-            GenerateDefaultFontFile(fontSpriteFontPath);
-        }
-
-        // Build the content if .xnb doesn't exist
-        if (!File.Exists(fontXnbPath))
-        {
-            System.Console.WriteLine($"Building DefaultFont.xnb with MGCB...");
-            System.Console.WriteLine($"  Source: {fontSpriteFontPath}");
-            System.Console.WriteLine($"  Target: {fontXnbPath}");
-            var success = ContentBuilder.BuildFont(contentPath, "DefaultFont.spritefont");
-
-            if (!success)
-            {
-                System.Console.WriteLine("⚠ Warning: Could not build .xnb file automatically.");
-                System.Console.WriteLine("  Text will not be visible.");
-                return;
-            }
-
-            System.Console.WriteLine($"✓ Build complete. Checking for XNB at: {fontXnbPath}");
-            System.Console.WriteLine($"  XNB exists: {File.Exists(fontXnbPath)}");
-        }
-        else
-        {
-            System.Console.WriteLine($"✓ Font XNB already exists at: {fontXnbPath}");
-        }
-
-        // Try to load the compiled font
-        try
-        {
-            System.Console.WriteLine($"Loading font from Content.RootDirectory: {Content.RootDirectory}");
-            var font = Content.Load<SpriteFont>("DefaultFont");
-            _uiContext?.SetDefaultFont(font);
-            System.Console.WriteLine(
-                $"✓ Font loaded successfully! LineSpacing: {font.LineSpacing}, DefaultChar: {font.DefaultCharacter}");
-        }
-        catch (Exception ex)
-        {
-            System.Console.WriteLine($"⚠ Warning: Could not load DefaultFont: {ex.Message}");
-            System.Console.WriteLine($"  Stack trace: {ex.StackTrace}");
-            System.Console.WriteLine("  Text will not be visible.");
-        }
-    }
-
-    private static void GenerateDefaultFontFile(string path)
-    {
-        var fontContent = @"
-<?xml version=""1.0"" encoding=""utf-8""?>
-<XnaContent xmlns:Graphics=""Microsoft.Xna.Framework.Content.Pipeline.Graphics"">
-  <Asset Type=""Graphics:FontDescription"">
-    <FontName>Arial</FontName>
-    <Size>14</Size>
-    <Spacing>0</Spacing>
-    <UseKerning>true</UseKerning>
-    <Style>Regular</Style>
-    <CharacterRegions>
-      <CharacterRegion>
-        <Start>&#32;</Start>
-        <End>&#126;</End>
-      </CharacterRegion>
-    </CharacterRegions>
-  </Asset>
-</XnaContent>";
-        File.WriteAllText(path, fontContent);
-        System.Console.WriteLine($"Created {path}");
+        base.LoadContent(); // This loads the default font automatically
     }
 
     protected override void Initialize()
     {
-        base.Initialize(); // This calls LoadContent internally
+        base.Initialize();
 
-        // Create UIContext BEFORE base.Initialize() would be better, but we need GraphicsDevice
-        // So we create it here and manually load the font afterwards
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
 
-        // Load font now that UIContext exists
-        LoadFontForUI();
+        // Use the automatically loaded default font
+        if (DefaultFont != null)
+        {
+            _uiContext.SetDefaultFont(DefaultFont);
+            System.Console.WriteLine("[BasicWidgetsSample] Using automatic default font");
+        }
+        else
+        {
+            System.Console.WriteLine("[BasicWidgetsSample] WARNING: No default font available");
+        }
 
         System.Console.WriteLine("=== Basic Widgets Sample ===");
         System.Console.WriteLine("Initializing UI...");
@@ -144,20 +76,6 @@ public class BasicWidgetsSample : IgnisGame
         SetupReactiveLogging();
     }
 
-    private void LoadFontForUI()
-    {
-        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
-        try
-        {
-            var font = Content.Load<SpriteFont>("DefaultFont");
-            _uiContext?.SetDefaultFont(font);
-            System.Console.WriteLine($"✓ Font set in UIContext");
-        }
-        catch (Exception ex)
-        {
-            System.Console.WriteLine($"⚠ Could not load font: {ex.Message}");
-        }
-    }
 
     private IView BuildUI()
     {

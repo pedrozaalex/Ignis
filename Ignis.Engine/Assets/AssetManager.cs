@@ -36,7 +36,7 @@ public abstract class Asset : IDisposable
     /// <summary>
     /// Reference count for memory management
     /// </summary>
-    internal int ReferenceCount = 0;
+    internal int ReferenceCount;
     
     /// <summary>
     /// Dispose of asset resources

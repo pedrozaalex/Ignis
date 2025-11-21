@@ -38,7 +38,7 @@ namespace Ignis.Engine.UI.Widgets
             row.Layout.Height = Units.Pixels(32);
             row.Layout.PaddingBottom = Units.Pixels(4);
 
-            var labelView = new Text() { Content = label, Color = Color.LightGray };
+            var labelView = new Text { Content = label, Color = Color.LightGray };
             labelView.Layout.Width = Units.Pixels(100);
             labelView.Layout.PaddingTop = Units.Pixels(6);
 
@@ -192,7 +192,7 @@ namespace Ignis.Engine.UI.Widgets
             row.Layout.LayoutType = LayoutType.Row;
             row.Layout.Height = Units.Pixels(28);
 
-            var labelView = new Text() { Content = label, Color = Color.White };
+            var labelView = new Text { Content = label, Color = Color.White };
             labelView.Layout.Width = Units.Pixels(20);
             labelView.Layout.PaddingTop = Units.Pixels(4);
 
@@ -290,7 +290,7 @@ namespace Ignis.Engine.UI.Widgets
             container.Layout.Width = Units.Stretch(1);
             container.Layout.PaddingLeft = Units.Pixels(4);
 
-            var axisLabel = new Text() { Content = axis, Color = GetAxisColor(axis) };
+            var axisLabel = new Text { Content = axis, Color = GetAxisColor(axis) };
             axisLabel.Layout.Width = Units.Pixels(12);
             axisLabel.Layout.PaddingTop = Units.Pixels(6);
 
@@ -365,7 +365,7 @@ namespace Ignis.Engine.UI.Widgets
         private IView AssetTile(T asset)
         {
             var icon = new Icon(_iconFunc(asset), 64);
-            var label = new Text() 
+            var label = new Text
             { 
                 Content = _nameFunc(asset), 
                 Color = Color.White 
@@ -429,14 +429,14 @@ namespace Ignis.Engine.UI.Widgets
 
         private IView CreateLogEntry(LogEntry entry)
         {
-            var icon = new Text() 
+            var icon = new Text
             { 
                 Content = GetLogIcon(entry.Level), 
                 Color = GetLogColor(entry.Level) 
             };
             icon.Layout.Width = Units.Pixels(20);
 
-            var message = new Text() 
+            var message = new Text
             { 
                 Content = entry.Message, 
                 Color = GetLogColor(entry.Level) 
@@ -459,10 +459,10 @@ namespace Ignis.Engine.UI.Widgets
 
         private string GetLogIcon(LogLevel level) => level switch
         {
-            LogLevel.Error => "✖",
-            LogLevel.Warning => "⚠",
-            LogLevel.Info => "ℹ",
-            _ => "·"
+            LogLevel.Error => "[X]",
+            LogLevel.Warning => "[!]",
+            LogLevel.Info => "[i]",
+            _ => "[-]"
         };
 
         private Color GetLogColor(LogLevel level) => level switch

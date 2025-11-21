@@ -1,6 +1,7 @@
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -73,14 +74,14 @@ namespace Ignis.Engine.UI.Widgets
         {
             _selectedIndex = selectedIndex ?? new Signal<int>(0);
 
-            _tabBar = new Panel()
+            _tabBar = new Panel
             {
                 BackgroundColor = TabBackgroundColor
             };
             _tabBar.Layout.LayoutType = LayoutType.Row;
             _tabBar.Layout.Height = Units.Pixels(35);
 
-            _contentArea = new Panel()
+            _contentArea = new Panel
             {
                 BackgroundColor = new Color(37, 37, 38)
             };
@@ -95,7 +96,7 @@ namespace Ignis.Engine.UI.Widgets
             _tabs.Add((title, content));
 
             // Create tab button
-            var tabButton = new Panel(new Elements.Text(null) { Content = title, Color = Color.White })
+            var tabButton = new Panel(new Text() { Content = title, Color = Color.White })
             {
                 BackgroundColor = InactiveTabColor
             };
@@ -157,7 +158,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly SignalList<TreeNode<T>> _rootNodes;
         private readonly Func<T, string> _displayFunc;
         private readonly Signal<T?> _selectedItem;
-        private readonly IView _container;
+        private readonly Panel _rootContainer;
 
         public TreeView(SignalList<TreeNode<T>> rootNodes, Func<T, string> displayFunc, Signal<T?>? selectedItem = null)
         {
@@ -165,13 +166,28 @@ namespace Ignis.Engine.UI.Widgets
             _displayFunc = displayFunc;
             _selectedItem = selectedItem ?? new Signal<T?>(default);
 
-            // Build tree using Bind.For
-            _container = Bind.For(_rootNodes, node => CreateNodeView(node));
+            // Container that will host all node views in a vertical stack
+            _rootContainer = new Panel
+            {
+                BackgroundColor = Color.Transparent
+            };
+            _rootContainer.Layout.LayoutType = LayoutType.Column;
+            _rootContainer.Layout.Width = Units.Stretch(1);
+            _rootContainer.Layout.Height = Units.Auto;
+
+            // Build tree using Bind.For into the root container
+            var listView = Bind.For(_rootNodes, node => CreateNodeView(node));
+            _rootContainer.AddChild(listView);
+
+            // TreeView itself is just a wrapper around the root container
+            Layout.LayoutType = LayoutType.Column;
+            Layout.Width = Units.Stretch(1);
+            Layout.Height = Units.Stretch(1);
         }
 
         private IView CreateNodeView(TreeNode<T> node)
         {
-            var nodePanel = new Panel()
+            var nodePanel = new Panel
             {
                 BackgroundColor = Color.Transparent
             };
@@ -179,10 +195,10 @@ namespace Ignis.Engine.UI.Widgets
 
             // Node header (with expand/collapse arrow)
             var header = new Panel(
-                new Elements.Text(null) 
-                { 
-                    Content = (node.IsExpanded.Value ? "▼ " : "► ") + _displayFunc(node.Data), 
-                    Color = Color.White 
+                new Text()
+                {
+                    Content = (node.IsExpanded.Value ? "▼ " : "► ") + _displayFunc(node.Data),
+                    Color = Color.White
                 }
             )
             {
@@ -195,48 +211,48 @@ namespace Ignis.Engine.UI.Widgets
             nodePanel.AddChild(header);
 
             // Children (if expanded)
-            if (node.Children.Count > 0)
-            {
-                var childrenContainer = Bind.If(
-                    node.IsExpanded,
-                    () => Bind.For(node.Children, child => CreateNodeView(child)),
-                    null
-                );
-                nodePanel.AddChild(childrenContainer);
-            }
+            if (node.Children.Count <= 0) return nodePanel;
+            
+            var childrenContainer = Bind.If(
+                node.IsExpanded,
+                () => Bind.For(node.Children, CreateNodeView)
+            );
+            nodePanel.AddChild(childrenContainer);
 
             return nodePanel;
         }
 
         protected override void OnMount()
         {
-            _container.Mount(Context!);
+            _rootContainer.Mount(Context!);
         }
 
         protected override void OnUnmount()
         {
-            _container.Unmount();
+            _rootContainer.Unmount();
         }
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
+            // Intentionally left empty – children are drawn via UIContext/Panel drawing.
         }
 
         public IEnumerable<IView> GetChildren()
         {
-            yield return _container;
+            // Treat TreeView as a single container in the layout tree.
+            yield return _rootContainer;
         }
     }
 
     /// <summary>
-    /// TreeNode - Node data structure for TreeView.
+    /// TreeNode - Node data structure for <see cref="TreeView{T}"/>.
     /// </summary>
     public class TreeNode<T> where T : notnull
     {
         public T Data { get; set; }
         public SignalList<TreeNode<T>> Children { get; } = new SignalList<TreeNode<T>>();
         public Signal<bool> IsExpanded { get; } = new Signal<bool>(false);
-        public int Depth { get; set; } = 0;
+        public int Depth { get; set; }
 
         public TreeNode(T data, int depth = 0)
         {
@@ -267,7 +283,7 @@ namespace Ignis.Engine.UI.Widgets
 
         public MenuBar()
         {
-            _container = new Panel()
+            _container = new Panel
             {
                 BackgroundColor = new Color(45, 45, 48)
             };
@@ -317,7 +333,7 @@ namespace Ignis.Engine.UI.Widgets
         {
             _title = title;
 
-            var titleLabel = new Elements.Text(null) { Content = title, Color = Color.White };
+            var titleLabel = new Text() { Content = title, Color = Color.White };
             _container = new Panel(titleLabel)
             {
                 BackgroundColor = Color.Transparent
@@ -367,7 +383,7 @@ namespace Ignis.Engine.UI.Widgets
         public string Label { get; set; }
         public Action? OnClick { get; set; }
         public string? Shortcut { get; set; }
-        public bool IsSeparator { get; set; } = false;
+        public bool IsSeparator { get; set; }
 
         public MenuItem(string label, Action? onClick = null, string? shortcut = null)
         {

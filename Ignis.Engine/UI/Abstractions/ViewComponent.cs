@@ -1,4 +1,3 @@
-using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;

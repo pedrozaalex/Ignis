@@ -26,6 +26,11 @@ public class EditorWidgetSample : IgnisGame
     {
     }
 
+    protected override void LoadContent()
+    {
+        base.LoadContent(); // Automatically loads default font
+    }
+
     protected override void Initialize()
     {
         base.Initialize();
@@ -33,8 +38,11 @@ public class EditorWidgetSample : IgnisGame
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new Engine.UI.Core.UIContext(GraphicsDevice);
         
-        // Load font for UI (Critical for text visibility)
-        LoadFontForUI();
+        // Use the automatically loaded default font
+        if (DefaultFont != null)
+        {
+            _uiContext.SetDefaultFont(DefaultFont);
+        }
         
         // Create the full editor layout
         var editorLayout = new EditorLayout();
@@ -53,34 +61,6 @@ public class EditorWidgetSample : IgnisGame
         System.Console.WriteLine("=====================================");
     }
 
-    private void LoadFontForUI()
-    {
-        try
-        {
-            // Assumes DefaultFont has been built by BasicWidgetsSample or Content pipeline
-            var font = Content.Load<SpriteFont>("DefaultFont");
-            
-            try 
-            {
-                if (!font.DefaultCharacter.HasValue) 
-                {
-                    font.DefaultCharacter = '?'; 
-                }
-            }
-            catch 
-            {
-                // Some fonts might not have '?' either, but Arial usually does.
-            }
-
-            _uiContext?.SetDefaultFont(font);
-            System.Console.WriteLine($"✓ Font set in UIContext");
-        }
-        catch (System.Exception ex)
-        {
-            System.Console.WriteLine($"⚠ Could not load font: {ex.Message}");
-            System.Console.WriteLine("  Text may not be visible.");
-        }
-    }
 
     protected override void Update(GameTime gameTime)
     {
