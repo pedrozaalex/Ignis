@@ -17,8 +17,13 @@ namespace Ignis.Tests.UI
             // Arrange
             var undoCalled = false;
             
-            var child = new Box(Color.Red);
-            child.Layout.Focusable = true;
+            var child = new Box(Color.Red)
+            {
+                Layout =
+                {
+                    Focusable = true
+                }
+            };
 
             var parent = new Container(child);
             parent.Shortcuts(s => s.Bind("Ctrl+Z", () => undoCalled = true));
@@ -97,8 +102,13 @@ namespace Ignis.Tests.UI
             // Arrange
             var rootCalled = false;
 
-            var leaf = new Box(Color.Yellow);
-            leaf.Layout.Focusable = true;
+            var leaf = new Box(Color.Yellow)
+            {
+                Layout =
+                {
+                    Focusable = true
+                }
+            };
 
             var middle = new Container(leaf);
             var root = new Container(middle);

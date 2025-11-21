@@ -19,8 +19,13 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Column(params IView[] children)
         {
-            var container = new Container(children);
-            container.Layout.LayoutType = LayoutType.Column;
+            var container = new Container(children)
+            {
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
+            };
             return container;
         }
 
@@ -29,8 +34,13 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Row(params IView[] children)
         {
-            var container = new Container(children);
-            container.Layout.LayoutType = LayoutType.Row;
+            var container = new Container(children)
+            {
+                Layout =
+                {
+                    LayoutType = LayoutType.Row
+                }
+            };
             return container;
         }
 
@@ -72,9 +82,14 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView ColorBox(Color color, float width, float height)
         {
-            var box = new Box(color);
-            box.Layout.Width = Units.Pixels(width);
-            box.Layout.Height = Units.Pixels(height);
+            var box = new Box(color)
+            {
+                Layout =
+                {
+                    Width = Units.Pixels(width),
+                    Height = Units.Pixels(height)
+                }
+            };
             return box;
         }
 
@@ -107,9 +122,14 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Rule(Color? color = null, float thickness = 1f)
         {
-            var box = new Box(color ?? new Color(63, 63, 70));
-            box.Layout.Height = Units.Pixels(thickness);
-            box.Layout.Width = Units.Stretch(1);
+            var box = new Box(color ?? new Color(63, 63, 70))
+            {
+                Layout =
+                {
+                    Height = Units.Pixels(thickness),
+                    Width = Units.Stretch(1)
+                }
+            };
             return box;
         }
 
@@ -118,8 +138,13 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView ScrollView(params IView[] children)
         {
-            var container = new Container(children);
-            container.Layout.LayoutType = LayoutType.Column;
+            var container = new Container(children)
+            {
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
+            };
             // TODO: Add actual scrolling behavior when input system is ready
             return container;
         }
@@ -137,11 +162,16 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Padding(IView child, float padding)
         {
-            var container = new Container(child);
-            container.Layout.PaddingLeft = Units.Pixels(padding);
-            container.Layout.PaddingRight = Units.Pixels(padding);
-            container.Layout.PaddingTop = Units.Pixels(padding);
-            container.Layout.PaddingBottom = Units.Pixels(padding);
+            var container = new Container(child)
+            {
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(padding),
+                    PaddingRight = Units.Pixels(padding),
+                    PaddingTop = Units.Pixels(padding),
+                    PaddingBottom = Units.Pixels(padding)
+                }
+            };
             return container;
         }
 
@@ -150,9 +180,14 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Spacer(float size)
         {
-            var box = new Box(Color.Transparent);
-            box.Layout.Width = Units.Pixels(size);
-            box.Layout.Height = Units.Pixels(size);
+            var box = new Box(Color.Transparent)
+            {
+                Layout =
+                {
+                    Width = Units.Pixels(size),
+                    Height = Units.Pixels(size)
+                }
+            };
             return box;
         }
 
@@ -209,9 +244,14 @@ public class ButtonView : ViewComponent, IViewContainer
     public ButtonView(string label, Action onClick, SpriteFont? font)
     {
         // Build button as a colored box with text
-        var background = new Box(new Color(100, 100, 200));
-        background.Layout.Width = Units.Pixels(100);
-        background.Layout.Height = Units.Pixels(30);
+        var background = new Box(new Color(100, 100, 200))
+        {
+            Layout =
+            {
+                Width = Units.Pixels(100),
+                Height = Units.Pixels(30)
+            }
+        };
 
         var text = new Text(font) { Content = label, Color = Color.White };
 

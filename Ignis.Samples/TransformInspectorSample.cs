@@ -59,9 +59,9 @@ public class TransformInspectorSample : IgnisGame
             _uiContext.SetDefaultFont(DefaultFont);
         }
 
-        System.Console.WriteLine("=== Transform Inspector Sample ===");
-        System.Console.WriteLine("Demonstrating Declarative UI with Signal.Lens()");
-        System.Console.WriteLine("==================================");
+        Console.WriteLine("=== Transform Inspector Sample ===");
+        Console.WriteLine("Demonstrating Declarative UI with Signal.Lens()");
+        Console.WriteLine("==================================");
 
         var ui = BuildTransformInspector();
         _uiContext.SetRoot(ui);
@@ -89,7 +89,6 @@ public class TransformInspectorSample : IgnisGame
                     Label("Transform Inspector", null, new Color(100, 200, 255))
                         .Padding(20)
                         .PaddingBottom(10),
-
                     Label("Declarative API Demo", null, Color.Gray)
                         .PaddingLeft(20)
                         .PaddingBottom(20),
@@ -102,20 +101,20 @@ public class TransformInspectorSample : IgnisGame
 
                     // Rotation with conditional Reset button
                     Row(
-                        Vector3Field("Rotation", _rotation)
-                            .Width(Units.Stretch(1)),
+                            Vector3Field("Rotation", _rotation)
+                                .Width(Units.Stretch(1)),
 
-                        // Only shows button if rotation is not zero
-                        Bind.If(
-                            _rotationNonZero,
-                            () => Button("Reset", () => _rotation.Value = Vector3.Zero)
-                                .Width(80)
-                                .PaddingLeft(10)
+                            // Only shows button if rotation is not zero
+                            Bind.If(
+                                _rotationNonZero,
+                                () => Button("Reset", () => _rotation.Value = Vector3.Zero)
+                                    .Width(80)
+                                    .PaddingLeft(10)
+                            )
                         )
-                    )
-                    .PaddingLeft(20)
-                    .PaddingRight(20)
-                    .PaddingBottom(10),
+                        .PaddingLeft(20)
+                        .PaddingRight(20)
+                        .PaddingBottom(10),
 
                     // Scale
                     Vector3Field("Scale", _scale)
@@ -134,16 +133,12 @@ public class TransformInspectorSample : IgnisGame
 
                     // Action Buttons
                     Row(
-                        Button("Reset All", ResetAllTransforms)
-                            .Width(120),
-
-                        Spacer(10),
-
-                        Button("Randomize", RandomizeTransforms)
-                            .Width(120)
-                    )
-                    .Padding(20)
-                    .AlignCenter()
+                            Button("Reset All", ResetAllTransforms),
+                            Spacer(10),
+                            Button("Randomize", RandomizeTransforms)
+                        )
+                        .Padding(20)
+                        .AlignCenter()
                 )
             );
     }
@@ -155,27 +150,24 @@ public class TransformInspectorSample : IgnisGame
     private IView Vector3Field(string label, Signal<Vector3> vector)
     {
         return Column(
-            Label(label, null, Color.White)
-                .PaddingBottom(5),
-
-            Row(
-                // We create "Lenses" (2-way bindings) to individual struct fields
-                // vector.Lens(v => v.X, (v, x) => v with { X = x })
-                // creates a Signal<float> that writes back to the Signal<Vector3>
-                FloatFieldWithLabel("X:", vector.Lens(v => v.X, (v, x) => new Vector3(x, v.Y, v.Z)))
-                    .Width(Units.Stretch(1)),
-
-                Spacer(10),
-
-                FloatFieldWithLabel("Y:", vector.Lens(v => v.Y, (v, y) => new Vector3(v.X, y, v.Z)))
-                    .Width(Units.Stretch(1)),
-
-                Spacer(10),
-
-                FloatFieldWithLabel("Z:", vector.Lens(v => v.Z, (v, z) => new Vector3(v.X, v.Y, z)))
+                Label(label, null, Color.White)
+                    .PaddingBottom(5),
+                Row(
+                        // We create "Lenses" (2-way bindings) to individual struct fields
+                        // vector.Lens(v => v.X, (v, x) => v with { X = x })
+                        // creates a Signal<float> that writes back to the Signal<Vector3>
+                        FloatFieldWithLabel("X:", vector.Lens(v => v.X, (v, x) => new Vector3(x, v.Y, v.Z)))
+                            .Width(Units.Stretch(1)),
+                        Spacer(10),
+                        FloatFieldWithLabel("Y:", vector.Lens(v => v.Y, (v, y) => new Vector3(v.X, y, v.Z)))
+                            .Width(Units.Stretch(1)),
+                        Spacer(10),
+                        FloatFieldWithLabel("Z:", vector.Lens(v => v.Z, (v, z) => new Vector3(v.X, v.Y, z)))
+                            .Width(Units.Stretch(1))
+                    )
                     .Width(Units.Stretch(1))
             )
-        );
+            .Width(Units.Stretch(1));
     }
 
     /// <summary>
@@ -184,15 +176,15 @@ public class TransformInspectorSample : IgnisGame
     private IView FloatFieldWithLabel(string label, Signal<float> value)
     {
         return Row(
-            Label(label, null, Color.LightGray)
-                .Width(25)
-                .PaddingTop(6),
-
-            Label(Computed<string>.From(() => value.Value.ToString("F2")), null, Color.White)
-                .Width(Units.Stretch(1))
-                .PaddingTop(6)
-                .PaddingLeft(5)
-        );
+                Label(label, null, Color.LightGray)
+                    .Width(25)
+                    .PaddingTop(6),
+                Label(Computed<string>.From(() => value.Value.ToString("F2")), null, Color.White)
+                    .Width(Units.Stretch(1))
+                    .PaddingTop(6)
+                    .PaddingLeft(5)
+            )
+            .Width(Units.Stretch(1));
     }
 
     private void ResetAllTransforms()
@@ -200,7 +192,7 @@ public class TransformInspectorSample : IgnisGame
         _position.Value = Vector3.Zero;
         _rotation.Value = Vector3.Zero;
         _scale.Value = Vector3.One;
-        System.Console.WriteLine("[ACTION] Reset all transforms");
+        Console.WriteLine("[ACTION] Reset all transforms");
     }
 
     private void RandomizeTransforms()
@@ -221,25 +213,16 @@ public class TransformInspectorSample : IgnisGame
             (float)(rand.NextDouble() * 2 + 0.5),
             (float)(rand.NextDouble() * 2 + 0.5)
         );
-        System.Console.WriteLine("[ACTION] Randomized transforms");
+        Console.WriteLine("[ACTION] Randomized transforms");
     }
 
     private void SetupReactiveLogging()
     {
-        new ReactiveEffect(() =>
-        {
-            System.Console.WriteLine($"[REACTIVE] Position: {_position.Value}");
-        });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Position: {_position.Value}"); });
 
-        new ReactiveEffect(() =>
-        {
-            System.Console.WriteLine($"[REACTIVE] Rotation: {_rotation.Value}");
-        });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Rotation: {_rotation.Value}"); });
 
-        new ReactiveEffect(() =>
-        {
-            System.Console.WriteLine($"[REACTIVE] Scale: {_scale.Value}");
-        });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Scale: {_scale.Value}"); });
     }
 
     protected override void Update(GameTime gameTime)
@@ -256,7 +239,7 @@ public class TransformInspectorSample : IgnisGame
                 _rotation.Value.Y,
                 _rotation.Value.Z
             );
-            System.Console.WriteLine("[AUTO] Incremented rotation");
+            Console.WriteLine("[AUTO] Incremented rotation");
         }
     }
 
@@ -273,7 +256,7 @@ public class TransformInspectorSample : IgnisGame
             _spriteBatch?.Dispose();
             _uiContext?.Dispose();
         }
+
         base.Dispose(disposing);
     }
 }
-

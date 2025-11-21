@@ -34,8 +34,10 @@ namespace Ignis.Engine.UI.Widgets
 
         public Label(Signal<string> text, SpriteFont? font = null, Color? color = null)
         {
-            var textView = new ReactiveText(text, font);
-            textView.Color = color ?? Color.White;
+            var textView = new ReactiveText(text, font)
+            {
+                Color = color ?? Color.White
+            };
 
             _container = new Panel(textView)
             {
@@ -47,8 +49,10 @@ namespace Ignis.Engine.UI.Widgets
 
         public Label(Computed<string> text, SpriteFont? font = null, Color? color = null)
         {
-            var textView = new ReactiveText(text, font);
-            textView.Color = color ?? Color.White;
+            var textView = new ReactiveText(text, font)
+            {
+                Color = color ?? Color.White
+            };
 
             _container = new Panel(textView)
             {
@@ -85,9 +89,9 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly Signal<float> _progress;
 
-        public Color BackgroundColor { get; set; } = new Color(51, 51, 55);
-        public Color FillColor { get; set; } = new Color(0, 122, 204);
-        public Color BorderColor { get; set; } = new Color(63, 63, 70);
+        public Color BackgroundColor { get; set; } = new(51, 51, 55);
+        public Color FillColor { get; set; } = new(0, 122, 204);
+        public Color BorderColor { get; set; } = new(63, 63, 70);
 
         public ProgressBar(Signal<float> progress)
         {
@@ -136,7 +140,7 @@ namespace Ignis.Engine.UI.Widgets
     /// </summary>
     public class Separator : ViewComponent
     {
-        public Color Color { get; set; } = new Color(63, 63, 70);
+        public Color Color { get; set; } = new(63, 63, 70);
         public float Thickness { get; set; } = 1f;
         public bool IsVertical { get; set; }
 
@@ -278,8 +282,10 @@ namespace Ignis.Engine.UI.Widgets
             var textView = new ReactiveText(
                 Computed<string>.From(() => count.Value.ToString()),
                 font
-            );
-            textView.Color = Color.White;
+            )
+            {
+                Color = Color.White
+            };
 
             _container = new Panel(textView)
             {

@@ -4,11 +4,11 @@ using Ignis.Engine.UI;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Widgets;
-using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 using static Ignis.Engine.UI.Elements.Elements;
+using Console = System.Console;
 
 namespace Ignis.Samples;
 
@@ -54,23 +54,23 @@ public class BasicWidgetsSample : IgnisGame
         if (DefaultFont != null)
         {
             _uiContext.SetDefaultFont(DefaultFont);
-            System.Console.WriteLine("[BasicWidgetsSample] Using automatic default font");
+            Console.WriteLine("[BasicWidgetsSample] Using automatic default font");
         }
         else
         {
-            System.Console.WriteLine("[BasicWidgetsSample] WARNING: No default font available");
+            Console.WriteLine("[BasicWidgetsSample] WARNING: No default font available");
         }
 
-        System.Console.WriteLine("=== Basic Widgets Sample ===");
-        System.Console.WriteLine("Initializing UI...");
+        Console.WriteLine("=== Basic Widgets Sample ===");
+        Console.WriteLine("Initializing UI...");
 
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
 
-        System.Console.WriteLine("Demonstrating reactive UI updates.");
-        System.Console.WriteLine("Watch console for reactive changes!");
-        System.Console.WriteLine("================================");
+        Console.WriteLine("Demonstrating reactive UI updates.");
+        Console.WriteLine("Watch console for reactive changes!");
+        Console.WriteLine("================================");
 
         // Demonstrate reactive effects
         SetupReactiveLogging();
@@ -114,7 +114,7 @@ public class BasicWidgetsSample : IgnisGame
                     Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%")),
 
                     // Volume Slider
-                    new Slider(_volume, 0f, 1f)
+                    new Slider(_volume)
                         .Width(300),
 
                     // Status Panel
@@ -147,19 +147,19 @@ public class BasicWidgetsSample : IgnisGame
         // Log when player name changed
         new ReactiveEffect(() =>
         {
-            System.Console.WriteLine($"[REACTIVE] Player name changed to: {_playerName.Value}");
+            Console.WriteLine($"[REACTIVE] Player name changed to: {_playerName.Value}");
         });
 
         // Log when health changes
         new ReactiveEffect(() =>
         {
             var health = _health.Value;
-            System.Console.WriteLine($"[REACTIVE] Health changed to: {health}");
+            Console.WriteLine($"[REACTIVE] Health changed to: {health}");
 
             // Auto-update alive status when health reaches 0
             if (health <= 0 && _isAlive.Value)
             {
-                System.Console.WriteLine("[REACTIVE] Health is 0, setting alive to false!");
+                Console.WriteLine("[REACTIVE] Health is 0, setting alive to false!");
                 _isAlive.Value = false;
             }
         });
@@ -167,13 +167,13 @@ public class BasicWidgetsSample : IgnisGame
         // Log when alive status changes
         new ReactiveEffect(() =>
         {
-            System.Console.WriteLine($"[REACTIVE] Alive status changed to: {_isAlive.Value}");
+            Console.WriteLine($"[REACTIVE] Alive status changed to: {_isAlive.Value}");
         });
 
         // Log when volume changes
         new ReactiveEffect(() =>
         {
-            System.Console.WriteLine($"[REACTIVE] Volume changed to: {(_volume.Value * 100):F0}%");
+            Console.WriteLine($"[REACTIVE] Volume changed to: {(_volume.Value * 100):F0}%");
         });
     }
 
@@ -188,7 +188,7 @@ public class BasicWidgetsSample : IgnisGame
         // Every 3 seconds, change something automatically
         if (totalSeconds % 3.0 < 0.016 && totalSeconds > 1.0)
         {
-            System.Console.WriteLine("\n[AUTO] Triggering automatic update...");
+            Console.WriteLine("\n[AUTO] Triggering automatic update...");
 
             // Cycle through some changes
             var cycle = (int)(totalSeconds / 3.0) % 4;
@@ -208,7 +208,7 @@ public class BasicWidgetsSample : IgnisGame
                     {
                         _health.Value = 100;
                         _isAlive.Value = true;
-                        System.Console.WriteLine("[AUTO] Resurrecting player!");
+                        Console.WriteLine("[AUTO] Resurrecting player!");
                     }
 
                     break;

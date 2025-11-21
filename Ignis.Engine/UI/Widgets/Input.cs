@@ -37,13 +37,16 @@ namespace Ignis.Engine.UI.Widgets
             {
                 BackgroundColor = new Color(51, 51, 55),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8),
+                    PaddingRight = Units.Pixels(8),
+                    PaddingTop = Units.Pixels(6),
+                    PaddingBottom = Units.Pixels(6),
+                    Height = Units.Pixels(30)
+                }
             };
-            _background.Layout.PaddingLeft = Units.Pixels(8);
-            _background.Layout.PaddingRight = Units.Pixels(8);
-            _background.Layout.PaddingTop = Units.Pixels(6);
-            _background.Layout.PaddingBottom = Units.Pixels(6);
-            _background.Layout.Height = Units.Pixels(30);
 
             Layout.Width = Units.Pixels(200);
             Layout.Height = Units.Pixels(30);
@@ -88,14 +91,25 @@ namespace Ignis.Engine.UI.Widgets
             _decrement = decrement;
 
             // Build layout: [Label] [Value Display] [-] [+]
-            var labelView = new Text(font) { Content = label, Color = Color.White };
-            labelView.Layout.Width = Units.Pixels(80);
+            var labelView = new Text(font)
+            {
+                Content = label, Color = Color.White,
+                Layout =
+                {
+                    Width = Units.Pixels(80)
+                }
+            };
 
             var valueText = new ReactiveText(
                 Computed<string>.From(() => _value.Value.ToString() ?? "0"),
                 font
-            );
-            valueText.Layout.Width = Units.Pixels(60);
+            )
+            {
+                Layout =
+                {
+                    Width = Units.Pixels(60)
+                }
+            };
 
             var decrementBtn = CreateButton("-", () => _value.Value = _decrement(_value.Value));
             var incrementBtn = CreateButton("+", () => _value.Value = _increment(_value.Value));
@@ -159,13 +173,22 @@ namespace Ignis.Engine.UI.Widgets
             {
                 BackgroundColor = new Color(51, 51, 55),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    Width = Units.Pixels(18),
+                    Height = Units.Pixels(18)
+                }
             };
-            box.Layout.Width = Units.Pixels(18);
-            box.Layout.Height = Units.Pixels(18);
 
-            var labelView = new Text(font) { Content = label, Color = Color.White };
-            labelView.Layout.PaddingLeft = Units.Pixels(8);
+            var labelView = new Text(font)
+            {
+                Content = label, Color = Color.White,
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8)
+                }
+            };
 
             _container = new Panel(box, labelView)
             {
@@ -213,9 +236,9 @@ namespace Ignis.Engine.UI.Widgets
         private readonly float _min;
         private readonly float _max;
 
-        public Color TrackColor { get; set; } = new Color(63, 63, 70);
-        public Color ThumbColor { get; set; } = new Color(0, 122, 204);
-        public Color FillColor { get; set; } = new Color(0, 122, 204);
+        public Color TrackColor { get; set; } = new(63, 63, 70);
+        public Color ThumbColor { get; set; } = new(0, 122, 204);
+        public Color FillColor { get; set; } = new(0, 122, 204);
 
         public Slider(Signal<float> value, float min = 0f, float max = 1f)
         {
@@ -283,7 +306,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Signal<T> _selected;
         private readonly List<T> _options;
         private readonly Func<T, string> _displayFunc;
-        private readonly Signal<bool> _isOpen = new Signal<bool>(false);
+        private readonly Signal<bool> _isOpen = new(false);
 
         public Dropdown(Signal<T> selected, List<T> options, Func<T, string>? displayFunc = null)
         {
@@ -318,9 +341,9 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly Signal<bool> _isChecked;
 
-        public Color BackgroundColor { get; set; } = new Color(51, 51, 55);
-        public Color BorderColor { get; set; } = new Color(63, 63, 70);
-        public Color CheckColor { get; set; } = new Color(0, 122, 204);
+        public Color BackgroundColor { get; set; } = new(51, 51, 55);
+        public Color BorderColor { get; set; } = new(63, 63, 70);
+        public Color CheckColor { get; set; } = new(0, 122, 204);
 
         public CheckboxBox(Signal<bool> isChecked)
         {

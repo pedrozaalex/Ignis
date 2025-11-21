@@ -1,12 +1,9 @@
-using Xunit;
-using Ignis.Engine.UI;
-using Ignis.Engine.UI.Abstractions;
-using Ignis.Engine.UI.Input;
-using Ignis.Engine.UI.Elements;
 using Ignis.Engine.Reactive;
+using Ignis.Engine.UI;
+using Ignis.Engine.UI.Elements;
+using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using static Ignis.Engine.UI.Elements.Elements;
 
 namespace Ignis.Tests.UI
 {

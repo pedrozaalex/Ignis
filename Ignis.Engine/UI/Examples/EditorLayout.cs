@@ -20,10 +20,10 @@ namespace Ignis.Engine.UI.Examples
         private readonly IView _root;
         
         // State
-        private readonly Signal<string?> _selectedEntityName = new Signal<string?>("None");
-        private readonly SignalList<TreeNode<string>> _hierarchyNodes = new SignalList<TreeNode<string>>();
-        private readonly SignalList<LogEntry> _consoleEntries = new SignalList<LogEntry>();
-        private readonly Signal<Vector3> _selectedPosition = new Signal<Vector3>(Vector3.Zero);
+        private readonly Signal<string?> _selectedEntityName = new("None");
+        private readonly SignalList<TreeNode<string>> _hierarchyNodes = new();
+        private readonly SignalList<LogEntry> _consoleEntries = new();
+        private readonly Signal<Vector3> _selectedPosition = new(Vector3.Zero);
 
         public EditorLayout()
         {
@@ -42,11 +42,14 @@ namespace Ignis.Engine.UI.Examples
             // Root container
             var container = new Panel(menuBar, mainContent)
             {
-                BackgroundColor = new Color(45, 45, 48)
+                BackgroundColor = new Color(45, 45, 48),
+                Layout =
+                {
+                    LayoutType = LayoutType.Column,
+                    Width = Units.Stretch(1),
+                    Height = Units.Stretch(1)
+                }
             };
-            container.Layout.LayoutType = LayoutType.Column;
-            container.Layout.Width = Units.Stretch(1);
-            container.Layout.Height = Units.Stretch(1);
 
             return container;
         }
@@ -92,9 +95,12 @@ namespace Ignis.Engine.UI.Examples
             // Horizontal splitter
             var splitter = new Splitter(hierarchy, centerRight, isVertical: false)
             {
-                SplitRatio = 0.20f // 20% for hierarchy
+                SplitRatio = 0.20f,
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                } // 20% for hierarchy
             };
-            splitter.Layout.Height = Units.Stretch(1);
 
             return splitter;
         }
@@ -107,16 +113,24 @@ namespace Ignis.Engine.UI.Examples
                 _hierarchyNodes,
                 name => name,
                 _selectedEntityName
-            );
-            hierarchyView.Layout.Height = Units.Stretch(1);
+            )
+            {
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                }
+            };
 
             var panel = new Panel(titleBar, hierarchyView)
             {
                 BackgroundColor = new Color(37, 37, 38),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
             };
-            panel.Layout.LayoutType = LayoutType.Column;
 
             return panel;
         }
@@ -132,9 +146,12 @@ namespace Ignis.Engine.UI.Examples
 
             var bottomSplit = new Splitter(inspector, console, isVertical: false)
             {
-                SplitRatio = 0.4f // 40% inspector, 60% console
+                SplitRatio = 0.4f,
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                } // 40% inspector, 60% console
             };
-            bottomSplit.Layout.Height = Units.Stretch(1);
 
             // Vertical splitter
             var verticalSplit = new Splitter(sceneView, bottomSplit, isVertical: true)
@@ -152,9 +169,12 @@ namespace Ignis.Engine.UI.Examples
             // Scene viewport (placeholder - actual 3D rendering happens here)
             var viewport = new Panel
             {
-                BackgroundColor = new Color(30, 30, 35)
+                BackgroundColor = new Color(30, 30, 35),
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                }
             };
-            viewport.Layout.Height = Units.Stretch(1);
 
             // Scene controls (Grid, Gizmos toggles)
             var controls = CreateSceneControls();
@@ -162,36 +182,55 @@ namespace Ignis.Engine.UI.Examples
 
             var sceneContainer = new Panel(controls, viewport)
             {
-                BackgroundColor = new Color(37, 37, 38)
+                BackgroundColor = new Color(37, 37, 38),
+                Layout =
+                {
+                    LayoutType = LayoutType.Column,
+                    Height = Units.Stretch(1)
+                }
             };
-            sceneContainer.Layout.LayoutType = LayoutType.Column;
-            sceneContainer.Layout.Height = Units.Stretch(1);
 
             var panel = new Panel(titleBar, sceneContainer)
             {
                 BackgroundColor = new Color(37, 37, 38),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
             };
-            panel.Layout.LayoutType = LayoutType.Column;
 
             return panel;
         }
 
         private IView CreateSceneControls()
         {
-            var gridToggle = new Checkbox("Grid", new Signal<bool>(true));
-            gridToggle.Layout.PaddingLeft = Units.Pixels(8);
+            var gridToggle = new Checkbox("Grid", new Signal<bool>(true))
+            {
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8)
+                }
+            };
 
-            var gizmosToggle = new Checkbox("Gizmos", new Signal<bool>(true));
-            gizmosToggle.Layout.PaddingLeft = Units.Pixels(8);
+            var gizmosToggle = new Checkbox("Gizmos", new Signal<bool>(true))
+            {
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8)
+                }
+            };
 
             var panel = new Panel(gridToggle, gizmosToggle)
             {
-                BackgroundColor = new Color(45, 45, 48)
+                BackgroundColor = new Color(45, 45, 48),
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    PaddingTop = Units.Pixels(6)
+                }
             };
-            panel.Layout.LayoutType = LayoutType.Row;
-            panel.Layout.PaddingTop = Units.Pixels(6);
 
             return panel;
         }
@@ -212,16 +251,24 @@ namespace Ignis.Engine.UI.Examples
             var colorSignal = new Signal<Color>(Color.White);
             propertyGrid.AddProperty("Color", new ColorPicker(colorSignal));
 
-            var scrollView = new ScrollView(propertyGrid);
-            scrollView.Layout.Height = Units.Stretch(1);
+            var scrollView = new ScrollView(propertyGrid)
+            {
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                }
+            };
 
             var panel = new Panel(titleBar, scrollView)
             {
                 BackgroundColor = new Color(37, 37, 38),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
             };
-            panel.Layout.LayoutType = LayoutType.Column;
 
             return panel;
         }
@@ -230,8 +277,13 @@ namespace Ignis.Engine.UI.Examples
         {
             var titleBar = CreatePanelTitle("Console");
 
-            var consoleView = new Console(_consoleEntries);
-            consoleView.Layout.Height = Units.Stretch(1);
+            var consoleView = new Console(_consoleEntries)
+            {
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                }
+            };
 
             // Console controls (Clear button, filters)
             var controls = CreateConsoleControls();
@@ -241,51 +293,81 @@ namespace Ignis.Engine.UI.Examples
             {
                 BackgroundColor = new Color(37, 37, 38),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
             };
-            panel.Layout.LayoutType = LayoutType.Column;
 
             return panel;
         }
 
         private IView CreateConsoleControls()
         {
-            var clearButton = new Text() { Content = "Clear", Color = Color.White };
-            clearButton.Layout.PaddingLeft = Units.Pixels(8);
-            clearButton.Layout.PaddingTop = Units.Pixels(6);
+            var clearButton = new Text
+            {
+                Content = "Clear", Color = Color.White,
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8),
+                    PaddingTop = Units.Pixels(6)
+                }
+            };
             // TODO: Wire up click to clear console
 
-            var errorFilter = new Checkbox("Errors", new Signal<bool>(true));
-            errorFilter.Layout.PaddingLeft = Units.Pixels(16);
+            var errorFilter = new Checkbox("Errors", new Signal<bool>(true))
+            {
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(16)
+                }
+            };
 
-            var warningFilter = new Checkbox("Warnings", new Signal<bool>(true));
-            warningFilter.Layout.PaddingLeft = Units.Pixels(8);
+            var warningFilter = new Checkbox("Warnings", new Signal<bool>(true))
+            {
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8)
+                }
+            };
 
-            var infoFilter = new Checkbox("Info", new Signal<bool>(true));
-            infoFilter.Layout.PaddingLeft = Units.Pixels(8);
+            var infoFilter = new Checkbox("Info", new Signal<bool>(true))
+            {
+                Layout =
+                {
+                    PaddingLeft = Units.Pixels(8)
+                }
+            };
 
             var panel = new Panel(clearButton, errorFilter, warningFilter, infoFilter)
             {
-                BackgroundColor = new Color(45, 45, 48)
+                BackgroundColor = new Color(45, 45, 48),
+                Layout =
+                {
+                    LayoutType = LayoutType.Row
+                }
             };
-            panel.Layout.LayoutType = LayoutType.Row;
 
             return panel;
         }
 
         private IView CreatePanelTitle(string title)
         {
-            var titleLabel = new Text() { Content = title, Color = Color.White };
+            var titleLabel = new Text { Content = title, Color = Color.White };
 
             var panel = new Panel(titleLabel)
             {
                 BackgroundColor = new Color(45, 45, 48),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 0f
+                BorderThickness = 0f,
+                Layout =
+                {
+                    Height = Units.Pixels(28),
+                    PaddingLeft = Units.Pixels(8),
+                    PaddingTop = Units.Pixels(6)
+                }
             };
-            panel.Layout.Height = Units.Pixels(28);
-            panel.Layout.PaddingLeft = Units.Pixels(8);
-            panel.Layout.PaddingTop = Units.Pixels(6);
 
             return panel;
         }
@@ -293,14 +375,24 @@ namespace Ignis.Engine.UI.Examples
         private void InitializeSampleData()
         {
             // Sample hierarchy
-            var root = new TreeNode<string>("Scene Root");
-            root.IsExpanded.Value = true;
+            var root = new TreeNode<string>("Scene Root")
+            {
+                IsExpanded =
+                {
+                    Value = true
+                }
+            };
 
             var camera = new TreeNode<string>("Main Camera", 1);
             var light = new TreeNode<string>("Directional Light", 1);
             
-            var cube = new TreeNode<string>("Cube", 1);
-            cube.IsExpanded.Value = true;
+            var cube = new TreeNode<string>("Cube", 1)
+            {
+                IsExpanded =
+                {
+                    Value = true
+                }
+            };
             var cubeMesh = new TreeNode<string>("Mesh", 2);
             var cubeMaterial = new TreeNode<string>("Material", 2);
             cube.AddChild(cubeMesh);

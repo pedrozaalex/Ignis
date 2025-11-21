@@ -20,27 +20,39 @@ namespace Ignis.Engine.UI.Widgets
         {
             _container = new Panel
             {
-                BackgroundColor = new Color(37, 37, 38)
+                BackgroundColor = new Color(37, 37, 38),
+                Layout =
+                {
+                    LayoutType = LayoutType.Column,
+                    PaddingLeft = Units.Pixels(8),
+                    PaddingRight = Units.Pixels(8),
+                    PaddingTop = Units.Pixels(8)
+                }
             };
-            _container.Layout.LayoutType = LayoutType.Column;
-            _container.Layout.PaddingLeft = Units.Pixels(8);
-            _container.Layout.PaddingRight = Units.Pixels(8);
-            _container.Layout.PaddingTop = Units.Pixels(8);
         }
 
         public void AddProperty(string label, IView editor)
         {
             var row = new Panel
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Height = Units.Pixels(32),
+                    PaddingBottom = Units.Pixels(4)
+                }
             };
-            row.Layout.LayoutType = LayoutType.Row;
-            row.Layout.Height = Units.Pixels(32);
-            row.Layout.PaddingBottom = Units.Pixels(4);
 
-            var labelView = new Text { Content = label, Color = Color.LightGray };
-            labelView.Layout.Width = Units.Pixels(100);
-            labelView.Layout.PaddingTop = Units.Pixels(6);
+            var labelView = new Text
+            {
+                Content = label, Color = Color.LightGray,
+                Layout =
+                {
+                    Width = Units.Pixels(100),
+                    PaddingTop = Units.Pixels(6)
+                }
+            };
 
             editor.Layout.Width = Units.Stretch(1);
 
@@ -100,9 +112,12 @@ namespace Ignis.Engine.UI.Widgets
             {
                 BackgroundColor = new Color(37, 37, 38),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    PaddingTop = Units.Pixels(4)
+                }
             };
-            _container.Layout.PaddingTop = Units.Pixels(4);
         }
 
         protected override void OnMount()
@@ -132,10 +147,10 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly Signal<Color> _color;
         private readonly Panel _container;
-        private readonly Signal<float> _hue = new Signal<float>(0f);
-        private readonly Signal<float> _saturation = new Signal<float>(1f);
-        private readonly Signal<float> _value = new Signal<float>(1f);
-        private readonly Signal<float> _alpha = new Signal<float>(1f);
+        private readonly Signal<float> _hue = new(0f);
+        private readonly Signal<float> _saturation = new(1f);
+        private readonly Signal<float> _value = new(1f);
+        private readonly Signal<float> _alpha = new(1f);
 
         public ColorPicker(Signal<Color> color)
         {
@@ -146,10 +161,13 @@ namespace Ignis.Engine.UI.Widgets
             {
                 BackgroundColor = color.Value,
                 BorderColor = Color.White,
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    Width = Units.Pixels(60),
+                    Height = Units.Pixels(60)
+                }
             };
-            preview.Layout.Width = Units.Pixels(60);
-            preview.Layout.Height = Units.Pixels(60);
 
             var rSlider = CreateColorSlider("R", 
                 new Signal<float>(color.Value.R / 255f), 
@@ -166,45 +184,70 @@ namespace Ignis.Engine.UI.Widgets
 
             var slidersPanel = new Panel(rSlider, gSlider, bSlider, aSlider)
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
             };
-            slidersPanel.Layout.LayoutType = LayoutType.Column;
 
             _container = new Panel(preview, slidersPanel)
             {
                 BackgroundColor = new Color(45, 45, 48),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    PaddingLeft = Units.Pixels(8),
+                    PaddingRight = Units.Pixels(8),
+                    PaddingTop = Units.Pixels(8),
+                    PaddingBottom = Units.Pixels(8)
+                }
             };
-            _container.Layout.LayoutType = LayoutType.Row;
-            _container.Layout.PaddingLeft = Units.Pixels(8);
-            _container.Layout.PaddingRight = Units.Pixels(8);
-            _container.Layout.PaddingTop = Units.Pixels(8);
-            _container.Layout.PaddingBottom = Units.Pixels(8);
         }
 
         private IView CreateColorSlider(string label, Signal<float> value, Action<float> onChange)
         {
             var row = new Panel
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Height = Units.Pixels(28)
+                }
             };
-            row.Layout.LayoutType = LayoutType.Row;
-            row.Layout.Height = Units.Pixels(28);
 
-            var labelView = new Text { Content = label, Color = Color.White };
-            labelView.Layout.Width = Units.Pixels(20);
-            labelView.Layout.PaddingTop = Units.Pixels(4);
+            var labelView = new Text
+            {
+                Content = label, Color = Color.White,
+                Layout =
+                {
+                    Width = Units.Pixels(20),
+                    PaddingTop = Units.Pixels(4)
+                }
+            };
 
-            var slider = new Slider(value);
-            slider.Layout.Width = Units.Stretch(1);
+            var slider = new Slider(value)
+            {
+                Layout =
+                {
+                    Width = Units.Stretch(1)
+                }
+            };
 
             var valueDisplay = new ReactiveText(
                 Computed<string>.From(() => ((int)(value.Value * 255)).ToString()),
                 null
-            );
-            valueDisplay.Layout.Width = Units.Pixels(35);
-            valueDisplay.Layout.PaddingTop = Units.Pixels(4);
+            )
+            {
+                Layout =
+                {
+                    Width = Units.Pixels(35),
+                    PaddingTop = Units.Pixels(4)
+                }
+            };
 
             row.AddChild(labelView);
             row.AddChild(slider);
@@ -256,9 +299,15 @@ namespace Ignis.Engine.UI.Widgets
         {
             _vector = vector;
 
-            var labelView = new Text(font) { Content = label, Color = Color.White };
-            labelView.Layout.Width = Units.Pixels(80);
-            labelView.Layout.PaddingTop = Units.Pixels(6);
+            var labelView = new Text(font)
+            {
+                Content = label, Color = Color.White,
+                Layout =
+                {
+                    Width = Units.Pixels(80),
+                    PaddingTop = Units.Pixels(6)
+                }
+            };
 
             var xField = CreateAxisField("X", 
                 Computed<float>.From(() => vector.Value.X),
@@ -274,32 +323,47 @@ namespace Ignis.Engine.UI.Widgets
 
             _container = new Panel(labelView, xField, yField, zField)
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Height = Units.Pixels(32)
+                }
             };
-            _container.Layout.LayoutType = LayoutType.Row;
-            _container.Layout.Height = Units.Pixels(32);
         }
 
         private IView CreateAxisField(string axis, Computed<float> value, Action<float> onChange)
         {
             var container = new Panel
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Width = Units.Stretch(1),
+                    PaddingLeft = Units.Pixels(4)
+                }
             };
-            container.Layout.LayoutType = LayoutType.Row;
-            container.Layout.Width = Units.Stretch(1);
-            container.Layout.PaddingLeft = Units.Pixels(4);
 
-            var axisLabel = new Text { Content = axis, Color = GetAxisColor(axis) };
-            axisLabel.Layout.Width = Units.Pixels(12);
-            axisLabel.Layout.PaddingTop = Units.Pixels(6);
+            var axisLabel = new Text
+            {
+                Content = axis, Color = GetAxisColor(axis),
+                Layout =
+                {
+                    Width = Units.Pixels(12),
+                    PaddingTop = Units.Pixels(6)
+                }
+            };
 
             var textField = new TextField(new Signal<string?>(value.Value.ToString("F2")))
             {
-                BackgroundColor = new Color(51, 51, 55)
+                BackgroundColor = new Color(51, 51, 55),
+                Layout =
+                {
+                    Width = Units.Stretch(1),
+                    Height = Units.Pixels(24)
+                }
             };
-            textField.Layout.Width = Units.Stretch(1);
-            textField.Layout.Height = Units.Pixels(24);
 
             container.AddChild(axisLabel);
             container.AddChild(textField);
@@ -344,7 +408,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Func<T, string> _nameFunc;
         private readonly Func<T, Texture2D?> _iconFunc;
         private readonly Signal<T?> _selectedAsset;
-        private readonly Signal<bool> _isGridView = new Signal<bool>(true);
+        private readonly Signal<bool> _isGridView = new(true);
         private readonly ScrollView _scrollView;
 
         public AssetBrowser(
@@ -375,13 +439,16 @@ namespace Ignis.Engine.UI.Widgets
             {
                 BackgroundColor = new Color(51, 51, 55),
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f
+                BorderThickness = 1f,
+                Layout =
+                {
+                    Width = Units.Pixels(80),
+                    Height = Units.Pixels(100),
+                    LayoutType = LayoutType.Column,
+                    Alignment = Alignment.TopCenter,
+                    PaddingTop = Units.Pixels(8)
+                }
             };
-            tile.Layout.Width = Units.Pixels(80);
-            tile.Layout.Height = Units.Pixels(100);
-            tile.Layout.LayoutType = LayoutType.Column;
-            tile.Layout.Alignment = Alignment.TopCenter;
-            tile.Layout.PaddingTop = Units.Pixels(8);
 
             // TODO: Wire up click to set _selectedAsset.Value = asset
 
@@ -432,27 +499,36 @@ namespace Ignis.Engine.UI.Widgets
             var icon = new Text
             { 
                 Content = GetLogIcon(entry.Level), 
-                Color = GetLogColor(entry.Level) 
+                Color = GetLogColor(entry.Level),
+                Layout =
+                {
+                    Width = Units.Pixels(20)
+                }
             };
-            icon.Layout.Width = Units.Pixels(20);
 
             var message = new Text
             { 
                 Content = entry.Message, 
-                Color = GetLogColor(entry.Level) 
+                Color = GetLogColor(entry.Level),
+                Layout =
+                {
+                    Width = Units.Stretch(1)
+                }
             };
-            message.Layout.Width = Units.Stretch(1);
 
             var row = new Panel(icon, message)
             {
                 BackgroundColor = Color.Transparent,
                 BorderColor = new Color(63, 63, 70),
-                BorderThickness = 0f
+                BorderThickness = 0f,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Height = Units.Pixels(24),
+                    PaddingLeft = Units.Pixels(8),
+                    PaddingTop = Units.Pixels(4)
+                }
             };
-            row.Layout.LayoutType = LayoutType.Row;
-            row.Layout.Height = Units.Pixels(24);
-            row.Layout.PaddingLeft = Units.Pixels(8);
-            row.Layout.PaddingTop = Units.Pixels(4);
 
             return row;
         }

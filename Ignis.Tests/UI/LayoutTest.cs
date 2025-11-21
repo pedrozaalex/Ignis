@@ -1,5 +1,4 @@
 using Ignis.Engine.UI;
-using Xunit;
 
 namespace Ignis.Tests.UI
 {
@@ -41,9 +40,9 @@ namespace Ignis.Tests.UI
         
         public List<Units> GridRows = [];
         public List<Units> GridColumns = [];
-        public int RowStart = 0;
+        public int RowStart;
         public int RowSpan = 1;
-        public int ColumnStart = 0;
+        public int ColumnStart;
         public int ColumnSpan = 1;
         
         public Func<float?, float?, (float, float)>? ContentMeasurer;
@@ -51,7 +50,7 @@ namespace Ignis.Tests.UI
 
     public class World : ILayoutNode, ILayoutCache
     {
-        private int _nextId = 0;
+        private int _nextId;
         public Dictionary<int, TestNode> Nodes = new();
         public Dictionary<int, Rect> Bounds = new();
 

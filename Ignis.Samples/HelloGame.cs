@@ -1,10 +1,12 @@
-using System.Numerics;
+using Friflo.Engine.ECS;
 using Ignis.Engine.Core;
 using Ignis.Engine.ECS;
 using Ignis.Engine.ECS.Components;
 using Ignis.Engine.ECS.Systems;
-using Friflo.Engine.ECS;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Quaternion = System.Numerics.Quaternion;
+using Vector3 = System.Numerics.Vector3;
 
 namespace Ignis.Samples;
 
@@ -60,7 +62,7 @@ public class HelloGame() : IgnisGame(new IgnisApp(new EngineSettings
         Console.WriteLine("=======================================");
     }
     
-    protected override void Update(Microsoft.Xna.Framework.GameTime gameTime)
+    protected override void Update(GameTime gameTime)
     {
         // Rotate the root entity every frame
         // Rotate around Y-axis (up)

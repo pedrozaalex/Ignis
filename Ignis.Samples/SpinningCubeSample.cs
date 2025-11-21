@@ -1,4 +1,3 @@
-using System.Numerics;
 using Friflo.Engine.ECS;
 using Ignis.Engine.Core;
 using Ignis.Engine.ECS;

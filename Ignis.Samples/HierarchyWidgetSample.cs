@@ -1,4 +1,3 @@
-
 using Ignis.Engine.Core;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
@@ -25,7 +24,7 @@ public class HierarchyWidgetSample : IgnisGame
     private readonly SignalList<TreeNode<string>> _sceneNodes = new SignalList<TreeNode<string>>();
     private readonly Signal<string?> _selectedNode = new Signal<string?>(null);
     private readonly SignalList<LogEntry> _logEntries = new SignalList<LogEntry>();
-    private int _entityCounter = 0;
+    private int _entityCounter;
 
     public HierarchyWidgetSample() : base(new IgnisApp(new EngineSettings
     {
@@ -66,7 +65,7 @@ public class HierarchyWidgetSample : IgnisGame
 
     private void InitializeScene()
     {
-        var root = new TreeNode<string>("Scene Root", 0)
+        var root = new TreeNode<string>("Scene Root")
         {
             IsExpanded =
             {
@@ -258,7 +257,7 @@ public class HierarchyWidgetSample : IgnisGame
     {
         var title = CreateTitle("Console");
 
-        var consoleWidget = new Ignis.Engine.UI.Widgets.Console(_logEntries)
+        var consoleWidget = new Engine.UI.Widgets.Console(_logEntries)
         {
             Layout =
             {

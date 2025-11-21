@@ -1,5 +1,4 @@
 using Ignis.Engine.Reactive;
-using Xunit;
 
 namespace Ignis.Tests.Reactive;
 

@@ -14,8 +14,8 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly List<IView> _children = [];
 
-        public Color BackgroundColor { get; set; } = new Color(45, 45, 48); // Dark gray (VS theme)
-        public Color BorderColor { get; set; } = new Color(63, 63, 70);
+        public Color BackgroundColor { get; set; } = new(45, 45, 48); // Dark gray (VS theme)
+        public Color BorderColor { get; set; } = new(63, 63, 70);
         public float BorderThickness { get; set; }
         public float CornerRadius { get; set; }
         
@@ -132,7 +132,7 @@ namespace Ignis.Engine.UI.Widgets
             _content = content;
 
             // Create title bar
-            var titleLabel = new Text() { Content = title, Color = Color.White };
+            var titleLabel = new Text { Content = title, Color = Color.White };
             _titleBar = new Panel(titleLabel)
             {
                 BackgroundColor = new Color(37, 37, 38),
@@ -167,7 +167,7 @@ namespace Ignis.Engine.UI.Widgets
 
         public float SplitRatio { get; set; } = 0.5f;
         public float DividerThickness { get; set; } = 4f;
-        public Color DividerColor { get; set; } = new Color(63, 63, 70);
+        public Color DividerColor { get; set; } = new(63, 63, 70);
 
         public Splitter(IView first, IView second, bool isVertical = false)
         {

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ignis.Engine.Assets;
 using Ignis.Engine.Core;
 
@@ -73,7 +74,7 @@ public static class AssetSample
                 VSync = true
             }
         };
-        var jsonContent = System.Text.Json.JsonSerializer.Serialize(gameConfig, new System.Text.Json.JsonSerializerOptions
+        var jsonContent = JsonSerializer.Serialize(gameConfig, new JsonSerializerOptions
         {
             WriteIndented = true
         });
@@ -134,7 +135,7 @@ public static class AssetSample
         
         var isSameAsset = ReferenceEquals(handle1.Asset, handle2.Asset);
         Console.WriteLine($"Same asset instance: {isSameAsset}");
-        Console.WriteLine($"Reference count is managed automatically\n");
+        Console.WriteLine("Reference count is managed automatically\n");
     }
     
     private static void ShowStatistics(IgnisApp app)

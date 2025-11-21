@@ -3,7 +3,6 @@ using Friflo.Engine.ECS;
 using Ignis.Engine.ECS;
 using Ignis.Engine.ECS.Bridge;
 using Ignis.Engine.Reactive;
-using Xunit;
 
 namespace Ignis.Tests.ECS.Bridge;
 

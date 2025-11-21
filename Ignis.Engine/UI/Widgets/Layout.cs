@@ -13,14 +13,14 @@ namespace Ignis.Engine.UI.Widgets
     public class ScrollView : ViewComponent, IViewContainer
     {
         private readonly IView _content;
-        private readonly Signal<float> _scrollX = new Signal<float>(0f);
-        private readonly Signal<float> _scrollY = new Signal<float>(0f);
+        private readonly Signal<float> _scrollX = new(0f);
+        private readonly Signal<float> _scrollY = new(0f);
 
         public bool HorizontalScrollEnabled { get; set; } = false;
         public bool VerticalScrollEnabled { get; set; } = true;
 
-        public Color ScrollbarColor { get; set; } = new Color(104, 104, 104);
-        public Color TrackColor { get; set; } = new Color(62, 62, 66);
+        public Color ScrollbarColor { get; set; } = new(104, 104, 104);
+        public Color TrackColor { get; set; } = new(62, 62, 66);
 
         public ScrollView(IView content)
         {
@@ -66,9 +66,9 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Panel _tabBar;
         private readonly Panel _contentArea;
 
-        public Color TabBackgroundColor { get; set; } = new Color(45, 45, 48);
-        public Color ActiveTabColor { get; set; } = new Color(0, 122, 204);
-        public Color InactiveTabColor { get; set; } = new Color(62, 62, 66);
+        public Color TabBackgroundColor { get; set; } = new(45, 45, 48);
+        public Color ActiveTabColor { get; set; } = new(0, 122, 204);
+        public Color InactiveTabColor { get; set; } = new(62, 62, 66);
 
         public TabView(Signal<int>? selectedIndex = null)
         {
@@ -76,16 +76,22 @@ namespace Ignis.Engine.UI.Widgets
 
             _tabBar = new Panel
             {
-                BackgroundColor = TabBackgroundColor
+                BackgroundColor = TabBackgroundColor,
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Height = Units.Pixels(35)
+                }
             };
-            _tabBar.Layout.LayoutType = LayoutType.Row;
-            _tabBar.Layout.Height = Units.Pixels(35);
 
             _contentArea = new Panel
             {
-                BackgroundColor = new Color(37, 37, 38)
+                BackgroundColor = new Color(37, 37, 38),
+                Layout =
+                {
+                    Height = Units.Stretch(1)
+                }
             };
-            _contentArea.Layout.Height = Units.Stretch(1);
 
             Layout.LayoutType = LayoutType.Column;
         }
@@ -96,14 +102,17 @@ namespace Ignis.Engine.UI.Widgets
             _tabs.Add((title, content));
 
             // Create tab button
-            var tabButton = new Panel(new Text() { Content = title, Color = Color.White })
+            var tabButton = new Panel(new Text { Content = title, Color = Color.White })
             {
-                BackgroundColor = InactiveTabColor
+                BackgroundColor = InactiveTabColor,
+                Layout =
+                {
+                    Width = Units.Pixels(120),
+                    Height = Units.Pixels(35),
+                    PaddingLeft = Units.Pixels(12),
+                    PaddingTop = Units.Pixels(8)
+                }
             };
-            tabButton.Layout.Width = Units.Pixels(120);
-            tabButton.Layout.Height = Units.Pixels(35);
-            tabButton.Layout.PaddingLeft = Units.Pixels(12);
-            tabButton.Layout.PaddingTop = Units.Pixels(8);
             // TODO: Wire up click to set _selectedIndex.Value = index
 
             _tabBar.AddChild(tabButton);
@@ -169,11 +178,14 @@ namespace Ignis.Engine.UI.Widgets
             // Container that will host all node views in a vertical stack
             _rootContainer = new Panel
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column,
+                    Width = Units.Stretch(1),
+                    Height = Units.Auto
+                }
             };
-            _rootContainer.Layout.LayoutType = LayoutType.Column;
-            _rootContainer.Layout.Width = Units.Stretch(1);
-            _rootContainer.Layout.Height = Units.Auto;
 
             // Build tree using Bind.For into the root container
             var listView = Bind.For(_rootNodes, node => CreateNodeView(node));
@@ -189,24 +201,30 @@ namespace Ignis.Engine.UI.Widgets
         {
             var nodePanel = new Panel
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    LayoutType = LayoutType.Column
+                }
             };
-            nodePanel.Layout.LayoutType = LayoutType.Column;
 
             // Node header (with expand/collapse arrow)
             var header = new Panel(
-                new Text()
+                new Text
                 {
                     Content = (node.IsExpanded.Value ? "▼ " : "► ") + _displayFunc(node.Data),
                     Color = Color.White
                 }
             )
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    Height = Units.Pixels(24),
+                    PaddingLeft = Units.Pixels(node.Depth * 16), // Indent based on depth
+                    PaddingTop = Units.Pixels(4)
+                }
             };
-            header.Layout.Height = Units.Pixels(24);
-            header.Layout.PaddingLeft = Units.Pixels(node.Depth * 16); // Indent based on depth
-            header.Layout.PaddingTop = Units.Pixels(4);
 
             nodePanel.AddChild(header);
 
@@ -250,8 +268,8 @@ namespace Ignis.Engine.UI.Widgets
     public class TreeNode<T> where T : notnull
     {
         public T Data { get; set; }
-        public SignalList<TreeNode<T>> Children { get; } = new SignalList<TreeNode<T>>();
-        public Signal<bool> IsExpanded { get; } = new Signal<bool>(false);
+        public SignalList<TreeNode<T>> Children { get; } = new();
+        public Signal<bool> IsExpanded { get; } = new(false);
         public int Depth { get; set; }
 
         public TreeNode(T data, int depth = 0)
@@ -285,10 +303,13 @@ namespace Ignis.Engine.UI.Widgets
         {
             _container = new Panel
             {
-                BackgroundColor = new Color(45, 45, 48)
+                BackgroundColor = new Color(45, 45, 48),
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Height = Units.Pixels(30)
+                }
             };
-            _container.Layout.LayoutType = LayoutType.Row;
-            _container.Layout.Height = Units.Pixels(30);
 
             Layout.Height = Units.Pixels(30);
         }
@@ -326,22 +347,25 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly string _title;
         private readonly List<MenuItem> _items = [];
-        private readonly Signal<bool> _isOpen = new Signal<bool>(false);
+        private readonly Signal<bool> _isOpen = new(false);
         private readonly Panel _container;
 
         public Menu(string title)
         {
             _title = title;
 
-            var titleLabel = new Text() { Content = title, Color = Color.White };
+            var titleLabel = new Text { Content = title, Color = Color.White };
             _container = new Panel(titleLabel)
             {
-                BackgroundColor = Color.Transparent
+                BackgroundColor = Color.Transparent,
+                Layout =
+                {
+                    Width = Units.Pixels(80),
+                    Height = Units.Pixels(30),
+                    PaddingLeft = Units.Pixels(12),
+                    PaddingTop = Units.Pixels(6)
+                }
             };
-            _container.Layout.Width = Units.Pixels(80);
-            _container.Layout.Height = Units.Pixels(30);
-            _container.Layout.PaddingLeft = Units.Pixels(12);
-            _container.Layout.PaddingTop = Units.Pixels(6);
         }
 
         public void AddItem(MenuItem item)
@@ -392,7 +416,7 @@ namespace Ignis.Engine.UI.Widgets
             Shortcut = shortcut;
         }
 
-        public static MenuItem Separator() => new MenuItem("") { IsSeparator = true };
+        public static MenuItem Separator() => new("") { IsSeparator = true };
     }
 }
 

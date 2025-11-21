@@ -50,7 +50,7 @@ namespace Ignis.Engine.UI.Elements
 
             if (fontToUse != null)
             {
-                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color);
+                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color, 0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0f);
             }
         }
 
