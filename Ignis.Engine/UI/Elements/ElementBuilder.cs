@@ -12,7 +12,7 @@ namespace Ignis.Engine.UI.Elements
     /// <summary>
     /// Static builder API for creating UI elements declaratively.
     /// </summary>
-    public static class Elements
+    public static partial class Elements
     {
         /// <summary>
         /// Creates a container that lays out children vertically.

@@ -93,9 +93,9 @@ public class BasicWidgetsSample : IgnisGame
 
                     // Player Name Row
                     Row(
-                        Label("Player Name:", null, Color.LightGray).Width(120),
+                        Label("Player Name:", null, Color.LightGray),
                         new TextField(_playerName).Width(300)
-                    ),
+                    ).AlignCenter(),
 
                     // Health Field
                     new NumberField<int>(

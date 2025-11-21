@@ -10,7 +10,6 @@ namespace Ignis.Engine.UI.Widgets
 {
     /// <summary>
     /// TextField - Single-line text input.
-    /// Wrapper component that delegates rendering to an internal Panel.
     /// </summary>
     public class TextField : ViewComponent, IViewContainer
     {
@@ -35,8 +34,8 @@ namespace Ignis.Engine.UI.Widgets
         {
             _text = text;
             _textView = new Text(font);
-
-            // Create the internal panel that handles the visuals (background + border)
+        
+            // Internal panel for visuals (Background, Border, Padding)
             _background = new Panel(_textView)
             {
                 BackgroundColor = new Color(51, 51, 55),
@@ -44,26 +43,24 @@ namespace Ignis.Engine.UI.Widgets
                 BorderThickness = 1f,
                 Layout =
                 {
-                    // Important: Fill the wrapper component completely
+                    // Fill the wrapper component
                     Width = Units.Stretch(1),
-                    Height = Units.Stretch(1),
+                    Height = Units.Auto,
                     
-                    // Internal padding for the text
+                    // Padding for the text inside
                     PaddingLeft = Units.Pixels(8),
                     PaddingRight = Units.Pixels(8),
                     PaddingTop = Units.Pixels(6),
                     PaddingBottom = Units.Pixels(6)
                 }
             };
-
-            // Set default size for the wrapper
-            Layout.Width = Units.Pixels(200);
-            Layout.Height = Units.Pixels(30);
+        
+            // Default Height
+            Layout.Height = Units.Auto;
         }
 
         protected override void OnMount()
         {
-            // Mount the internal view tree
             _background.Mount(Context!);
 
             // Update text view when signal changes
@@ -80,17 +77,15 @@ namespace Ignis.Engine.UI.Widgets
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            // No drawing needed here; UIContext will draw the _background child
+            // Drawing delegated to _background via UIContext
         }
 
-        // Expose the background panel to the UI system
         public IEnumerable<IView> GetChildren()
         {
             yield return _background;
         }
     }
 
-    // ... [Rest of the file (NumberField, Checkbox, etc.) remains unchanged] ...
     /// <summary>
     /// NumberField - Numeric input with increment/decrement buttons.
     /// </summary>
@@ -182,20 +177,7 @@ namespace Ignis.Engine.UI.Widgets
         {
             _isChecked = isChecked;
 
-            var box = new Panel
-            {
-                BackgroundColor = new Color(51, 51, 55),
-                BorderColor = new Color(63, 63, 70),
-                BorderThickness = 1f,
-                Layout =
-                {
-                    Width = Units.Pixels(18),
-                    Height = Units.Pixels(18)
-                }
-            };
-            
-            // Updated from previous turn: Using a dedicated internal component for the check mark
-            // to ensure correct rendering order and visibility
+            // Visual box component
             var checkBoxVisual = new CheckboxBox(isChecked)
                 .Width(18)
                 .Height(18);

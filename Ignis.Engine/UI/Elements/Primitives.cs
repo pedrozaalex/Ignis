@@ -36,6 +36,7 @@ namespace Ignis.Engine.UI.Elements
     /// </summary>
     public class Text(SpriteFont? font = null) : ViewComponent
     {
+        private const float TextScalingFactor = 0.5f;
         public string Content { get; set; } = "";
 
         public Color Color { get; set; } = Color.White;
@@ -50,7 +51,7 @@ namespace Ignis.Engine.UI.Elements
 
             if (fontToUse != null)
             {
-                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color, 0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0f);
+                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color, 0f, Vector2.Zero, TextScalingFactor, SpriteEffects.None, 0f);
             }
         }
 
@@ -64,7 +65,7 @@ namespace Ignis.Engine.UI.Elements
 
             if (fontToUse == null) return (Content.Length * 8f, 14f);
 
-            var size = fontToUse.MeasureString(Content);
+            var size = fontToUse.MeasureString(Content) * TextScalingFactor;
             return (size.X, size.Y);
         }
     }
