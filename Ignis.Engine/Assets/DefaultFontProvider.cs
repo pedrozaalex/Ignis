@@ -50,7 +50,7 @@ public static class DefaultFontProvider
         try
         {
             var font = contentManager.Load<SpriteFont>(DefaultFontName);
-            font.DefaultCharacter = '?'; 
+            // font.DefaultCharacter = '?'; 
             Console.WriteLine("[DefaultFontProvider] Default font loaded successfully!");
             return font;
         }
@@ -66,7 +66,7 @@ public static class DefaultFontProvider
         var fontContent = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <XnaContent xmlns:Graphics=""Microsoft.Xna.Framework.Content.Pipeline.Graphics"">
   <Asset Type=""Graphics:FontDescription"">
-    <FontName>Verdana</FontName>
+    <FontName>Roboto Flex</FontName>
     <Size>22</Size>
     <Spacing>0</Spacing>
     <UseKerning>true</UseKerning>
@@ -80,6 +80,11 @@ public static class DefaultFontProvider
       <CharacterRegion>
         <Start>&#9600;</Start>
         <End>&#9727;</End>
+      </CharacterRegion>
+      <!-- Add support for various symbols -->
+      <CharacterRegion>
+        <Start>&#8960;</Start>
+        <End>&#8991;</End>
       </CharacterRegion>
     </CharacterRegions>
   </Asset>

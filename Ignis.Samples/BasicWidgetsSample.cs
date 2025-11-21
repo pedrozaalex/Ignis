@@ -93,10 +93,8 @@ public class BasicWidgetsSample : IgnisGame
 
                     // Player Name Row
                     Row(
-                        Label("Player Name:", null, Color.LightGray)
-                            .Width(120),
-                        new TextField(_playerName)
-                            .Width(300)
+                        Label("Player Name:", null, Color.LightGray).Width(120),
+                        new TextField(_playerName).Width(300)
                     ),
 
                     // Health Field
@@ -145,10 +143,7 @@ public class BasicWidgetsSample : IgnisGame
     private void SetupReactiveLogging()
     {
         // Log when player name changed
-        new ReactiveEffect(() =>
-        {
-            Console.WriteLine($"[REACTIVE] Player name changed to: {_playerName.Value}");
-        });
+        // new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Player name changed to: {_playerName.Value}"); });
 
         // Log when health changes
         new ReactiveEffect(() =>
@@ -165,16 +160,10 @@ public class BasicWidgetsSample : IgnisGame
         });
 
         // Log when alive status changes
-        new ReactiveEffect(() =>
-        {
-            Console.WriteLine($"[REACTIVE] Alive status changed to: {_isAlive.Value}");
-        });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Alive status changed to: {_isAlive.Value}"); });
 
         // Log when volume changes
-        new ReactiveEffect(() =>
-        {
-            Console.WriteLine($"[REACTIVE] Volume changed to: {(_volume.Value * 100):F0}%");
-        });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Volume changed to: {(_volume.Value * 100):F0}%"); });
     }
 
     protected override void Update(GameTime gameTime)
@@ -195,7 +184,7 @@ public class BasicWidgetsSample : IgnisGame
             switch (cycle)
             {
                 case 0:
-                    _playerName.Value = "Auto-Player-" + new Random().Next(1, 100);
+                    // _playerName.Value = "Auto-Player-" + new Random().Next(1, 100);
                     break;
                 case 1:
                     _health.Value = Math.Max(0, _health.Value - 15);

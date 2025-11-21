@@ -100,18 +100,19 @@ public class TransformInspectorSample : IgnisGame
                         .PaddingBottom(10),
 
                     // Rotation with conditional Reset button
-                    Row(
+                    // Row(
                             Vector3Field("Rotation", _rotation)
-                                .Width(Units.Stretch(1)),
+                                
+                            // ,
 
                             // Only shows button if rotation is not zero
-                            Bind.If(
-                                _rotationNonZero,
-                                () => Button("Reset", () => _rotation.Value = Vector3.Zero)
-                                    .Width(80)
-                                    .PaddingLeft(10)
-                            )
-                        )
+                            // Bind.If(
+                            //     _rotationNonZero,
+                            //     () => Button("Reset", () => _rotation.Value = Vector3.Zero)
+                            //         .Width(80)
+                            //         .PaddingLeft(10)
+                            // )
+                        // )
                         .PaddingLeft(20)
                         .PaddingRight(20)
                         .PaddingBottom(10),

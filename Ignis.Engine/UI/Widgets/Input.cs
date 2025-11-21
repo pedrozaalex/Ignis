@@ -4,6 +4,7 @@ using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using static Ignis.Engine.UI.Elements.Elements;
 
 namespace Ignis.Engine.UI.Widgets
 {
@@ -81,14 +82,11 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly Signal<T> _value;
         private readonly IView _container;
-        private readonly Func<T, T> _increment;
-        private readonly Func<T, T> _decrement;
 
-        public NumberField(string label, Signal<T> value, Func<T, T> increment, Func<T, T> decrement, SpriteFont? font = null)
+        public NumberField(string label, Signal<T> value, Func<T, T> increment, Func<T, T> decrement,
+            SpriteFont? font = null)
         {
             _value = value;
-            _increment = increment;
-            _decrement = decrement;
 
             // Build layout: [Label] [Value Display] [-] [+]
             var labelView = new Text(font)
@@ -111,26 +109,25 @@ namespace Ignis.Engine.UI.Widgets
                 }
             };
 
-            var decrementBtn = CreateButton("-", () => _value.Value = _decrement(_value.Value));
-            var incrementBtn = CreateButton("+", () => _value.Value = _increment(_value.Value));
-
-            _container = new Panel(labelView, valueText, decrementBtn, incrementBtn)
-            {
-                BackgroundColor = Color.Transparent
-            };
-            _container.Layout.LayoutType = LayoutType.Row;
-            _container.Layout.Alignment = Alignment.Left;
+            _container = Row(
+                labelView,
+                valueText,
+                Row(
+                    Button("-", () => _value.Value = decrement(_value.Value)),
+                    Button("+", () => _value.Value = increment(_value.Value))
+                ).Gap(0)
+            );
 
             Layout.Height = Units.Pixels(30);
         }
 
-        private static IView CreateButton(string label, Action onClick)
+        private static IView Button(string label, Action onClick)
         {
             return new Panel(new Text { Content = label, Color = Color.White })
                 .Background(new Color(62, 62, 66))
                 .Border(new Color(63, 63, 70))
-                .Width(Units.Pixels(25))
-                .Height(Units.Pixels(25))
+                .Width(Units.Pixels(22))
+                .Height(Units.Pixels(22))
                 .AlignCenter()
                 .PaddingTop(4)
                 .PaddingLeft(8)
@@ -190,12 +187,13 @@ namespace Ignis.Engine.UI.Widgets
                 }
             };
 
-            _container = new Panel(box, labelView)
-            {
-                BackgroundColor = Color.Transparent
-            };
-            _container.Layout.LayoutType = LayoutType.Row;
-            _container.Layout.Alignment = Alignment.Left;
+            // _container = new Panel(box, labelView)
+            // {
+            //     BackgroundColor = Color.Transparent
+            // };
+            // _container.Layout.LayoutType = LayoutType.Row;
+            // _container.Layout.Alignment = Alignment.Left;
+            _container = Row(box, labelView);
 
             Layout.Height = Units.Pixels(24);
         }
@@ -266,11 +264,11 @@ namespace Ignis.Engine.UI.Widgets
             if (Context == null) return;
 
             var batch = Context.PrimitiveBatch;
-            
+
             // Calculate track position (centered vertically)
             const int trackHeight = 4;
             const int thumbSize = 16;
-            
+
             var trackY = bounds.Y + (bounds.Height - trackHeight) / 2;
             var trackBounds = new Rectangle(bounds.X, trackY, bounds.Width, trackHeight);
 
@@ -355,7 +353,7 @@ namespace Ignis.Engine.UI.Widgets
             if (Context == null) return;
 
             var batch = Context.PrimitiveBatch;
-            
+
             // Draw background
             batch.DrawFilledRectangle(bounds, BackgroundColor);
 
@@ -376,4 +374,3 @@ namespace Ignis.Engine.UI.Widgets
         }
     }
 }
-

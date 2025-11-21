@@ -482,7 +482,8 @@ namespace Ignis.Engine.UI
             if (mainFlexSum > 0)
             {
                 // If parent is auto-sized, measure stretch children at their content size first
-                if (main.IsAuto)
+                var nodeMainAxis = layoutType == LayoutType.Row ? width : height;
+                if (nodeMainAxis.IsAuto)
                 {
                     for (int i = 0; i < childrenData.Count; i++)
                     {

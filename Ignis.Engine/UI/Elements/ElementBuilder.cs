@@ -243,21 +243,16 @@ public class ButtonView : ViewComponent, IViewContainer
 
     public ButtonView(string label, Action onClick, SpriteFont? font)
     {
-        // Build button as a colored box with text
-        var background = new Box(new Color(100, 100, 200))
-        {
-            Layout =
-            {
-                Width = Units.Pixels(100),
-                Height = Units.Pixels(30)
-            }
-        };
+        var panel = new Panel(new Text(font) { Content = label, Color = Color.White })
+                .Background(new Color(100, 100, 200))
+                .Width(100)
+                .Height(30)
+                .AlignCenter()
+                .Rounded(4)
+                .OnClick(onClick)
+            ;
 
-        var text = new Text(font) { Content = label, Color = Color.White };
-
-        _content = new Container(background, text);
-        _content.Layout.LayoutType = LayoutType.Column;
-        _content.Layout.Alignment = Alignment.Center;
+        _content = panel;
     }
 
     protected override void OnMount()
