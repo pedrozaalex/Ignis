@@ -10,8 +10,9 @@ namespace Ignis.Engine.UI.Widgets
 {
     /// <summary>
     /// TextField - Single-line text input.
+    /// Wrapper component that delegates rendering to an internal Panel.
     /// </summary>
-    public class TextField : ViewComponent
+    public class TextField : ViewComponent, IViewContainer
     {
         private readonly Signal<string?> _text;
         private readonly Text _textView;
@@ -34,6 +35,8 @@ namespace Ignis.Engine.UI.Widgets
         {
             _text = text;
             _textView = new Text(font);
+
+            // Create the internal panel that handles the visuals (background + border)
             _background = new Panel(_textView)
             {
                 BackgroundColor = new Color(51, 51, 55),
@@ -41,20 +44,26 @@ namespace Ignis.Engine.UI.Widgets
                 BorderThickness = 1f,
                 Layout =
                 {
+                    // Important: Fill the wrapper component completely
+                    Width = Units.Stretch(1),
+                    Height = Units.Stretch(1),
+                    
+                    // Internal padding for the text
                     PaddingLeft = Units.Pixels(8),
                     PaddingRight = Units.Pixels(8),
                     PaddingTop = Units.Pixels(6),
-                    PaddingBottom = Units.Pixels(6),
-                    Height = Units.Pixels(30)
+                    PaddingBottom = Units.Pixels(6)
                 }
             };
 
+            // Set default size for the wrapper
             Layout.Width = Units.Pixels(200);
             Layout.Height = Units.Pixels(30);
         }
 
         protected override void OnMount()
         {
+            // Mount the internal view tree
             _background.Mount(Context!);
 
             // Update text view when signal changes
@@ -71,10 +80,17 @@ namespace Ignis.Engine.UI.Widgets
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            // Background draws itself and children
+            // No drawing needed here; UIContext will draw the _background child
+        }
+
+        // Expose the background panel to the UI system
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _background;
         }
     }
 
+    // ... [Rest of the file (NumberField, Checkbox, etc.) remains unchanged] ...
     /// <summary>
     /// NumberField - Numeric input with increment/decrement buttons.
     /// </summary>
@@ -177,6 +193,12 @@ namespace Ignis.Engine.UI.Widgets
                     Height = Units.Pixels(18)
                 }
             };
+            
+            // Updated from previous turn: Using a dedicated internal component for the check mark
+            // to ensure correct rendering order and visibility
+            var checkBoxVisual = new CheckboxBox(isChecked)
+                .Width(18)
+                .Height(18);
 
             var labelView = new Text(font)
             {
@@ -187,13 +209,8 @@ namespace Ignis.Engine.UI.Widgets
                 }
             };
 
-            // _container = new Panel(box, labelView)
-            // {
-            //     BackgroundColor = Color.Transparent
-            // };
-            // _container.Layout.LayoutType = LayoutType.Row;
-            // _container.Layout.Alignment = Alignment.Left;
-            _container = Row(box, labelView);
+            // Using Row helper
+            _container = Row(checkBoxVisual, labelView);
 
             Layout.Height = Units.Pixels(24);
         }
@@ -201,13 +218,6 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _container.Mount(Context!);
-
-            // Update visual state when checked state changes
-            CreateEffect(() =>
-            {
-                var isChecked = _isChecked.Value;
-                // TODO: Update check mark visual when true
-            });
         }
 
         protected override void OnUnmount()
@@ -264,6 +274,7 @@ namespace Ignis.Engine.UI.Widgets
             if (Context == null) return;
 
             var batch = Context.PrimitiveBatch;
+            if (batch == null) return;
 
             // Calculate track position (centered vertically)
             const int trackHeight = 4;
@@ -348,11 +359,17 @@ namespace Ignis.Engine.UI.Widgets
             _isChecked = isChecked;
         }
 
+        protected override void OnMount() 
+        {
+            CreateEffect(() => { var v = _isChecked.Value; }); 
+        }
+
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
             if (Context == null) return;
 
             var batch = Context.PrimitiveBatch;
+            if (batch == null) return;
 
             // Draw background
             batch.DrawFilledRectangle(bounds, BackgroundColor);

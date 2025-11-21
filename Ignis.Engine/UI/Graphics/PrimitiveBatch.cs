@@ -186,9 +186,9 @@ namespace Ignis.Engine.UI.Graphics
         }
 
         /// <summary>
-        /// Draws a rectangle border/outline.
+        /// Draws a rectangle border/outline with optional rounded corners.
         /// </summary>
-        public void DrawBorder(Rectangle bounds, float thickness, Color color)
+        public void DrawBorder(Rectangle bounds, float thickness, Color color, float radius = 0f)
         {
             if (!_isDrawing)
                 throw new InvalidOperationException("Begin must be called before drawing.");
@@ -198,14 +198,78 @@ namespace Ignis.Engine.UI.Graphics
             float w = bounds.Width;
             float h = bounds.Height;
 
-            // Top
-            DrawFilledRectangle(x, y, w, thickness, color);
-            // Bottom
-            DrawFilledRectangle(x, y + h - thickness, w, thickness, color);
-            // Left
-            DrawFilledRectangle(x, y, thickness, h, color);
-            // Right
-            DrawFilledRectangle(x + w - thickness, y, thickness, h, color);
+            if (radius <= 0)
+            {
+                // Simple rectangular border
+                DrawFilledRectangle(x, y, w, thickness, color); // Top
+                DrawFilledRectangle(x, y + h - thickness, w, thickness, color); // Bottom
+                DrawFilledRectangle(x, y, thickness, h, color); // Left
+                DrawFilledRectangle(x + w - thickness, y, thickness, h, color); // Right
+                return;
+            }
+
+            // Clamp corner radius
+            float maxRadius = Math.Min(w, h) * 0.5f;
+            radius = Math.Min(radius, maxRadius);
+
+            // Draw straight edge segments (avoiding corners)
+            DrawFilledRectangle(x + radius, y, w - 2 * radius, thickness, color); // Top
+            DrawFilledRectangle(x + radius, y + h - thickness, w - 2 * radius, thickness, color); // Bottom
+            DrawFilledRectangle(x, y + radius, thickness, h - 2 * radius, color); // Left
+            DrawFilledRectangle(x + w - thickness, y + radius, thickness, h - 2 * radius, color); // Right
+
+            // Draw rounded corners as arc outlines
+            int segments = 8;
+            DrawArcOutline(new Vector2(x + radius, y + radius), radius, radius - thickness, color, segments, 180, 270); // Top-left
+            DrawArcOutline(new Vector2(x + w - radius, y + radius), radius, radius - thickness, color, segments, 270, 360); // Top-right
+            DrawArcOutline(new Vector2(x + w - radius, y + h - radius), radius, radius - thickness, color, segments, 0, 90); // Bottom-right
+            DrawArcOutline(new Vector2(x + radius, y + h - radius), radius, radius - thickness, color, segments, 90, 180); // Bottom-left
+        }
+
+        /// <summary>
+        /// Draws an arc outline (ring segment) between inner and outer radius.
+        /// </summary>
+        private void DrawArcOutline(Vector2 center, float outerRadius, float innerRadius, Color color, int segments, float startAngle, float endAngle)
+        {
+            if (segments < 1) segments = 1;
+
+            EnsureCapacity((segments + 1) * 2, segments * 6);
+            int baseVertex = _vertexCount;
+
+            float startRad = MathHelper.ToRadians(startAngle);
+            float endRad = MathHelper.ToRadians(endAngle);
+            float angleStep = (endRad - startRad) / segments;
+
+            // Generate vertices for outer and inner arc
+            for (int i = 0; i <= segments; i++)
+            {
+                float angle = startRad + angleStep * i;
+                var direction = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+                
+                // Outer vertex
+                _vertices[_vertexCount++] = new VertexPositionColor(new Vector3(center + direction * outerRadius, 0), color);
+                // Inner vertex
+                _vertices[_vertexCount++] = new VertexPositionColor(new Vector3(center + direction * innerRadius, 0), color);
+            }
+
+            // Generate quad indices for each segment
+            for (int i = 0; i < segments; i++)
+            {
+                int outerCurrent = baseVertex + i * 2;
+                int innerCurrent = baseVertex + i * 2 + 1;
+                int outerNext = baseVertex + (i + 1) * 2;
+                int innerNext = baseVertex + (i + 1) * 2 + 1;
+
+                // First triangle
+                _indices[_indexCount++] = outerCurrent;
+                _indices[_indexCount++] = outerNext;
+                _indices[_indexCount++] = innerCurrent;
+                
+                // Second triangle
+                _indices[_indexCount++] = innerCurrent;
+                _indices[_indexCount++] = outerNext;
+                _indices[_indexCount++] = innerNext;
+            }
         }
 
         /// <summary>
@@ -373,3 +437,4 @@ namespace Ignis.Engine.UI.Graphics
         }
     }
 }
+

@@ -18,7 +18,7 @@ namespace Ignis.Engine.UI.Widgets
         public Color BorderColor { get; set; } = new(63, 63, 70);
         public float BorderThickness { get; set; }
         public float CornerRadius { get; set; }
-        
+
         public Panel(params IView[] children)
         {
             _children.AddRange(children);
@@ -51,6 +51,7 @@ namespace Ignis.Engine.UI.Widgets
             {
                 AddChild(child);
             }
+
             return this;
         }
 
@@ -87,27 +88,20 @@ namespace Ignis.Engine.UI.Widgets
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            if (Context == null) return;
+            if (Context?.PrimitiveBatch == null) return;
 
             var primitiveBatch = Context.PrimitiveBatch;
 
             // Draw background
             if (BackgroundColor.A > 0)
             {
-                if (CornerRadius > 0)
-                {
-                    primitiveBatch.DrawRoundedRectangle(bounds, CornerRadius, BackgroundColor);
-                }
-                else
-                {
-                    primitiveBatch.DrawFilledRectangle(bounds, BackgroundColor);
-                }
+                primitiveBatch.DrawRoundedRectangle(bounds, CornerRadius, BackgroundColor);
             }
 
             // Draw border
             if (BorderThickness > 0 && BorderColor.A > 0)
             {
-                primitiveBatch.DrawBorder(bounds, BorderThickness, BorderColor);
+                primitiveBatch.DrawBorder(bounds, BorderThickness, BorderColor, CornerRadius);
             }
         }
 
@@ -191,4 +185,3 @@ namespace Ignis.Engine.UI.Widgets
         }
     }
 }
-

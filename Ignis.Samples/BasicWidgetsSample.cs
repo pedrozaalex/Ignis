@@ -109,7 +109,7 @@ public class BasicWidgetsSample : IgnisGame
                     new Checkbox("Is Alive", _isAlive),
 
                     // Volume Label
-                    Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%")),
+                    Label(Computed<string>.From(() => $"Volume: {_volume.Value * 100:F0}%")),
 
                     // Volume Slider
                     new Slider(_volume)
@@ -126,7 +126,7 @@ public class BasicWidgetsSample : IgnisGame
                             Label(Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")),
                             Label(Computed<string>.From(() => $"Health: {_health.Value}/100")),
                             Label(Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")),
-                            Label(Computed<string>.From(() => $"Volume: {(_volume.Value * 100):F0}%"))
+                            Label(Computed<string>.From(() => $"Volume: {_volume.Value * 100:F0}%"))
                         )
                 )
             );
@@ -143,7 +143,7 @@ public class BasicWidgetsSample : IgnisGame
     private void SetupReactiveLogging()
     {
         // Log when player name changed
-        // new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Player name changed to: {_playerName.Value}"); });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Player name changed to: {_playerName.Value}"); });
 
         // Log when health changes
         new ReactiveEffect(() =>
@@ -163,7 +163,7 @@ public class BasicWidgetsSample : IgnisGame
         new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Alive status changed to: {_isAlive.Value}"); });
 
         // Log when volume changes
-        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Volume changed to: {(_volume.Value * 100):F0}%"); });
+        new ReactiveEffect(() => { Console.WriteLine($"[REACTIVE] Volume changed to: {_volume.Value * 100:F0}%"); });
     }
 
     protected override void Update(GameTime gameTime)
@@ -175,33 +175,31 @@ public class BasicWidgetsSample : IgnisGame
         var totalSeconds = gameTime.TotalGameTime.TotalSeconds;
 
         // Every 3 seconds, change something automatically
-        if (totalSeconds % 3.0 < 0.016 && totalSeconds > 1.0)
+        if (totalSeconds % 3.0 >= 0.016 || totalSeconds <= 1.0) return;
+        Console.WriteLine("\n[AUTO] Triggering automatic update...");
+
+        // Cycle through some changes
+        var cycle = (int)(totalSeconds / 3.0) % 4;
+        switch (cycle)
         {
-            Console.WriteLine("\n[AUTO] Triggering automatic update...");
+            case 0:
+                _playerName.Value = "Auto-Player-" + new Random().Next(1, 100);
+                break;
+            case 1:
+                _health.Value = Math.Max(0, _health.Value - 15);
+                break;
+            case 2:
+                _volume.Value = (float)new Random().NextDouble();
+                break;
+            case 3:
+                if (_health.Value <= 0)
+                {
+                    _health.Value = 100;
+                    _isAlive.Value = true;
+                    Console.WriteLine("[AUTO] Resurrecting player!");
+                }
 
-            // Cycle through some changes
-            var cycle = (int)(totalSeconds / 3.0) % 4;
-            switch (cycle)
-            {
-                case 0:
-                    // _playerName.Value = "Auto-Player-" + new Random().Next(1, 100);
-                    break;
-                case 1:
-                    _health.Value = Math.Max(0, _health.Value - 15);
-                    break;
-                case 2:
-                    _volume.Value = (float)new Random().NextDouble();
-                    break;
-                case 3:
-                    if (_health.Value <= 0)
-                    {
-                        _health.Value = 100;
-                        _isAlive.Value = true;
-                        Console.WriteLine("[AUTO] Resurrecting player!");
-                    }
-
-                    break;
-            }
+                break;
         }
     }
 
@@ -209,12 +207,9 @@ public class BasicWidgetsSample : IgnisGame
     {
         base.OnRenderUI(spriteBatch);
 
-        if (_uiContext != null)
-        {
-            // Draw UI - PrimitiveBatch handles its own Begin/End internally
-            // SpriteBatch is used for text rendering within the draw calls
-            _uiContext.Draw(spriteBatch);
-        }
+        // Draw UI - PrimitiveBatch handles its own Begin/End internally
+        // SpriteBatch is used for text rendering within the draw calls
+        _uiContext?.Draw(spriteBatch);
     }
 
     protected override void Dispose(bool disposing)

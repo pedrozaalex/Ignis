@@ -42,7 +42,7 @@ namespace Ignis.Engine.UI
         public float ToPx(float parentValue, float defaultValue) => Kind switch
         {
             UnitKind.Pixels => Value,
-            UnitKind.Percentage => (Value / 100.0f) * parentValue,
+            UnitKind.Percentage => Value / 100.0f * parentValue,
             _ => defaultValue
         };
 
@@ -247,10 +247,10 @@ namespace Ignis.Engine.UI
             {
                 var pW = width.IsAuto
                     ? (float?)null
-                    : (parentLayoutType is LayoutType.Row or LayoutType.Grid ? computedMain : computedCross);
+                    : parentLayoutType is LayoutType.Row or LayoutType.Grid ? computedMain : computedCross;
                 var pH = height.IsAuto
                     ? (float?)null
-                    : (parentLayoutType is LayoutType.Column ? computedMain : computedCross);
+                    : parentLayoutType is LayoutType.Column ? computedMain : computedCross;
 
                 var content = store.MeasureContent(node, pW, pH);
                 if (content.HasValue)
@@ -301,8 +301,8 @@ namespace Ignis.Engine.UI
             float borderCrossBefore = layoutType == LayoutType.Row ? borderTop : borderLeft;
             float borderCrossAfter = layoutType == LayoutType.Row ? borderBottom : borderRight;
 
-            childParentMain -= (padMainBefore + padMainAfter + borderMainBefore + borderMainAfter);
-            childParentCross -= (padCrossBefore + padCrossAfter + borderCrossBefore + borderCrossAfter);
+            childParentMain -= padMainBefore + padMainAfter + borderMainBefore + borderMainAfter;
+            childParentCross -= padCrossBefore + padCrossAfter + borderCrossBefore + borderCrossAfter;
 
             // Layout Children
             float mainFlexSum = 0;
@@ -348,9 +348,9 @@ namespace Ignis.Engine.UI
                         childComputedMain = childMain.ToPx(childParentMain, 0);
 
                         // Get constraints - handle Auto properly
-                        var minMainUnits = (layoutType == LayoutType.Row
+                        var minMainUnits = layoutType == LayoutType.Row
                             ? store.GetMinWidth(child)
-                            : store.GetMinHeight(child));
+                            : store.GetMinHeight(child);
                         var cMin = DefaultMin;
                         if (minMainUnits.IsAuto)
                         {
@@ -443,9 +443,9 @@ namespace Ignis.Engine.UI
                 if (childCross.IsStretch)
                 {
                     // Handle MinAuto properly for cross axis
-                    var minCrossUnits = (layoutType == LayoutType.Row
+                    var minCrossUnits = layoutType == LayoutType.Row
                         ? store.GetMinHeight(child)
-                        : store.GetMinWidth(child));
+                        : store.GetMinWidth(child);
                     var cMin = DefaultMin;
                     if (minCrossUnits.IsAuto)
                     {
@@ -523,12 +523,12 @@ namespace Ignis.Engine.UI
 
                             if (childMain.Kind == UnitKind.Stretch)
                             {
-                                float share = activeFlex > 0 ? (childMain.Value / activeFlex) * freeSpace : 0;
+                                float share = activeFlex > 0 ? childMain.Value / activeFlex * freeSpace : 0;
 
                                 // Get constraints - handle MinAuto properly
-                                var minMainUnits = (layoutType == LayoutType.Row
+                                var minMainUnits = layoutType == LayoutType.Row
                                     ? store.GetMinWidth(d.node)
-                                    : store.GetMinHeight(d.node));
+                                    : store.GetMinHeight(d.node);
                                 var cMin = DefaultMin;
                                 if (minMainUnits.IsAuto)
                                 {
@@ -633,12 +633,12 @@ namespace Ignis.Engine.UI
 
             // Alignment Offset
             float mainSumFinal = childrenData.Sum(c => c.main + c.mainAfter);
-            float extraMain = (childParentMain + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter) -
+            float extraMain = childParentMain + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter -
                               (mainSumFinal + padMainBefore + padMainAfter + borderMainBefore +
                                borderMainAfter); // Roughly
             // Simpler:
             float contentMain = mainSumFinal;
-            float freeMain = (childParentMain) - contentMain;
+            float freeMain = childParentMain - contentMain;
 
             if (freeMain > 0)
             {
@@ -768,7 +768,7 @@ namespace Ignis.Engine.UI
                 float free = Math.Max(0, availableWidth - usedW);
                 for (int i = 0; i < colTracks.Count; i++)
                     if (colTracks[i].IsStretch)
-                        colSizes[i] = (colTracks[i].Value / flexColSum) * free;
+                        colSizes[i] = colTracks[i].Value / flexColSum * free;
             }
 
             float[] rowSizes = new float[rowTracks.Count];
@@ -789,7 +789,7 @@ namespace Ignis.Engine.UI
                 float free = Math.Max(0, availableHeight - usedH);
                 for (int i = 0; i < rowTracks.Count; i++)
                     if (rowTracks[i].IsStretch)
-                        rowSizes[i] = (rowTracks[i].Value / flexRowSum) * free;
+                        rowSizes[i] = rowTracks[i].Value / flexRowSum * free;
             }
 
             // Calculate positions
