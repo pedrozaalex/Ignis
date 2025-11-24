@@ -233,7 +233,7 @@ public class BindTests
 
     private class MockUIContext : UIContext
     {
-        public MockUIContext() : base(null!)
+        public MockUIContext() : base(null, new MockInputProvider())
         {
             // Mock context for testing
         }

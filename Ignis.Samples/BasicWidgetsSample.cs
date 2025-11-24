@@ -49,7 +49,7 @@ public class BasicWidgetsSample : IgnisGame
         base.Initialize();
 
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _uiContext = new UIContext(GraphicsDevice);
+        _uiContext = new UIContext(GraphicsDevice, App.Input);
         _uiContext.SetGame(this); // Set game reference for FontSystem access
 
         // Use the automatically loaded default font

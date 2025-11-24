@@ -139,7 +139,8 @@ namespace Ignis.Tests.UI
                 [box2.Layout.ElementId] = new Rectangle(50, 50, 50, 50)
             };
 
-            var inputManager = new InputManager(bounds);
+            var mockInput = new MockInputProvider();
+            var inputManager = new InputManager(bounds, mockInput);
             var container = new Container(box1, box2);
             inputManager.SetRoot(container);
 

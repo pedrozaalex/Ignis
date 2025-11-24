@@ -1,3 +1,4 @@
+using Ignis.Engine.Input;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
@@ -15,8 +16,7 @@ namespace Ignis.Engine.UI.Input
         private readonly Signal<long?> _focusedElementId = new(null);
         private readonly Signal<long?> _hoveredElementId = new(null);
         
-        private MouseState _previousMouseState;
-        private KeyboardState _previousKeyboardState;
+        private readonly IInputProvider _input;
         
         private IView? _root;
         private readonly Dictionary<long, Rectangle> _bounds;
@@ -30,9 +30,10 @@ namespace Ignis.Engine.UI.Input
         public Signal<long?> FocusedElementId => _focusedElementId;
         public Signal<long?> HoveredElementId => _hoveredElementId;
 
-        public InputManager(Dictionary<long, Rectangle> bounds)
+        public InputManager(Dictionary<long, Rectangle> bounds, IInputProvider input)
         {
             _bounds = bounds;
+            _input = input;
         }
 
         public void SetRoot(IView root)
@@ -47,19 +48,13 @@ namespace Ignis.Engine.UI.Input
         {
             if (_root == null) return;
 
-            var mouseState = Mouse.GetState();
-            var keyboardState = Keyboard.GetState();
-
-            ProcessMouseInput(mouseState);
-            ProcessKeyboardInput(keyboardState);
-
-            _previousMouseState = mouseState;
-            _previousKeyboardState = keyboardState;
+            ProcessMouseInput();
+            ProcessKeyboardInput();
         }
 
-        private void ProcessMouseInput(MouseState mouseState)
+        private void ProcessMouseInput()
         {
-            var mousePos = new Vector2(mouseState.X, mouseState.Y);
+            var mousePos = _input.MousePosition;
 
             // Find the topmost view under the cursor (depth-first search, reverse order for Z-index)
             var hitView = FindViewAt(mousePos, _root!);
@@ -92,20 +87,17 @@ namespace Ignis.Engine.UI.Input
             }
 
             // Mouse button events
-            if (mouseState.LeftButton == ButtonState.Pressed && _previousMouseState.LeftButton == ButtonState.Released)
+            if (_input.IsMouseButtonJustPressed(0))
             {
                 HandleMouseDown(mousePos, 0, hitView);
             }
-            else if (mouseState.LeftButton == ButtonState.Released && _previousMouseState.LeftButton == ButtonState.Pressed)
+            else if (_input.IsMouseButtonReleased(0))
             {
                 HandleMouseUp(mousePos, 0, hitView);
             }
 
             // Mouse move
-            if (mouseState.Position != _previousMouseState.Position)
-            {
-                HandleMouseMove(mousePos, hitView);
-            }
+            HandleMouseMove(mousePos, hitView);
         }
 
         private void HandleMouseDown(Vector2 position, int button, IView? hitView)
@@ -169,7 +161,7 @@ namespace Ignis.Engine.UI.Input
         private void HandleMouseMove(Vector2 position, IView? hitView)
         {
             // Check for drag threshold
-            if (!_isDragging && Mouse.GetState().LeftButton == ButtonState.Pressed)
+            if (!_isDragging && _input.IsMouseButtonPressed(0))
             {
                 var distance = Vector2.Distance(position, _dragStartPosition);
                 if (distance > DragThreshold && hitView is ViewComponent dragSource)
@@ -194,17 +186,18 @@ namespace Ignis.Engine.UI.Input
             }
         }
 
-        private void ProcessKeyboardInput(KeyboardState keyboardState)
+        private void ProcessKeyboardInput()
         {
-            var pressedKeys = keyboardState.GetPressedKeys();
-            var previousKeys = _previousKeyboardState.GetPressedKeys();
+            // Get pressed keys from input service
+            var pressedKeys = (_input as InputService)?.GetPressedKeys() ?? Array.Empty<Keys>();
+            var previousKeys = (_input as InputService)?.GetPreviousPressedKeys() ?? Array.Empty<Keys>();
 
             // Detect newly pressed keys
             var newKeys = pressedKeys.Except(previousKeys).ToList();
 
             foreach (var key in newKeys)
             {
-                var modifiers = GetModifiers(keyboardState);
+                var modifiers = _input.GetModifiers();
                 var evt = new KeyboardEvent(key, modifiers, KeyboardEventType.Down);
 
                 // Try shortcuts first on focused element, then bubble
@@ -232,17 +225,6 @@ namespace Ignis.Engine.UI.Input
             }
         }
 
-        private static ModifierKeys GetModifiers(KeyboardState keyboardState)
-        {
-            var modifiers = ModifierKeys.None;
-            if (keyboardState.IsKeyDown(Keys.LeftControl) || keyboardState.IsKeyDown(Keys.RightControl))
-                modifiers |= ModifierKeys.Control;
-            if (keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift))
-                modifiers |= ModifierKeys.Shift;
-            if (keyboardState.IsKeyDown(Keys.LeftAlt) || keyboardState.IsKeyDown(Keys.RightAlt))
-                modifiers |= ModifierKeys.Alt;
-            return modifiers;
-        }
 
         /// <summary>
         /// Bubbles an event up the tree until handled.

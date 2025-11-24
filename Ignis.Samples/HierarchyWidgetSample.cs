@@ -40,7 +40,7 @@ public class HierarchyWidgetSample : IgnisGame
         base.Initialize();
         
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _uiContext = new UIContext(GraphicsDevice);
+        _uiContext = new UIContext(GraphicsDevice, App.Input);
 
         // Use the automatically loaded default font
         if (DefaultFont != null)

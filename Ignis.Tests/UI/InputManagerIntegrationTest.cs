@@ -23,7 +23,8 @@ namespace Ignis.Tests.UI
             // Simulate layout setting bounds
             bounds[boxId] = new Rectangle(10, 10, 100, 100);
             
-            var inputManager = new InputManager(bounds);
+            var mockInput = new MockInputProvider();
+            var inputManager = new InputManager(bounds, mockInput);
             inputManager.SetRoot(box);
             
             // The InputManager uses bounds to find views at positions
@@ -85,7 +86,8 @@ namespace Ignis.Tests.UI
         {
             // Arrange - No bounds registered
             var bounds = new Dictionary<long, Rectangle>();
-            var inputManager = new InputManager(bounds);
+            var mockInput = new MockInputProvider();
+            var inputManager = new InputManager(bounds, mockInput);
             var root = new Container();
             
             inputManager.SetRoot(root);
@@ -143,7 +145,8 @@ namespace Ignis.Tests.UI
         {
             // Arrange
             var bounds = new Dictionary<long, Rectangle>();
-            var inputManager = new InputManager(bounds);
+            var mockInput = new MockInputProvider();
+            var inputManager = new InputManager(bounds, mockInput);
             
             var focusChangeCount = 0;
             var hoverChangeCount = 0;

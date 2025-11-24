@@ -1,6 +1,7 @@
 using Friflo.Engine.ECS;
 using Friflo.Engine.ECS.Systems;
 using Ignis.Engine.Assets;
+using Ignis.Engine.Input;
 
 namespace Ignis.Engine.Core;
 
@@ -35,6 +36,11 @@ public class IgnisApp
     /// </summary>
     public AssetManager AssetManager { get; private set; }
     
+    /// <summary>
+    /// Input service for handling keyboard and mouse input
+    /// </summary>
+    public InputService Input { get; private set; }
+    
     public IgnisApp(EngineSettings? settings = null)
     {
         Settings = settings ?? new EngineSettings();
@@ -44,6 +50,9 @@ public class IgnisApp
         
         // Create Asset Manager
         AssetManager = new AssetManager();
+        
+        // Create Input Service
+        Input = new InputService();
         
         // TODO: Event-driven reactivity will be implemented when we understand Friflo's event system better
         // For now, TransformSystem will check all entities with WorldTransform component
@@ -60,6 +69,8 @@ public class IgnisApp
     /// <param name="deltaTime">Time elapsed since last update (in seconds)</param>
     public void Update(double deltaTime)
     {
+        Input.Update();
+        
         TotalTime += deltaTime;
         
         // Execute all systems in the simulation root

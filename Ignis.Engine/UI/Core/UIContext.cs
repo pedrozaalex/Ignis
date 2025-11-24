@@ -1,5 +1,6 @@
 using FontStashSharp;
 using Ignis.Engine.Core;
+using Ignis.Engine.Input;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Graphics;
 using Ignis.Engine.UI.Input;
@@ -31,7 +32,7 @@ namespace Ignis.Engine.UI.Core
         public IgnisGame? Game { get; private set; }
         public Theme Theme { get; set; } = Theme.Dark;
 
-        public UIContext(GraphicsDevice? graphicsDevice, SpriteFontBase? defaultFont = null, Theme? theme = null)
+        public UIContext(GraphicsDevice? graphicsDevice, IInputProvider inputProvider, SpriteFontBase? defaultFont = null, Theme? theme = null)
         {
             _instanceId = Interlocked.Increment(ref _nextInstanceId);
             Console.WriteLine($"[UIContext #{_instanceId}] Created");
@@ -45,7 +46,7 @@ namespace Ignis.Engine.UI.Core
             }
             
             // InputManager shares the same bounds dictionary indexed by element ID
-            _inputManager = new InputManager(_boundsById);
+            _inputManager = new InputManager(_boundsById, inputProvider);
         }
 
         /// <summary>
