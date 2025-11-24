@@ -3,47 +3,47 @@ using Microsoft.Xna.Framework;
 namespace Ignis.Engine.Graphics.Lighting;
 
 /// <summary>
-/// Global lighting settings for the scene
+///     Global lighting settings for the scene
 /// </summary>
 public struct LightSettings
 {
     /// <summary>
-    /// Ambient light color (affects all surfaces equally)
+    ///     Ambient light color (affects all surfaces equally)
     /// </summary>
     public Vector3 AmbientLightColor;
-    
+
     /// <summary>
-    /// Primary directional light direction (normalized)
+    ///     Primary directional light direction (normalized)
     /// </summary>
     public Vector3 DirectionalLightDirection;
-    
+
     /// <summary>
-    /// Primary directional light color
+    ///     Primary directional light color
     /// </summary>
     public Vector3 DirectionalLightColor;
-    
+
     /// <summary>
-    /// Secondary directional light direction (normalized)
+    ///     Secondary directional light direction (normalized)
     /// </summary>
     public Vector3 DirectionalLight2Direction;
-    
+
     /// <summary>
-    /// Secondary directional light color
+    ///     Secondary directional light color
     /// </summary>
     public Vector3 DirectionalLight2Color;
-    
+
     /// <summary>
-    /// Tertiary directional light direction (normalized)
+    ///     Tertiary directional light direction (normalized)
     /// </summary>
     public Vector3 DirectionalLight3Direction;
-    
+
     /// <summary>
-    /// Tertiary directional light color
+    ///     Tertiary directional light color
     /// </summary>
     public Vector3 DirectionalLight3Color;
-    
+
     /// <summary>
-    /// Creates default lighting settings (similar to BasicEffect.EnableDefaultLighting)
+    ///     Creates default lighting settings (similar to BasicEffect.EnableDefaultLighting)
     /// </summary>
     public static LightSettings Default => new()
     {
@@ -56,4 +56,3 @@ public struct LightSettings
         DirectionalLight3Color = new Vector3(0.3231373f, 0.3607844f, 0.3937255f)
     };
 }
-

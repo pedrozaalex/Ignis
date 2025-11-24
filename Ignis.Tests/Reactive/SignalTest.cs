@@ -3,7 +3,7 @@ using Ignis.Engine.Reactive;
 namespace Ignis.Tests.Reactive;
 
 /// <summary>
-/// Tests for Signal&lt;T&gt; - The atomic state container
+///     Tests for Signal&lt;T&gt; - The atomic state container
 /// </summary>
 public class SignalTests
 {
@@ -76,4 +76,3 @@ public class SignalTests
         Assert.Equal(5, value);
     }
 }
-

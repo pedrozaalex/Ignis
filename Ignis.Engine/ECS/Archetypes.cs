@@ -5,16 +5,16 @@ using Ignis.Engine.ECS.Components;
 namespace Ignis.Engine.ECS;
 
 /// <summary>
-/// Standard Archetypes for entity creation
-/// Ensures entities are created with the necessary components for common use cases
+///     Standard Archetypes for entity creation
+///     Ensures entities are created with the necessary components for common use cases
 /// </summary>
 public static class Archetypes
 {
     extension(EntityStore store)
     {
         /// <summary>
-        /// Get the GameObject archetype - A standard 3D entity with transform capabilities
-        /// Includes: Position, Rotation, Scale3, WorldTransform, TransformDirty
+        ///     Get the GameObject archetype - A standard 3D entity with transform capabilities
+        ///     Includes: Position, Rotation, Scale3, WorldTransform, TransformDirty
         /// </summary>
         public Archetype GetGameObjectArchetype()
         {
@@ -24,7 +24,7 @@ public static class Archetypes
         }
 
         /// <summary>
-        /// Helper method to create a GameObject entity with default transform values
+        ///     Helper method to create a GameObject entity with default transform values
         /// </summary>
         public Entity CreateGameObject()
         {

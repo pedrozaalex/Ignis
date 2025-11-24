@@ -10,14 +10,14 @@ using Vector3 = Microsoft.Xna.Framework.Vector3;
 namespace Ignis.Engine.Graphics.Systems;
 
 /// <summary>
-/// The bridge to GPU - renders all meshes using MonoGame
+///     The bridge to GPU - renders all meshes using MonoGame
 /// </summary>
 public class RenderSystem(GraphicsDevice graphicsDevice)
 {
     private LightSettings _lightSettings = LightSettings.Default;
 
     /// <summary>
-    /// Updates the global lighting settings
+    ///     Updates the global lighting settings
     /// </summary>
     public void SetLightSettings(LightSettings settings)
     {
@@ -25,7 +25,7 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
     }
 
     /// <summary>
-    /// Renders all entities with MeshComponent and WorldTransform
+    ///     Renders all entities with MeshComponent and WorldTransform
     /// </summary>
     public void Draw(EntityStore world)
     {
@@ -35,14 +35,12 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
 
         foreach (var (cameras, entities) in cameraQuery.Chunks)
         {
-            for (int i = 0; i < entities.Length; i++)
-            {
+            for (var i = 0; i < entities.Length; i++)
                 if (cameras[i].IsActive)
                 {
                     activeCamera = cameras[i];
                     break;
                 }
-            }
 
             if (activeCamera.HasValue) break;
         }
@@ -80,26 +78,19 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
         var renderQuery = world.Query<MeshComponent, WorldTransform>();
 
         foreach (var (meshes, transforms, entities) in renderQuery.Chunks)
-        {
             for (var i = 0; i < entities.Length; i++)
             {
                 var meshComponent = meshes[i];
                 var worldTransform = transforms[i];
 
                 // Skip if model is null
-                if (meshComponent.ModelRef == null)
-                {
-                    continue;
-                }
+                if (meshComponent.ModelRef == null) continue;
 
                 // Get optional material component
                 var entity = entities[i];
                 MaterialComponent? material = null;
                 var hasMaterial = world.GetEntityById(entity).HasComponent<MaterialComponent>();
-                if (hasMaterial)
-                {
-                    material = world.GetEntityById(entity).GetComponent<MaterialComponent>();
-                }
+                if (hasMaterial) material = world.GetEntityById(entity).GetComponent<MaterialComponent>();
 
                 // Convert System.Numerics.Matrix4x4 to XNA Matrix
                 var worldMatrix = ConvertToXnaMatrix(worldTransform.Value);
@@ -107,11 +98,10 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
                 // Draw the model
                 DrawModel(meshComponent.ModelRef, worldMatrix, camera, hasMaterial ? material : null);
             }
-        }
     }
 
     /// <summary>
-    /// Draws a single model with the specified transforms
+    ///     Draws a single model with the specified transforms
     /// </summary>
     private void DrawModel(Model model, Matrix world, CameraComponent camera, MaterialComponent? material)
     {
@@ -127,10 +117,7 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
                     basicEffect.View = camera.ViewMatrix;
                     basicEffect.Projection = camera.ProjectionMatrix;
 
-                    if (material.HasValue)
-                    {
-                        ApplyMaterialToBasicEffect(basicEffect, material.Value);
-                    }
+                    if (material.HasValue) ApplyMaterialToBasicEffect(basicEffect, material.Value);
                 }
                 else
                 {
@@ -145,7 +132,7 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
     }
 
     /// <summary>
-    /// Safely sets a shader parameter if it exists
+    ///     Safely sets a shader parameter if it exists
     /// </summary>
     private void SetEffectParameter(Effect effect, string paramName, Matrix value)
     {
@@ -173,7 +160,7 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
     }
 
     /// <summary>
-    /// Configures lighting on a BasicEffect
+    ///     Configures lighting on a BasicEffect
     /// </summary>
     private void ConfigureLighting(BasicEffect effect)
     {
@@ -203,7 +190,7 @@ public class RenderSystem(GraphicsDevice graphicsDevice)
     }
 
     /// <summary>
-    /// Converts System.Numerics.Matrix4x4 to Microsoft.Xna.Framework.Matrix
+    ///     Converts System.Numerics.Matrix4x4 to Microsoft.Xna.Framework.Matrix
     /// </summary>
     private static Matrix ConvertToXnaMatrix(Matrix4x4 matrix)
     {

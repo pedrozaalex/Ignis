@@ -3,7 +3,7 @@ using Ignis.Engine.Reactive;
 namespace Ignis.Tests.Reactive;
 
 /// <summary>
-/// Tests for Effect - Side effects with automatic dependency tracking
+///     Tests for Effect - Side effects with automatic dependency tracking
 /// </summary>
 public class EffectTests
 {
@@ -27,10 +27,7 @@ public class EffectTests
         var signal = new Signal<int>(10);
         var loggedValue = 0;
 
-        var effect = new Effect(() =>
-        {
-            loggedValue = signal.Value;
-        });
+        var effect = new Effect(() => { loggedValue = signal.Value; });
 
         Assert.Equal(10, loggedValue);
 
@@ -64,4 +61,3 @@ public class EffectTests
         Assert.Equal(1, executionCount);
     }
 }
-

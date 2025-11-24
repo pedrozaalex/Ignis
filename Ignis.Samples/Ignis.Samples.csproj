@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\Ignis.Engine\Ignis.Engine.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="ObjParser" Version="0.1.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Content\ColorCubeShader.fx" />
-  </ItemGroup>
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Ignis.Engine\Ignis.Engine.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="ObjParser" Version="0.1.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ClCompile Include="Content\ColorCubeShader.fx"/>
+    </ItemGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 </Project>

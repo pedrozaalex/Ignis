@@ -1,38 +1,37 @@
 namespace Ignis.Engine.ECS;
 
 /// <summary>
-/// System group identifiers for organizing system execution order
+///     System group identifiers for organizing system execution order
 /// </summary>
 public enum SystemGroup
 {
     /// <summary>
-    /// Input processing
+    ///     Input processing
     /// </summary>
     Input,
-    
+
     /// <summary>
-    /// Physics simulation (Future)
+    ///     Physics simulation (Future)
     /// </summary>
     Physics,
-    
+
     /// <summary>
-    /// Transform hierarchy update
+    ///     Transform hierarchy update
     /// </summary>
     Transform,
-    
+
     /// <summary>
-    /// Game logic update
+    ///     Game logic update
     /// </summary>
     Logic,
-    
+
     /// <summary>
-    /// Animation update (Future)
+    ///     Animation update (Future)
     /// </summary>
     Animation,
-    
+
     /// <summary>
-    /// Late update for final adjustments
+    ///     Late update for final adjustments
     /// </summary>
     LateUpdate
 }
-

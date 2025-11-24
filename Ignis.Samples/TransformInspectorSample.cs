@@ -11,22 +11,21 @@ using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 namespace Ignis.Samples;
 
 /// <summary>
-/// TransformInspectorSample - Demonstrates the declarative UI API with Vector3 editing.
-/// This example shows how to use Signal.Lens() for editing struct fields without boilerplate.
+///     TransformInspectorSample - Demonstrates the declarative UI API with Vector3 editing.
+///     This example shows how to use Signal.Lens() for editing struct fields without boilerplate.
 /// </summary>
 public class TransformInspectorSample : IgnisGame
 {
-    private UIContext? _uiContext;
-    private SpriteBatch? _spriteBatch;
-
     // Reactive state
     private readonly Signal<Vector3> _position = new(new Vector3(10, 20, 30));
     private readonly Signal<Vector3> _rotation = new(Vector3.Zero);
+    private readonly Computed<bool> _rotationNonZero;
     private readonly Signal<Vector3> _scale = new(Vector3.One);
 
     // Derived state
     private readonly Computed<string> _statusText;
-    private readonly Computed<bool> _rotationNonZero;
+    private SpriteBatch? _spriteBatch;
+    private UIContext? _uiContext;
 
     public TransformInspectorSample() : base(new IgnisApp(new EngineSettings
     {
@@ -54,10 +53,7 @@ public class TransformInspectorSample : IgnisGame
         _uiContext = new UIContext(GraphicsDevice, App.Input);
 
         // Use the automatically loaded default font
-        if (DefaultFont != null)
-        {
-            _uiContext.SetDefaultFont(DefaultFont);
-        }
+        if (DefaultFont != null) _uiContext.SetDefaultFont(DefaultFont);
 
         Console.WriteLine("=== Transform Inspector Sample ===");
         Console.WriteLine("Demonstrating Declarative UI with Signal.Lens()");
@@ -71,9 +67,9 @@ public class TransformInspectorSample : IgnisGame
 
 
     /// <summary>
-    /// The Declarative UI Layout - This is the key demo!
-    /// Shows: Method chaining, Signal.Lens(), Computed values, conditional rendering
-    /// Uses children-last API for better readability
+    ///     The Declarative UI Layout - This is the key demo!
+    ///     Shows: Method chaining, Signal.Lens(), Computed values, conditional rendering
+    ///     Uses children-last API for better readability
     /// </summary>
     private IView BuildTransformInspector()
     {
@@ -100,17 +96,17 @@ public class TransformInspectorSample : IgnisGame
 
                     // Rotation with conditional Reset button
                     // Row(
-                            Vector3Field("Rotation", _rotation)
-                                
-                            // ,
+                    Vector3Field("Rotation", _rotation)
 
-                            // Only shows button if rotation is not zero
-                            // Bind.If(
-                            //     _rotationNonZero,
-                            //     () => Button("Reset", () => _rotation.Value = Vector3.Zero)
-                            //         .Width(80)
-                            //         .PaddingLeft(10)
-                            // )
+                        // ,
+
+                        // Only shows button if rotation is not zero
+                        // Bind.If(
+                        //     _rotationNonZero,
+                        //     () => Button("Reset", () => _rotation.Value = Vector3.Zero)
+                        //         .Width(80)
+                        //         .PaddingLeft(10)
+                        // )
                         // )
                         .PaddingLeft(20)
                         .PaddingRight(20)
@@ -144,8 +140,8 @@ public class TransformInspectorSample : IgnisGame
     }
 
     /// <summary>
-    /// Reusable UI Component helper - creates a field for editing Vector3
-    /// using Signal.Lens() to create bidirectional bindings to X, Y, Z components
+    ///     Reusable UI Component helper - creates a field for editing Vector3
+    ///     using Signal.Lens() to create bidirectional bindings to X, Y, Z components
     /// </summary>
     private IView Vector3Field(string label, Signal<Vector3> vector)
     {
@@ -171,7 +167,7 @@ public class TransformInspectorSample : IgnisGame
     }
 
     /// <summary>
-    /// Helper for creating a compact float field with inline label
+    ///     Helper for creating a compact float field with inline label
     /// </summary>
     private IView FloatFieldWithLabel(string label, Signal<float> value)
     {
@@ -254,24 +250,6 @@ public class TransformInspectorSample : IgnisGame
         return new ThemedLabelView(text);
     }
 
-    // Helper component that resolves color from theme after mounting
-    private class ThemedLabelView(string text) : ViewComponent, IViewContainer
-    {
-        private readonly IView _label = Label(text, null, Color.White);
-
-        protected override void OnMount()
-        {
-            _label.Mount(Context!);
-            if (_label is Text textView)
-            {
-                textView.Color = Context!.Theme.Info;
-            }
-        }
-
-        protected override void OnUnmount() => _label.Unmount();
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds) { }
-        public IEnumerable<IView> GetChildren() { yield return _label; }
-    }
     protected override void Dispose(bool disposing)
     {
         if (disposing)
@@ -281,5 +259,31 @@ public class TransformInspectorSample : IgnisGame
         }
 
         base.Dispose(disposing);
+    }
+
+    // Helper component that resolves color from theme after mounting
+    private class ThemedLabelView(string text) : ViewComponent, IViewContainer
+    {
+        private readonly IView _label = Label(text, null, Color.White);
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _label;
+        }
+
+        protected override void OnMount()
+        {
+            _label.Mount(Context!);
+            if (_label is Text textView) textView.Color = Context!.Theme.Info;
+        }
+
+        protected override void OnUnmount()
+        {
+            _label.Unmount();
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
     }
 }

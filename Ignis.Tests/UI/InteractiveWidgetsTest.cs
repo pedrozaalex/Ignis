@@ -1,14 +1,12 @@
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
-using Ignis.Engine.UI.Input;
 using Ignis.Engine.UI.Widgets;
-using Microsoft.Xna.Framework;
 
 namespace Ignis.Tests.UI;
 
 /// <summary>
-/// Tests for Task 3: Advanced Widget Interactivity & Visual States
+///     Tests for Task 3: Advanced Widget Interactivity & Visual States
 /// </summary>
 public class InteractiveWidgetsTest
 {
@@ -19,16 +17,16 @@ public class InteractiveWidgetsTest
         var mockInput = new MockInputProvider();
         var mockContext = new MockUIContext(mockInput);
         var button = Elements.Button("Test", () => { }) as ViewComponent;
-        
+
         Assert.NotNull(button);
         button.Mount(mockContext);
-        
+
         // Initially not hovered
         Assert.False(button.CurrentState.HasFlag(WidgetState.Hovered));
-        
+
         // Act - Simulate hover by setting the hovered element ID
         mockContext.Input.HoveredElementId.Value = button.Layout.ElementId;
-        
+
         // Assert - Button should show hovered state
         Assert.True(button.CurrentState.HasFlag(WidgetState.Hovered));
     }
@@ -40,16 +38,16 @@ public class InteractiveWidgetsTest
         var mockInput = new MockInputProvider();
         var mockContext = new MockUIContext(mockInput);
         var button = Elements.Button("Test", () => { }) as ViewComponent;
-        
+
         Assert.NotNull(button);
         button.Mount(mockContext);
-        
+
         // Initially not active
         Assert.False(button.CurrentState.HasFlag(WidgetState.Active));
-        
+
         // Act - Simulate mouse press
         mockContext.Input.ActiveElementId.Value = button.Layout.ElementId;
-        
+
         // Assert - Button should show active state
         Assert.True(button.CurrentState.HasFlag(WidgetState.Active));
     }
@@ -62,15 +60,15 @@ public class InteractiveWidgetsTest
         var mockInput = new MockInputProvider();
         var mockContext = new MockUIContext(mockInput);
         var textField = new TextField(text);
-        
+
         textField.Mount(mockContext);
-        
+
         // Initially not focused
         Assert.False(textField.CurrentState.HasFlag(WidgetState.Focused));
-        
+
         // Act - Simulate focus
         mockContext.Input.FocusedElementId.Value = textField.Layout.ElementId;
-        
+
         // Assert - TextField should show focused state
         Assert.True(textField.CurrentState.HasFlag(WidgetState.Focused));
     }
@@ -80,13 +78,13 @@ public class InteractiveWidgetsTest
     {
         // Arrange
         var value = new Signal<float>(0.5f);
-        var slider = new Slider(value, 0f, 1f);
+        var slider = new Slider(value);
         var mockInput = new MockInputProvider();
         var mockContext = new MockUIContext(mockInput);
-        
+
         // Act
         slider.Mount(mockContext);
-        
+
         // Assert - Slider should have pointer down and move handlers for dragging
         Assert.NotNull(slider.EventHandlers.OnPointerDown);
         Assert.NotNull(slider.EventHandlers.OnPointerMove);
@@ -98,7 +96,7 @@ public class InteractiveWidgetsTest
         // Arrange
         var text = new Signal<string?>("test");
         var textField = new TextField(text);
-        
+
         // Assert - TextField is focusable
         Assert.True(textField.Layout.Focusable);
     }
@@ -113,11 +111,11 @@ public class InteractiveWidgetsTest
             x => x + 10,
             x => x - 10
         );
-        
+
         // Assert - NumberField is focusable
         Assert.True(numberField.Layout.Focusable);
     }
-    
+
     [Fact]
     public void TextField_ShouldHaveTextInputHandler_AfterMount()
     {
@@ -126,12 +124,11 @@ public class InteractiveWidgetsTest
         var textField = new TextField(text);
         var mockInput = new MockInputProvider();
         var mockContext = new MockUIContext(mockInput);
-        
+
         // Act
         textField.Mount(mockContext);
-        
+
         // Assert - EventHandlers should have OnTextInput registered
         Assert.NotNull(textField.EventHandlers.OnTextInput);
     }
 }
-

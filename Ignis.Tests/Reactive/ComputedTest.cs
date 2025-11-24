@@ -3,7 +3,7 @@ using Ignis.Engine.Reactive;
 namespace Ignis.Tests.Reactive;
 
 /// <summary>
-/// Tests for Computed&lt;T&gt; - Derived state with lazy evaluation and memoization
+///     Tests for Computed&lt;T&gt; - Derived state with lazy evaluation and memoization
 /// </summary>
 public class ComputedTests
 {
@@ -58,10 +58,7 @@ public class ComputedTests
         });
 
         // Act - Read 10 times without changing signal
-        for (int i = 0; i < 10; i++)
-        {
-            _ = computed.Value;
-        }
+        for (var i = 0; i < 10; i++) _ = computed.Value;
 
         // Assert - Should only compute once
         Assert.Equal(1, computeCount);
@@ -121,4 +118,3 @@ public class ComputedTests
         Assert.Equal(17, sum.Value);
     }
 }
-

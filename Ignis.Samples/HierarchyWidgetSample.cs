@@ -11,19 +11,19 @@ using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 namespace Ignis.Samples;
 
 /// <summary>
-/// HierarchyWidgetSample - Demonstrates TreeView, Hierarchy, and dynamic list updates.
-/// Shows how to build and manipulate hierarchical data structures reactively.
+///     HierarchyWidgetSample - Demonstrates TreeView, Hierarchy, and dynamic list updates.
+///     Shows how to build and manipulate hierarchical data structures reactively.
 /// </summary>
 public class HierarchyWidgetSample : IgnisGame
 {
-    private UIContext? _uiContext;
-    private SpriteBatch? _spriteBatch;
-    
+    private readonly SignalList<LogEntry> _logEntries = new();
+
     // Reactive state
-    private readonly SignalList<TreeNode<string>> _sceneNodes = new SignalList<TreeNode<string>>();
-    private readonly Signal<string?> _selectedNode = new Signal<string?>(null);
-    private readonly SignalList<LogEntry> _logEntries = new SignalList<LogEntry>();
+    private readonly SignalList<TreeNode<string>> _sceneNodes = new();
+    private readonly Signal<string?> _selectedNode = new(null);
     private int _entityCounter;
+    private SpriteBatch? _spriteBatch;
+    private UIContext? _uiContext;
 
     public HierarchyWidgetSample() : base(new IgnisApp(new EngineSettings
     {
@@ -37,26 +37,23 @@ public class HierarchyWidgetSample : IgnisGame
     protected override void Initialize()
     {
         base.Initialize();
-        
+
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice, App.Input);
 
         // Use the automatically loaded default font
-        if (DefaultFont != null)
-        {
-            _uiContext.SetDefaultFont(DefaultFont);
-        }
-        
+        if (DefaultFont != null) _uiContext.SetDefaultFont(DefaultFont);
+
         // Setup initial scene
         InitializeScene();
-        
+
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
-        
+
         // Setup reactive logging
         SetupReactiveEffects();
-        
+
         LogInfo("Hierarchy Widget Sample initialized");
         LogInfo("Watch the hierarchy and console update reactively!");
     }
@@ -74,7 +71,7 @@ public class HierarchyWidgetSample : IgnisGame
 
         var camera = new TreeNode<string>("Main Camera", 1);
         var light = new TreeNode<string>("Directional Light", 1);
-        
+
         var player = new TreeNode<string>("Player", 1)
         {
             IsExpanded =
@@ -98,12 +95,12 @@ public class HierarchyWidgetSample : IgnisGame
     {
         // Left side - Hierarchy
         var hierarchyPanel = CreateHierarchyPanel();
-        
+
         // Right side - Console and Controls
         var rightPanel = CreateRightPanel();
 
         // Main split view
-        var splitter = new Splitter(hierarchyPanel, rightPanel, isVertical: false)
+        var splitter = new Splitter(hierarchyPanel, rightPanel)
         {
             SplitRatio = 0.5f,
             Layout =
@@ -149,7 +146,7 @@ public class HierarchyWidgetSample : IgnisGame
         var controlsPanel = CreateControlsPanel();
         var consolePanel = CreateConsolePanel();
 
-        var splitter = new Splitter(controlsPanel, consolePanel, isVertical: true)
+        var splitter = new Splitter(controlsPanel, consolePanel, true)
         {
             SplitRatio = 0.35f
         };
@@ -229,7 +226,7 @@ public class HierarchyWidgetSample : IgnisGame
     private IView CreateButton(string text)
     {
         var label = new Label(text, null, Color.White);
-        
+
         var button = new Panel(label)
         {
             BorderThickness = 1f,
@@ -245,29 +242,6 @@ public class HierarchyWidgetSample : IgnisGame
 
         // Wrap to set button colors from theme after mount
         return new ThemedButton(button);
-    }
-
-    // Helper class to apply theme colors to buttons
-    private class ThemedButton : ViewComponent, IViewContainer
-    {
-        private readonly Panel _button;
-
-        public ThemedButton(Panel button)
-        {
-            _button = button;
-        }
-
-        protected override void OnMount()
-        {
-            _button.Mount(Context!);
-            _button.BackgroundColor = Context!.Theme.Primary;
-            // Slightly darker border for depth
-            _button.BorderColor = Color.Lerp(Context!.Theme.Primary, Color.Black, 0.2f);
-        }
-
-        protected override void OnUnmount() => _button.Unmount();
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds) { }
-        public IEnumerable<IView> GetChildren() { yield return _button; }
     }
 
     private IView CreateConsolePanel()
@@ -330,35 +304,23 @@ public class HierarchyWidgetSample : IgnisGame
         new ReactiveEffect(() =>
         {
             var selected = _selectedNode.Value;
-            if (selected != null)
-            {
-                LogInfo($"Selected: {selected}");
-            }
+            if (selected != null) LogInfo($"Selected: {selected}");
         });
 
         // Log hierarchy changes
-        _sceneNodes.ItemAdded += (item, index) =>
-        {
-            LogInfo($"Node added to hierarchy: {item.Data}");
-        };
+        _sceneNodes.ItemAdded += (item, index) => { LogInfo($"Node added to hierarchy: {item.Data}"); };
 
-        _sceneNodes.ItemRemoved += (item, index) =>
-        {
-            LogWarning($"Node removed from hierarchy: {item.Data}");
-        };
+        _sceneNodes.ItemRemoved += (item, index) => { LogWarning($"Node removed from hierarchy: {item.Data}"); };
     }
 
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
         _uiContext?.Update(gameTime);
-        
+
         // Auto-demo: Add entities every 5 seconds
         var totalSeconds = gameTime.TotalGameTime.TotalSeconds;
-        if (totalSeconds % 5.0 < 0.016 && totalSeconds > 2.0)
-        {
-            AddRandomEntity();
-        }
+        if (totalSeconds % 5.0 < 0.016 && totalSeconds > 2.0) AddRandomEntity();
     }
 
     private void AddRandomEntity()
@@ -371,7 +333,7 @@ public class HierarchyWidgetSample : IgnisGame
         var entityName = $"{randomType} {_entityCounter}";
 
         var newNode = new TreeNode<string>(entityName, 1);
-        
+
         // Add to root
         var root = _sceneNodes[0];
         root.AddChild(newNode);
@@ -379,10 +341,7 @@ public class HierarchyWidgetSample : IgnisGame
         LogInfo($"Auto-created: {entityName}");
 
         // Auto-expand root if collapsed
-        if (!root.IsExpanded.Value)
-        {
-            root.IsExpanded.Value = true;
-        }
+        if (!root.IsExpanded.Value) root.IsExpanded.Value = true;
     }
 
     private void LogInfo(string message)
@@ -406,13 +365,11 @@ public class HierarchyWidgetSample : IgnisGame
     protected override void OnRenderUI(SpriteBatch spriteBatch)
     {
         base.OnRenderUI(spriteBatch);
-        
+
         if (_uiContext != null)
-        {
             // UIContext.Draw handles Begin/End internally now to ensure correct draw order
             // of primitives vs text. Do NOT wrap this in spriteBatch.Begin/End.
             _uiContext.Draw(spriteBatch);
-        }
     }
 
     protected override void Dispose(bool disposing)
@@ -422,6 +379,40 @@ public class HierarchyWidgetSample : IgnisGame
             _spriteBatch?.Dispose();
             _uiContext?.Dispose();
         }
+
         base.Dispose(disposing);
+    }
+
+    // Helper class to apply theme colors to buttons
+    private class ThemedButton : ViewComponent, IViewContainer
+    {
+        private readonly Panel _button;
+
+        public ThemedButton(Panel button)
+        {
+            _button = button;
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _button;
+        }
+
+        protected override void OnMount()
+        {
+            _button.Mount(Context!);
+            _button.BackgroundColor = Context!.Theme.Primary;
+            // Slightly darker border for depth
+            _button.BorderColor = Color.Lerp(Context!.Theme.Primary, Color.Black, 0.2f);
+        }
+
+        protected override void OnUnmount()
+        {
+            _button.Unmount();
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
     }
 }

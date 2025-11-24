@@ -13,8 +13,8 @@ using XnaColor = Microsoft.Xna.Framework.Color;
 namespace Ignis.Samples;
 
 /// <summary>
-/// Phase 3 Sample: Spinning Cube with Orbiting Camera
-/// Demonstrates rendering, camera system, materials, and lighting
+///     Phase 3 Sample: Spinning Cube with Orbiting Camera
+///     Demonstrates rendering, camera system, materials, and lighting
 /// </summary>
 public class SpinningCubeSample() : IgnisGame(new IgnisApp(new EngineSettings
 {
@@ -24,9 +24,9 @@ public class SpinningCubeSample() : IgnisGame(new IgnisApp(new EngineSettings
     VSync = true
 }))
 {
-    private Entity _cubeEntity;
-    private Entity _cameraPivot;
     private Entity _cameraEntity;
+    private Entity _cameraPivot;
+    private Entity _cubeEntity;
     private Model? _cubeModel;
 
     protected override void Initialize()
@@ -79,7 +79,6 @@ public class SpinningCubeSample() : IgnisGame(new IgnisApp(new EngineSettings
 
         // Try to load the compiled model
         if (_cubeModel == null)
-        {
             try
             {
                 _cubeModel = Content.Load<Model>("Cube");
@@ -91,10 +90,9 @@ public class SpinningCubeSample() : IgnisGame(new IgnisApp(new EngineSettings
                 Console.WriteLine("\nExiting...");
                 Environment.Exit(1);
             }
-        }
 
-        string shaderName = "ColorCubeShader.fx";
-        string shaderPath = Path.Combine(contentPath, shaderName);
+        var shaderName = "ColorCubeShader.fx";
+        var shaderPath = Path.Combine(contentPath, shaderName);
         if (!File.Exists(shaderPath))
         {
             // Write the HLSL string defined in Step 1 of this answer
@@ -161,17 +159,13 @@ technique BasicColorDrawing
 
         // 3. Load Assets
         _cubeModel = Content.Load<Model>("Cube");
-        Effect colorShader = Content.Load<Effect>("ColorCubeShader");
+        var colorShader = Content.Load<Effect>("ColorCubeShader");
 
         // 4. Apply Shader to Model
         // This replaces the default BasicEffect with our custom shader
         foreach (var mesh in _cubeModel.Meshes)
-        {
-            foreach (var part in mesh.MeshParts)
-            {
-                part.Effect = colorShader;
-            }
-        }
+        foreach (var part in mesh.MeshParts)
+            part.Effect = colorShader;
 
         // Setup the scene
         SetupScene();

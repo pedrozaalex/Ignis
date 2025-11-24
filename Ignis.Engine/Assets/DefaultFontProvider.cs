@@ -3,16 +3,16 @@ using FontStashSharp;
 namespace Ignis.Engine.Assets;
 
 /// <summary>
-/// Provides automatic default font loading for the UI system using FontStackSharp.
-/// Uses embedded Roboto fonts with optimal scaling settings for high-quality rendering.
+///     Provides automatic default font loading for the UI system using FontStackSharp.
+///     Uses embedded Roboto fonts with optimal scaling settings for high-quality rendering.
 /// </summary>
 public static class DefaultFontProvider
 {
     public const int DefaultFontSize = 14;
 
     /// <summary>
-    /// Creates and configures a FontSystem with optimal scaling parameters.
-    /// This uses embedded Roboto fonts from FontStashSharp for zero-dependency font rendering.
+    ///     Creates and configures a FontSystem with optimal scaling parameters.
+    ///     This uses embedded Roboto fonts from FontStashSharp for zero-dependency font rendering.
     /// </summary>
     /// <returns>The configured FontSystem, or null if initialization failed</returns>
     public static FontSystem? CreateDefaultFontSystem()
@@ -36,9 +36,9 @@ public static class DefaultFontProvider
                 foreach (var font in fonts)
                 {
                     var fontPath = Path.Combine(fontsFolder, font);
-                    
+
                     if (!File.Exists(fontPath)) continue;
-                    
+
                     fontSystem.AddFont(File.ReadAllBytes(fontPath));
                     Console.WriteLine($"[DefaultFontProvider] Loaded {font} from system fonts");
                     break;
@@ -61,7 +61,7 @@ public static class DefaultFontProvider
     }
 
     /// <summary>
-    /// Gets a SpriteFontBase at the default size from a FontSystem.
+    ///     Gets a SpriteFontBase at the default size from a FontSystem.
     /// </summary>
     /// <param name="fontSystem">The FontSystem to get the font from</param>
     /// <param name="size">Font size in pixels (default: 22)</param>

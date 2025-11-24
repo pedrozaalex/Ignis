@@ -16,13 +16,9 @@ public static class NumericsExtensions
         // Pitch (Y-axis rotation)
         double sinp = 2 * (q.W * q.Y - q.Z * q.X);
         if (Math.Abs(sinp) >= 1)
-        {
             eulerAngles.Y = (float)(Math.PI / 2 * Math.Sign(sinp)); // Use 90 degrees if out of range
-        }
         else
-        {
             eulerAngles.Y = (float)Math.Asin(sinp);
-        }
 
         // Yaw (Z-axis rotation)
         double sinyCosp = 2 * (q.W * q.Z + q.X * q.Y);
@@ -31,7 +27,7 @@ public static class NumericsExtensions
 
         return eulerAngles;
     }
-    
+
     public static void ExtractRotation(this Matrix4x4 matrix, out Quaternion rotation)
     {
         // Normalize the matrix to remove scaling
@@ -40,7 +36,7 @@ public static class NumericsExtensions
         scale.Y = new Vector3(matrix.M21, matrix.M22, matrix.M23).Length();
         scale.Z = new Vector3(matrix.M31, matrix.M32, matrix.M33).Length();
 
-        Matrix4x4 rotationMatrix = new Matrix4x4
+        var rotationMatrix = new Matrix4x4
         (
             matrix.M11 / scale.X, matrix.M12 / scale.X, matrix.M13 / scale.X, 0,
             matrix.M21 / scale.Y, matrix.M22 / scale.Y, matrix.M23 / scale.Y, 0,

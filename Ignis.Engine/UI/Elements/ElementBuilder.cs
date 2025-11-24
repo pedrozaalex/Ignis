@@ -9,12 +9,12 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Ignis.Engine.UI.Elements;
 
 /// <summary>
-/// Static builder API for creating UI elements declaratively.
+///     Static builder API for creating UI elements declaratively.
 /// </summary>
-public static partial class Elements
+public static class Elements
 {
     /// <summary>
-    /// Creates a container that lays out children vertically.
+    ///     Creates a container that lays out children vertically.
     /// </summary>
     public static IView Column(params IView[] children)
     {
@@ -29,7 +29,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a container that lays out children horizontally.
+    ///     Creates a container that lays out children horizontally.
     /// </summary>
     public static IView Row(params IView[] children)
     {
@@ -44,7 +44,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a text label with static text.
+    ///     Creates a text label with static text.
     /// </summary>
     public static IView Label(string text, SpriteFontBase? font = null, Color? color = null)
     {
@@ -55,7 +55,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a text label bound to a signal.
+    ///     Creates a text label bound to a signal.
     /// </summary>
     public static IView Label(Signal<string> textSignal, SpriteFontBase? font = null, Color? color = null)
     {
@@ -66,7 +66,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a text label bound to a computed value.
+    ///     Creates a text label bound to a computed value.
     /// </summary>
     public static IView Label(Computed<string> textComputed, SpriteFontBase? font = null, Color? color = null)
     {
@@ -77,7 +77,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a colored box.
+    ///     Creates a colored box.
     /// </summary>
     public static IView ColorBox(Color color, float width, float height)
     {
@@ -93,7 +93,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a button.
+    ///     Creates a button.
     /// </summary>
     public static IView Button(string label, Action onClick, SpriteFontBase? font = null)
     {
@@ -101,7 +101,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a button with enabled state signal.
+    ///     Creates a button with enabled state signal.
     /// </summary>
     public static IView Button(string label, Action onClick, Signal<bool>? isEnabled, SpriteFontBase? font = null)
     {
@@ -109,7 +109,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a float input field.
+    ///     Creates a float input field.
     /// </summary>
     public static IView FloatField(string label, Signal<float> value, SpriteFontBase? font = null)
     {
@@ -117,7 +117,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a horizontal separator line.
+    ///     Creates a horizontal separator line.
     /// </summary>
     public static IView Rule(Color? color = null, float thickness = 1f)
     {
@@ -133,7 +133,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a scroll view container.
+    ///     Creates a scroll view container.
     /// </summary>
     public static IView ScrollView(params IView[] children)
     {
@@ -149,7 +149,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a window with title and content.
+    ///     Creates a window with title and content.
     /// </summary>
     public static IView Window(string title, params IView[] content)
     {
@@ -157,7 +157,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Wraps a view with padding.
+    ///     Wraps a view with padding.
     /// </summary>
     public static IView Padding(IView child, float padding)
     {
@@ -175,7 +175,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a spacer with fixed size.
+    ///     Creates a spacer with fixed size.
     /// </summary>
     public static IView Spacer(float size)
     {
@@ -191,7 +191,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates a panel (styled container) with optional styling.
+    ///     Creates a panel (styled container) with optional styling.
     /// </summary>
     public static Panel Panel(params IView[] children)
     {
@@ -199,7 +199,7 @@ public static partial class Elements
     }
 
     /// <summary>
-    /// Creates an empty panel for fluent children-last API.
+    ///     Creates an empty panel for fluent children-last API.
     /// </summary>
     public static Panel Panel()
     {
@@ -240,7 +240,7 @@ public static partial class Elements
 }
 
 /// <summary>
-/// Text that automatically updates when a signal changes.
+///     Text that automatically updates when a signal changes.
 /// </summary>
 public class ReactiveText : Text
 {
@@ -263,14 +263,12 @@ public class ReactiveText : Text
 }
 
 /// <summary>
-/// Simple button view.
+///     Simple button view.
 /// </summary>
 public class ButtonView : ViewComponent, IViewContainer
 {
-    private readonly Panel _panel;
     private readonly Text _labelText;
-
-    public Signal<bool>? IsEnabled { get; set; }
+    private readonly Panel _panel;
 
     public ButtonView(string label, Action onClick, SpriteFontBase? font)
     {
@@ -285,27 +283,28 @@ public class ButtonView : ViewComponent, IViewContainer
         _panel.Layout.Focusable = false; // Buttons don't need focus, just hover/active
     }
 
+    public Signal<bool>? IsEnabled { get; set; }
+
+    public IEnumerable<IView> GetChildren()
+    {
+        yield return _panel;
+    }
+
     protected override void OnMount()
     {
         _panel.Mount(Context!);
-        
+
         // Update background color based on widget state using theme colors
         CreateEffect(() =>
         {
             var state = CurrentState;
-            
+
             if (state.HasFlag(WidgetState.Active))
-            {
                 _panel.BackgroundColor = Context!.Theme.PrimaryActive;
-            }
             else if (state.HasFlag(WidgetState.Hovered))
-            {
                 _panel.BackgroundColor = Context!.Theme.PrimaryHover;
-            }
             else
-            {
                 _panel.BackgroundColor = Context!.Theme.Primary;
-            }
         });
     }
 
@@ -318,15 +317,10 @@ public class ButtonView : ViewComponent, IViewContainer
     {
         // Drawing is handled by the panel
     }
-
-    public IEnumerable<IView> GetChildren()
-    {
-        yield return _panel;
-    }
 }
 
 /// <summary>
-/// Float input field (simplified - displays value and increment/decrement buttons).
+///     Float input field (simplified - displays value and increment/decrement buttons).
 /// </summary>
 public class FloatFieldView : ViewComponent, IViewContainer
 {
@@ -345,6 +339,11 @@ public class FloatFieldView : ViewComponent, IViewContainer
         _content.Layout.LayoutType = LayoutType.Row;
     }
 
+    public IEnumerable<IView> GetChildren()
+    {
+        yield return _content;
+    }
+
     protected override void OnMount()
     {
         _content.Mount(Context!);
@@ -357,10 +356,5 @@ public class FloatFieldView : ViewComponent, IViewContainer
 
     public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
     {
-    }
-
-    public IEnumerable<IView> GetChildren()
-    {
-        yield return _content;
     }
 }

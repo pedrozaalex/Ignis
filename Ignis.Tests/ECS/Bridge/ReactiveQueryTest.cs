@@ -6,7 +6,7 @@ using Ignis.Engine.ECS.Bridge;
 namespace Ignis.Tests.ECS.Bridge;
 
 /// <summary>
-/// Tests for ReactiveQuery - SignalList that synchronizes with ECS queries
+///     Tests for ReactiveQuery - SignalList that synchronizes with ECS queries
 /// </summary>
 public class ReactiveQueryTests
 {
@@ -15,7 +15,7 @@ public class ReactiveQueryTests
     {
         // Arrange
         var store = new EntityStore();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var entity = store.CreateGameObject();
             entity.Position.value = new Vector3(i, i, i);
@@ -105,4 +105,3 @@ public class ReactiveQueryTests
         Assert.DoesNotContain(e1, reactiveQuery.Items);
     }
 }
-

@@ -1,28 +1,19 @@
+using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Ignis.Engine.UI.Input;
 
 namespace Ignis.Engine.Input;
 
 public class InputService : IInputProvider
 {
-    private MouseState _currentMouse;
-    private MouseState _prevMouse;
     private KeyboardState _currentKey;
+    private MouseState _currentMouse;
     private KeyboardState _prevKey;
+    private MouseState _prevMouse;
 
     public event EventHandler<TextInputEventArgs>? TextInput;
 
     public Vector2 MousePosition => new(_currentMouse.X, _currentMouse.Y);
-
-    public void Update()
-    {
-        _prevMouse = _currentMouse;
-        _currentMouse = Mouse.GetState();
-        
-        _prevKey = _currentKey;
-        _currentKey = Keyboard.GetState();
-    }
 
     public bool IsMouseButtonPressed(int buttonIndex)
     {
@@ -57,9 +48,15 @@ public class InputService : IInputProvider
         };
     }
 
-    public bool IsKeyDown(Keys key) => _currentKey.IsKeyDown(key);
-    
-    public bool IsKeyPressed(Keys key) => _currentKey.IsKeyDown(key) && !_prevKey.IsKeyDown(key);
+    public bool IsKeyDown(Keys key)
+    {
+        return _currentKey.IsKeyDown(key);
+    }
+
+    public bool IsKeyPressed(Keys key)
+    {
+        return _currentKey.IsKeyDown(key) && !_prevKey.IsKeyDown(key);
+    }
 
     public ModifierKeys GetModifiers()
     {
@@ -72,18 +69,48 @@ public class InputService : IInputProvider
             modifiers |= ModifierKeys.Alt;
         return modifiers;
     }
-    
-    public MouseState GetCurrentMouseState() => _currentMouse;
-    public MouseState GetPreviousMouseState() => _prevMouse;
-    public KeyboardState GetCurrentKeyboardState() => _currentKey;
-    public KeyboardState GetPreviousKeyboardState() => _prevKey;
-    
-    public Keys[] GetPressedKeys() => _currentKey.GetPressedKeys();
-    public Keys[] GetPreviousPressedKeys() => _prevKey.GetPressedKeys();
-    
+
+    public void Update()
+    {
+        _prevMouse = _currentMouse;
+        _currentMouse = Mouse.GetState();
+
+        _prevKey = _currentKey;
+        _currentKey = Keyboard.GetState();
+    }
+
+    public MouseState GetCurrentMouseState()
+    {
+        return _currentMouse;
+    }
+
+    public MouseState GetPreviousMouseState()
+    {
+        return _prevMouse;
+    }
+
+    public KeyboardState GetCurrentKeyboardState()
+    {
+        return _currentKey;
+    }
+
+    public KeyboardState GetPreviousKeyboardState()
+    {
+        return _prevKey;
+    }
+
+    public Keys[] GetPressedKeys()
+    {
+        return _currentKey.GetPressedKeys();
+    }
+
+    public Keys[] GetPreviousPressedKeys()
+    {
+        return _prevKey.GetPressedKeys();
+    }
+
     internal void RaiseTextInput(char character, Keys key)
     {
         TextInput?.Invoke(this, new TextInputEventArgs(character, key));
     }
 }
-

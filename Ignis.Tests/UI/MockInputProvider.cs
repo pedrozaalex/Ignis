@@ -8,47 +8,14 @@ namespace Ignis.Tests.UI;
 
 public class MockInputProvider : IInputProvider
 {
-    private Vector2 _mousePosition;
-    private readonly Dictionary<int, bool> _mouseButtons = new();
-    private readonly Dictionary<int, bool> _prevMouseButtons = new();
     private readonly HashSet<Keys> _keysDown = new();
+    private readonly Dictionary<int, bool> _mouseButtons = new();
     private readonly HashSet<Keys> _prevKeysDown = new();
+    private readonly Dictionary<int, bool> _prevMouseButtons = new();
 
     public event EventHandler<TextInputEventArgs>? TextInput;
 
-    public Vector2 MousePosition
-    {
-        get => _mousePosition;
-        set => _mousePosition = value;
-    }
-
-    public void SetMouseButton(int buttonIndex, bool isPressed)
-    {
-        _mouseButtons[buttonIndex] = isPressed;
-    }
-
-    public void SetKey(Keys key, bool isDown)
-    {
-        if (isDown)
-            _keysDown.Add(key);
-        else
-            _keysDown.Remove(key);
-    }
-
-    public void Update()
-    {
-        _prevMouseButtons.Clear();
-        foreach (var kvp in _mouseButtons)
-        {
-            _prevMouseButtons[kvp.Key] = kvp.Value;
-        }
-
-        _prevKeysDown.Clear();
-        foreach (var key in _keysDown)
-        {
-            _prevKeysDown.Add(key);
-        }
-    }
+    public Vector2 MousePosition { get; set; }
 
     public bool IsMouseButtonPressed(int buttonIndex)
     {
@@ -90,10 +57,9 @@ public class MockInputProvider : IInputProvider
             modifiers |= ModifierKeys.Alt;
         return modifiers;
     }
-    
+
     public void SimulateTextInput(char character, Keys key = Keys.None)
     {
         TextInput?.Invoke(this, new TextInputEventArgs(character, key));
     }
 }
-

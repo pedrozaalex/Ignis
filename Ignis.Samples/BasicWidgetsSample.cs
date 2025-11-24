@@ -13,19 +13,19 @@ using Console = System.Console;
 namespace Ignis.Samples;
 
 /// <summary>
-/// BasicWidgetsSample - Demonstrates basic widget functionality and reactive updates.
-/// Shows TextField, NumberField, Checkbox, Slider, and how they update reactively.
+///     BasicWidgetsSample - Demonstrates basic widget functionality and reactive updates.
+///     Shows TextField, NumberField, Checkbox, Slider, and how they update reactively.
 /// </summary>
 public class BasicWidgetsSample : IgnisGame
 {
-    private UIContext? _uiContext;
-    private SpriteBatch? _spriteBatch;
+    private readonly Signal<int> _health = new(100);
+    private readonly Signal<bool> _isAlive = new(true);
 
     // Reactive state
     private readonly Signal<string?> _playerName = new("Player Name");
-    private readonly Signal<int> _health = new(100);
-    private readonly Signal<bool> _isAlive = new(true);
     private readonly Signal<float> _volume = new(0.75f);
+    private SpriteBatch? _spriteBatch;
+    private UIContext? _uiContext;
 
     public BasicWidgetsSample() : base(new IgnisApp(new EngineSettings
     {
@@ -81,8 +81,8 @@ public class BasicWidgetsSample : IgnisGame
     private IView BuildUI()
     {
         // Get theme-aware colors - will resolve when context is available
-        Color titleColor = Color.White; // Will be overridden in OnMount via theme
-        Color warningColor = Color.White; // Will be overridden in OnMount via theme
+        var titleColor = Color.White; // Will be overridden in OnMount via theme
+        var warningColor = Color.White; // Will be overridden in OnMount via theme
 
         // Content panel
         var contentPanel = Panel()
@@ -174,108 +174,6 @@ public class BasicWidgetsSample : IgnisGame
         return new ThemedSubheadingView(text);
     }
 
-    // Helper components that resolve colors from theme after mounting
-    private class ThemedTitleView : ViewComponent, IViewContainer
-    {
-        private readonly IView _title;
-
-        public ThemedTitleView(string text)
-        {
-            _title = Title(text, Color.White); // Will be updated in OnMount
-        }
-
-        protected override void OnMount()
-        {
-            _title.Mount(Context!);
-            // Update color from theme
-            if (_title is IViewContainer container)
-            {
-                foreach (var child in container.GetChildren())
-                {
-                    if (child is Text textView)
-                    {
-                        textView.Color = Context!.Theme.Info;
-                    }
-                }
-            }
-        }
-
-        protected override void OnUnmount() => _title.Unmount();
-
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
-        {
-        }
-
-        public IEnumerable<IView> GetChildren()
-        {
-            yield return _title;
-        }
-    }
-
-    private class ThemedSubheadingView : ViewComponent, IViewContainer
-    {
-        private readonly IView _subheading;
-
-        public ThemedSubheadingView(string text)
-        {
-            _subheading = Subheading(text, Color.White);
-        }
-
-        protected override void OnMount()
-        {
-            _subheading.Mount(Context!);
-            if (_subheading is IViewContainer container)
-            {
-                foreach (var child in container.GetChildren())
-                {
-                    if (child is Text textView)
-                    {
-                        textView.Color = Context!.Theme.Warning;
-                    }
-                }
-            }
-        }
-
-        protected override void OnUnmount() => _subheading.Unmount();
-
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
-        {
-        }
-
-        public IEnumerable<IView> GetChildren()
-        {
-            yield return _subheading;
-        }
-    }
-
-    private class ThemedPanelView : ViewComponent, IViewContainer
-    {
-        private readonly Panel _panel;
-
-        public ThemedPanelView(Panel panel)
-        {
-            _panel = panel;
-        }
-
-        protected override void OnMount()
-        {
-            _panel.Mount(Context!);
-            _panel.BorderColor = Context!.Theme.Primary;
-            _panel.BorderThickness = 1f;
-        }
-
-        protected override void OnUnmount() => _panel.Unmount();
-
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
-        {
-        }
-
-        public IEnumerable<IView> GetChildren()
-        {
-            yield return _panel;
-        }
-    }
-
     private void SetupReactiveLogging()
     {
         // Log when player name changed
@@ -357,5 +255,104 @@ public class BasicWidgetsSample : IgnisGame
         }
 
         base.Dispose(disposing);
+    }
+
+    // Helper components that resolve colors from theme after mounting
+    private class ThemedTitleView : ViewComponent, IViewContainer
+    {
+        private readonly IView _title;
+
+        public ThemedTitleView(string text)
+        {
+            _title = Title(text, Color.White); // Will be updated in OnMount
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _title;
+        }
+
+        protected override void OnMount()
+        {
+            _title.Mount(Context!);
+            // Update color from theme
+            if (_title is IViewContainer container)
+                foreach (var child in container.GetChildren())
+                    if (child is Text textView)
+                        textView.Color = Context!.Theme.Info;
+        }
+
+        protected override void OnUnmount()
+        {
+            _title.Unmount();
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
+    }
+
+    private class ThemedSubheadingView : ViewComponent, IViewContainer
+    {
+        private readonly IView _subheading;
+
+        public ThemedSubheadingView(string text)
+        {
+            _subheading = Subheading(text, Color.White);
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _subheading;
+        }
+
+        protected override void OnMount()
+        {
+            _subheading.Mount(Context!);
+            if (_subheading is IViewContainer container)
+                foreach (var child in container.GetChildren())
+                    if (child is Text textView)
+                        textView.Color = Context!.Theme.Warning;
+        }
+
+        protected override void OnUnmount()
+        {
+            _subheading.Unmount();
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
+    }
+
+    private class ThemedPanelView : ViewComponent, IViewContainer
+    {
+        private readonly Panel _panel;
+
+        public ThemedPanelView(Panel panel)
+        {
+            _panel = panel;
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _panel;
+        }
+
+        protected override void OnMount()
+        {
+            _panel.Mount(Context!);
+            _panel.BorderColor = Context!.Theme.Primary;
+            _panel.BorderThickness = 1f;
+        }
+
+        protected override void OnUnmount()
+        {
+            _panel.Unmount();
+        }
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
     }
 }

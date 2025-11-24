@@ -12,26 +12,31 @@ using static Ignis.Engine.UI.Elements.Elements;
 namespace Ignis.Engine.UI.Examples;
 
 /// <summary>
-/// EditorLayout - Example of a complete game editor UI built with the Widget library.
-/// Refactored to use robust explicit sizing to prevent layout collapse.
+///     EditorLayout - Example of a complete game editor UI built with the Widget library.
+///     Refactored to use robust explicit sizing to prevent layout collapse.
 /// </summary>
 public class EditorLayout : ViewComponent, IViewContainer
 {
+    private readonly SignalList<LogEntry> _consoleEntries = new();
+    private readonly SignalList<TreeNode<string>> _hierarchyNodes = new();
     private readonly IView _root;
+    private readonly Signal<Color> _selectedColor = new(Color.White);
 
     // State
     private readonly Signal<string?> _selectedEntityName = new("None");
-    private readonly SignalList<TreeNode<string>> _hierarchyNodes = new();
-    private readonly SignalList<LogEntry> _consoleEntries = new();
     private readonly Signal<Vector3> _selectedPosition = new(Vector3.Zero);
     private readonly Signal<Vector3> _selectedRotation = new(Vector3.Zero);
     private readonly Signal<Vector3> _selectedScale = new(Vector3.One);
-    private readonly Signal<Color> _selectedColor = new(Color.White);
 
     public EditorLayout()
     {
         InitializeSampleData();
         _root = BuildLayout();
+    }
+
+    public IEnumerable<IView> GetChildren()
+    {
+        yield return _root;
     }
 
     private IView BuildLayout()
@@ -47,7 +52,7 @@ public class EditorLayout : ViewComponent, IViewContainer
         // for their percentage-based children.
 
         // Bottom-Right: Inspector (40%) | Console (60%)
-        var bottomRightSplit = new Splitter(inspectorPanel, consolePanel, isVertical: false)
+        var bottomRightSplit = new Splitter(inspectorPanel, consolePanel, false)
             {
                 SplitRatio = 0.4f
             }
@@ -55,7 +60,7 @@ public class EditorLayout : ViewComponent, IViewContainer
             .Height(Units.Stretch(1));
 
         // Right Pane: Scene (60%) / Bottom-Right (40%)
-        var rightPaneSplit = new Splitter(scenePanel, bottomRightSplit, isVertical: true)
+        var rightPaneSplit = new Splitter(scenePanel, bottomRightSplit, true)
             {
                 SplitRatio = 0.6f
             }
@@ -63,7 +68,7 @@ public class EditorLayout : ViewComponent, IViewContainer
             .Height(Units.Stretch(1));
 
         // Main Split: Hierarchy (20%) | Right Pane (80%)
-        var mainSplit = new Splitter(hierarchyPanel, rightPaneSplit, isVertical: false)
+        var mainSplit = new Splitter(hierarchyPanel, rightPaneSplit, false)
             {
                 SplitRatio = 0.2f
             }
@@ -157,7 +162,7 @@ public class EditorLayout : ViewComponent, IViewContainer
 
     private IView CreateConsolePanel()
     {
-        var consoleView = new Ignis.Engine.UI.Widgets.Console(_consoleEntries)
+        var consoleView = new Console(_consoleEntries)
             .Height(Units.Stretch(1));
 
         var controls = Row(
@@ -242,14 +247,12 @@ public class EditorLayout : ViewComponent, IViewContainer
         });
     }
 
-    protected override void OnUnmount() => _root.Unmount();
+    protected override void OnUnmount()
+    {
+        _root.Unmount();
+    }
 
     public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
     {
-    }
-
-    public IEnumerable<IView> GetChildren()
-    {
-        yield return _root;
     }
 }

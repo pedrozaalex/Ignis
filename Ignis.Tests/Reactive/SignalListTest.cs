@@ -3,7 +3,7 @@ using Ignis.Engine.Reactive;
 namespace Ignis.Tests.Reactive;
 
 /// <summary>
-/// Tests for SignalList&lt;T&gt; - Observable collection with fine-grained change notifications
+///     Tests for SignalList&lt;T&gt; - Observable collection with fine-grained change notifications
 /// </summary>
 public class SignalListTests
 {
@@ -93,4 +93,3 @@ public class SignalListTests
         Assert.Equal(1, list.IndexOf(10));
     }
 }
-

@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Ignis.Tests.UI;
 
 /// <summary>
-/// Tests for Bind.If and Bind.For - Control flow in reactive UI
+///     Tests for Bind.If and Bind.For - Control flow in reactive UI
 /// </summary>
 public class BindTests
 {
@@ -186,10 +186,7 @@ public class BindTests
         var viewInstances = new Dictionary<string, MockView>();
         var listView = Bind.For(list, item =>
         {
-            if (!viewInstances.ContainsKey(item))
-            {
-                viewInstances[item] = new MockView();
-            }
+            if (!viewInstances.ContainsKey(item)) viewInstances[item] = new MockView();
             return viewInstances[item];
         });
 

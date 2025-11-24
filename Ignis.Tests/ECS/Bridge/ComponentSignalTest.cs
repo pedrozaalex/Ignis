@@ -7,7 +7,7 @@ using Ignis.Engine.Reactive;
 namespace Ignis.Tests.ECS.Bridge;
 
 /// <summary>
-/// Tests for ComponentSignal&lt;T&gt; - Reactive bridge between ECS components and Signals
+///     Tests for ComponentSignal&lt;T&gt; - Reactive bridge between ECS components and Signals
 /// </summary>
 public class ComponentSignalTests
 {
@@ -106,4 +106,3 @@ public class ComponentSignalTests
         Assert.Equal(default, result);
     }
 }
-

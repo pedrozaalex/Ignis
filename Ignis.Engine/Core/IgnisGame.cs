@@ -7,29 +7,14 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Ignis.Engine.Core;
 
 /// <summary>
-/// MonoGame Wrapper - Manages GraphicsDevice and visual rendering
-/// Inherits from MonoGame's Game class
+///     MonoGame Wrapper - Manages GraphicsDevice and visual rendering
+///     Inherits from MonoGame's Game class
 /// </summary>
 public class IgnisGame : Game
 {
     private readonly GraphicsDeviceManager _graphics;
-    private SpriteBatch? _spriteBatch;
     private RenderSystem? _renderSystem;
-
-    /// <summary>
-    /// The headless core application
-    /// </summary>
-    public IgnisApp App { get; }
-    
-    /// <summary>
-    /// FontSystem for dynamic font loading using FontStashSharp.
-    /// </summary>
-    public FontSystem? FontSystem { get; private set; }
-    
-    /// <summary>
-    /// The default font for UI rendering. Automatically loaded during LoadContent().
-    /// </summary>
-    public SpriteFontBase? DefaultFont { get; private set; }
+    private SpriteBatch? _spriteBatch;
 
     public IgnisGame(IgnisApp? app = null)
     {
@@ -46,19 +31,30 @@ public class IgnisGame : Game
         IsMouseVisible = true;
         Window.Title = App.Settings.WindowTitle;
         Window.AllowUserResizing = true;
-
     }
+
+    /// <summary>
+    ///     The headless core application
+    /// </summary>
+    public IgnisApp App { get; }
+
+    /// <summary>
+    ///     FontSystem for dynamic font loading using FontStashSharp.
+    /// </summary>
+    public FontSystem? FontSystem { get; private set; }
+
+    /// <summary>
+    ///     The default font for UI rendering. Automatically loaded during LoadContent().
+    /// </summary>
+    public SpriteFontBase? DefaultFont { get; private set; }
 
     protected override void Initialize()
     {
         base.Initialize();
-        
+
         // Hook up text input events to InputService
-        Window.TextInput += (sender, args) =>
-        {
-            App.Input.RaiseTextInput(args.Character, args.Key);
-        };
-        
+        Window.TextInput += (sender, args) => { App.Input.RaiseTextInput(args.Character, args.Key); };
+
         App.Initialize();
     }
 
@@ -70,10 +66,7 @@ public class IgnisGame : Game
 
         // Create FontSystem with optimal scaling parameters
         FontSystem = DefaultFontProvider.CreateDefaultFontSystem();
-        if (FontSystem != null)
-        {
-            DefaultFont = DefaultFontProvider.GetDefaultFont(FontSystem);
-        }
+        if (FontSystem != null) DefaultFont = DefaultFontProvider.GetDefaultFont(FontSystem);
 
         App.LoadContent();
     }
@@ -83,7 +76,7 @@ public class IgnisGame : Game
         // Poll input (TODO: Phase 5)
 
         // Step the headless core
-        double deltaTime = gameTime.ElapsedGameTime.TotalSeconds;
+        var deltaTime = gameTime.ElapsedGameTime.TotalSeconds;
         App.Update(deltaTime);
 
         base.Update(gameTime);
@@ -104,16 +97,13 @@ public class IgnisGame : Game
         OnRender3D();
 
         // Render 2D UI Overlay
-        if (_spriteBatch != null)
-        {
-            OnRenderUI(_spriteBatch);
-        }
+        if (_spriteBatch != null) OnRenderUI(_spriteBatch);
 
         base.Draw(gameTime);
     }
 
     /// <summary>
-    /// Override this to render 3D content
+    ///     Override this to render 3D content
     /// </summary>
     protected virtual void OnRender3D()
     {
@@ -122,7 +112,7 @@ public class IgnisGame : Game
     }
 
     /// <summary>
-    /// Override this to render 2D UI overlay
+    ///     Override this to render 2D UI overlay
     /// </summary>
     protected virtual void OnRenderUI(SpriteBatch spriteBatch)
     {
