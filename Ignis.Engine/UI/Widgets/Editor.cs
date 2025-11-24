@@ -21,7 +21,6 @@ namespace Ignis.Engine.UI.Widgets
         {
             _container = new Panel
             {
-                BackgroundColor = new Color(37, 37, 38),
                 Layout =
                 {
                     LayoutType = LayoutType.Column,
@@ -111,8 +110,6 @@ namespace Ignis.Engine.UI.Widgets
 
             _container = new Panel(_treeView)
             {
-                BackgroundColor = new Color(37, 37, 38),
-                BorderColor = new Color(63, 63, 70),
                 BorderThickness = 1f,
                 Layout =
                 {
@@ -194,8 +191,6 @@ namespace Ignis.Engine.UI.Widgets
 
             _container = new Panel(preview, slidersPanel)
             {
-                BackgroundColor = new Color(45, 45, 48),
-                BorderColor = new Color(63, 63, 70),
                 BorderThickness = 1f,
                 Layout =
                 {
@@ -358,7 +353,6 @@ namespace Ignis.Engine.UI.Widgets
 
             var textField = new TextField(new Signal<string?>(value.Value.ToString("F2")))
             {
-                BackgroundColor = new Color(51, 51, 55),
                 Layout =
                 {
                     Width = Units.Stretch(1),
@@ -372,13 +366,18 @@ namespace Ignis.Engine.UI.Widgets
             return container;
         }
 
-        private Color GetAxisColor(string axis) => axis switch
+        private Color GetAxisColor(string axis)
         {
-            "X" => new Color(255, 100, 100), // Red
-            "Y" => new Color(100, 255, 100), // Green
-            "Z" => new Color(100, 150, 255), // Blue
-            _ => Color.White
-        };
+            if (Context == null) return Color.White;
+            
+            return axis switch
+            {
+                "X" => Context.Theme.Accent1,  // Red-ish for X axis
+                "Y" => Context.Theme.Accent2,  // Green-ish for Y axis
+                "Z" => Context.Theme.Accent3,  // Blue-ish for Z axis
+                _ => Color.White
+            };
+        }
 
         protected override void OnMount()
         {
@@ -438,8 +437,6 @@ namespace Ignis.Engine.UI.Widgets
 
             var tile = new Panel(icon, label)
             {
-                BackgroundColor = new Color(51, 51, 55),
-                BorderColor = new Color(63, 63, 70),
                 BorderThickness = 1f,
                 Layout =
                 {
@@ -520,7 +517,6 @@ namespace Ignis.Engine.UI.Widgets
             var row = new Panel(icon, message)
             {
                 BackgroundColor = Color.Transparent,
-                BorderColor = new Color(63, 63, 70),
                 BorderThickness = 0f,
                 Layout =
                 {
@@ -542,13 +538,18 @@ namespace Ignis.Engine.UI.Widgets
             _ => "[-]"
         };
 
-        private Color GetLogColor(LogLevel level) => level switch
+        private Color GetLogColor(LogLevel level)
         {
-            LogLevel.Error => new Color(255, 100, 100),
-            LogLevel.Warning => new Color(255, 200, 100),
-            LogLevel.Info => new Color(100, 200, 255),
-            _ => Color.LightGray
-        };
+            if (Context == null) return Color.LightGray;
+            
+            return level switch
+            {
+                LogLevel.Error => Context.Theme.ErrorColor,
+                LogLevel.Warning => Context.Theme.WarningColor,
+                LogLevel.Info => Context.Theme.InfoColor,
+                _ => Color.LightGray
+            };
+        }
 
         protected override void OnMount()
         {

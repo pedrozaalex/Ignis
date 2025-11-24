@@ -14,21 +14,21 @@ namespace Ignis.Engine.UI.Elements
     /// </summary>
     public class Box : ViewComponent
     {
-        private Color Color { get; set; } = Color.White;
+        private Color? Color { get; set; }
 
         public Box()
         {
         }
 
-        public Box(Color color)
+        public Box(Color? color)
         {
             Color = color;
         }
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            // Draw using PrimitiveBatch
-            Context?.PrimitiveBatch?.DrawFilledRectangle(bounds, Color);
+            var color = Color ?? Context?.Theme.BorderColor ?? Microsoft.Xna.Framework.Color.Gray;
+            Context?.PrimitiveBatch?.DrawFilledRectangle(bounds, color);
         }
     }
 

@@ -132,7 +132,6 @@ namespace Ignis.Engine.UI.Widgets
             var titleLabel = new Text { Content = title, Color = Color.White };
             _titleBar = new Panel(titleLabel)
             {
-                BackgroundColor = new Color(37, 37, 38)
             };
             _titleBar.Layout.Height = Units.Pixels(30);
             _titleBar.Layout.Width = Units.Stretch(1);

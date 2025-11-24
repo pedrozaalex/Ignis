@@ -135,8 +135,6 @@ public class HierarchyWidgetSample : IgnisGame
 
         var panel = new Panel(title, hierarchy)
         {
-            BackgroundColor = new Color(37, 37, 38),
-            BorderColor = new Color(63, 63, 70),
             BorderThickness = 1f,
             Layout =
             {
@@ -193,8 +191,6 @@ public class HierarchyWidgetSample : IgnisGame
             buttonPanel
         )
         {
-            BackgroundColor = new Color(37, 37, 38),
-            BorderColor = new Color(63, 63, 70),
             BorderThickness = 1f,
             Layout =
             {
@@ -237,8 +233,6 @@ public class HierarchyWidgetSample : IgnisGame
         
         var button = new Panel(label)
         {
-            BackgroundColor = new Color(0, 122, 204),
-            BorderColor = new Color(0, 100, 180),
             BorderThickness = 1f,
             Layout =
             {
@@ -250,7 +244,31 @@ public class HierarchyWidgetSample : IgnisGame
             }
         };
 
-        return button;
+        // Wrap to set button colors from theme after mount
+        return new ThemedButton(button);
+    }
+
+    // Helper class to apply theme colors to buttons
+    private class ThemedButton : ViewComponent, IViewContainer
+    {
+        private readonly Panel _button;
+
+        public ThemedButton(Panel button)
+        {
+            _button = button;
+        }
+
+        protected override void OnMount()
+        {
+            _button.Mount(Context!);
+            _button.BackgroundColor = Context!.Theme.PrimaryColor;
+            // Slightly darker border for depth
+            _button.BorderColor = Color.Lerp(Context!.Theme.PrimaryColor, Color.Black, 0.2f);
+        }
+
+        protected override void OnUnmount() => _button.Unmount();
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds) { }
+        public IEnumerable<IView> GetChildren() { yield return _button; }
     }
 
     private IView CreateConsolePanel()
@@ -280,8 +298,6 @@ public class HierarchyWidgetSample : IgnisGame
 
         var panel = new Panel(title, consoleWidget, statsLabel)
         {
-            BackgroundColor = new Color(37, 37, 38),
-            BorderColor = new Color(63, 63, 70),
             BorderThickness = 1f,
             Layout =
             {
@@ -298,7 +314,6 @@ public class HierarchyWidgetSample : IgnisGame
 
         var panel = new Panel(label)
         {
-            BackgroundColor = new Color(45, 45, 48),
             Layout =
             {
                 Height = Units.Pixels(30),

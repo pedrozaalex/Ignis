@@ -85,7 +85,6 @@ namespace Ignis.Engine.UI.Widgets
 
             _contentArea = new Panel
             {
-                BackgroundColor = new Color(37, 37, 38),
                 Layout =
                 {
                     Height = Units.Stretch(1)

@@ -3,6 +3,7 @@ using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static Ignis.Engine.UI.Elements.Elements;
@@ -78,15 +79,14 @@ public class TransformInspectorSample : IgnisGame
     private IView BuildTransformInspector()
     {
         return Panel()
-            .Background(new Color(30, 30, 32))
             .Width(Units.Stretch(1))
             .Height(Units.Stretch(1))
             .Padding(30)
             .AlignCenter()
             .Children(
                 Column(
-                    // Header
-                    Label("Transform Inspector", null, new Color(100, 200, 255))
+                    // Header - use themed label
+                    CreateThemedLabel("Transform Inspector")
                         .Padding(20)
                         .PaddingBottom(10),
                     Label("Declarative API Demo", null, Color.Gray)
@@ -250,6 +250,34 @@ public class TransformInspectorSample : IgnisGame
         _uiContext?.Draw(spriteBatch);
     }
 
+    private IView CreateThemedLabel(string text)
+    {
+        return new ThemedLabelView(text);
+    }
+
+    // Helper component that resolves color from theme after mounting
+    private class ThemedLabelView : ViewComponent, IViewContainer
+    {
+        private readonly IView _label;
+
+        public ThemedLabelView(string text)
+        {
+            _label = Label(text, null, Color.White);
+        }
+
+        protected override void OnMount()
+        {
+            _label.Mount(Context!);
+            if (_label is Text textView)
+            {
+                textView.Color = Context!.Theme.InfoColor;
+            }
+        }
+
+        protected override void OnUnmount() => _label.Unmount();
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds) { }
+        public IEnumerable<IView> GetChildren() { yield return _label; }
+    }
     protected override void Dispose(bool disposing)
     {
         if (disposing)

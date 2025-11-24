@@ -83,7 +83,7 @@ public class EditorLayout : ViewComponent, IViewContainer
 
     private IView CreateMenuBar()
     {
-        var menuBar = new MenuBar { BackgroundColor = new Color(45, 45, 48) };
+        var menuBar = new MenuBar();
 
         var fileMenu = new Menu("File");
         fileMenu.AddItem(new MenuItem("New Scene", () => Log("New Scene")));
@@ -124,14 +124,12 @@ public class EditorLayout : ViewComponent, IViewContainer
     {
         // Placeholder for 3D viewport
         var viewport = Panel()
-            .Background(new Color(30, 30, 35))
             .Height(Units.Stretch(1));
 
         var controls = Row(
                 new Checkbox("Grid", new Signal<bool>(true)).PaddingLeft(8),
                 new Checkbox("Gizmos", new Signal<bool>(true)).PaddingLeft(8)
             )
-            // .Background(new Color(45, 45, 48))
             .PaddingTop(6)
             .Height(35);
 
@@ -187,14 +185,11 @@ public class EditorLayout : ViewComponent, IViewContainer
         var titleBar = Panel(
                 new Text { Content = title, Color = Color.White }
             )
-            .Background(new Color(45, 45, 48))
             .Height(28)
             .PaddingLeft(8)
             .PaddingTop(6);
 
         return Column(titleBar, content)
-            // .Background(new Color(37, 37, 38))
-            // .Border(new Color(63, 63, 70))
             .Width(Units.Stretch(1))
             .Height(Units.Stretch(1));
     }

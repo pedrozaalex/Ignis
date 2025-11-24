@@ -119,7 +119,7 @@ namespace Ignis.Engine.UI.Widgets
 
             var batch = Context.PrimitiveBatch;
             
-            var bg = BackgroundColor ?? new Color(51, 51, 55);
+            var bg = BackgroundColor ?? Context.Theme.BackgroundColor;
             var fill = FillColor ?? Context.Theme.PrimaryColor;
             var border = BorderColor ?? Context.Theme.BorderColor;
             
@@ -213,17 +213,17 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly IView _content;
         private readonly Signal<bool> _isVisible;
+        private readonly Color? _backgroundColor;
 
-        public Tooltip(string text, Signal<bool> isVisible, SpriteFontBase? font = null)
+        public Tooltip(string text, Signal<bool> isVisible, SpriteFontBase? font = null, Color? backgroundColor = null)
         {
             _isVisible = isVisible;
+            _backgroundColor = backgroundColor;
 
             var textView = new Text(font) { Content = text, Color = Color.White };
 
             _content = new Panel(textView)
             {
-                BackgroundColor = new Color(30, 30, 30, 240),
-                BorderColor = new Color(100, 100, 100),
                 BorderThickness = 1f
             };
             _content.Layout.PaddingLeft = Units.Pixels(8);
@@ -236,6 +236,12 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _content.Mount(Context!);
+            
+            // Set background color from theme after mounting when Context is available
+            if (_content is Panel panel)
+            {
+                panel.BackgroundColor = _backgroundColor ?? Context!.Theme.TooltipBackground;
+            }
 
             CreateEffect(() =>
             {

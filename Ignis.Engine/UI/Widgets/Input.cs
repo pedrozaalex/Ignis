@@ -44,7 +44,6 @@ namespace Ignis.Engine.UI.Widgets
             // Internal panel for visuals (Background, Border, Padding)
             _root = new Panel(_textView)
             {
-                BackgroundColor = new Color(51, 51, 55),
                 BorderThickness = 1f,
                 Layout =
                 {
@@ -67,6 +66,12 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _root.Mount(Context!);
+            
+            // Set default background to InputBackground from theme if not explicitly set
+            if (_root.BackgroundColor == null)
+            {
+                _root.BackgroundColor = Context!.Theme.InputBackground;
+            }
 
             // Update text view when signal changes
             CreateEffect(() => { _textView.Content = _text.Value ?? ""; });
@@ -119,8 +124,6 @@ namespace Ignis.Engine.UI.Widgets
                 // ).Gap(2)
             )
             {
-                BackgroundColor = new Color(51, 51, 55),
-                BorderColor = new Color(63, 63, 70),
                 Layout =
                 {
                     LayoutType = LayoutType.Row,
@@ -133,8 +136,6 @@ namespace Ignis.Engine.UI.Widgets
         private static IView Button(string label, Action onClick)
         {
             return new Panel(new Text { Content = label, Color = Color.White })
-                .Background(new Color(62, 62, 66))
-                .Border(new Color(63, 63, 70))
                 .Width(Units.Pixels(22))
                 .Height(Units.Pixels(22))
                 .AlignCenter()

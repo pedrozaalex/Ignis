@@ -3,6 +3,7 @@ using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
 using Ignis.Engine.UI.Widgets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -80,17 +81,20 @@ public class BasicWidgetsSample : IgnisGame
 
     private IView BuildUI()
     {
+        // Get theme-aware colors - will resolve when context is available
+        Color titleColor = Color.White; // Will be overridden in OnMount via theme
+        Color warningColor = Color.White; // Will be overridden in OnMount via theme
+
         // Content panel
         var contentPanel = Panel()
-            .Background(new Color(37, 37, 38))
-            .Border(new Color(63, 63, 70), 2f)
+            .Border(Color.Transparent, 2f)
             .Width(Units.Auto)
             .Height(Units.Auto)
             .Padding(30)
             .Children(
                 Column(
-                    // Title using the new Title() helper (32pt)
-                    Title("Basic Widgets Demo", new Color(100, 200, 255)),
+                    // Title using the new Title() helper (32pt) - use theme InfoColor
+                    CreateThemedTitle("Basic Widgets Demo"),
                     Rule(),
 
                     // Section Heading (24pt)
@@ -129,28 +133,148 @@ public class BasicWidgetsSample : IgnisGame
                     Rule(),
 
                     // Status Panel with Subheading (18pt)
-                    Panel()
-                        .Background(new Color(45, 45, 48))
-                        .Border(new Color(0, 122, 204))
-                        .Padding(15)
-                        .Gap(5)
-                        .Children(
-                            Subheading("Current State (Reactive)", new Color(255, 200, 100)),
-                            Label(Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")),
-                            Label(Computed<string>.From(() => $"Health: {_health.Value}/100")),
-                            Label(Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")),
-                            Label(Computed<string>.From(() => $"Volume: {_volume.Value * 100:F0}%"))
-                        )
+                    CreateStatusPanel()
                 )
             );
 
-        // Wrapper to center content
+        // Wrapper to center content - uses theme BackgroundColor by default
         return Panel()
-            .Background(new Color(25, 25, 28))
             .Width(Units.Stretch(1))
             .Height(Units.Stretch(1))
             .Align(Alignment.Center)
             .Children(contentPanel);
+    }
+
+    private IView CreateThemedTitle(string text)
+    {
+        // Create a custom component that resolves color from theme after mount
+        var titleView = new ThemedTitleView(text);
+        return titleView;
+    }
+
+    private IView CreateStatusPanel()
+    {
+        var panel = Panel()
+            .Padding(15)
+            .Gap(5)
+            .Children(
+                CreateThemedSubheading("Current State (Reactive)"),
+                Label(Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")),
+                Label(Computed<string>.From(() => $"Health: {_health.Value}/100")),
+                Label(Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")),
+                Label(Computed<string>.From(() => $"Volume: {_volume.Value * 100:F0}%"))
+            );
+
+        // Set border to use PrimaryColor after mount
+        var wrapper = new ThemedPanelView(panel);
+        return wrapper;
+    }
+
+    private IView CreateThemedSubheading(string text)
+    {
+        return new ThemedSubheadingView(text);
+    }
+
+    // Helper components that resolve colors from theme after mounting
+    private class ThemedTitleView : ViewComponent, IViewContainer
+    {
+        private readonly IView _title;
+
+        public ThemedTitleView(string text)
+        {
+            _title = Title(text, Color.White); // Will be updated in OnMount
+        }
+
+        protected override void OnMount()
+        {
+            _title.Mount(Context!);
+            // Update color from theme
+            if (_title is IViewContainer container)
+            {
+                foreach (var child in container.GetChildren())
+                {
+                    if (child is Text textView)
+                    {
+                        textView.Color = Context!.Theme.InfoColor;
+                    }
+                }
+            }
+        }
+
+        protected override void OnUnmount() => _title.Unmount();
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _title;
+        }
+    }
+
+    private class ThemedSubheadingView : ViewComponent, IViewContainer
+    {
+        private readonly IView _subheading;
+
+        public ThemedSubheadingView(string text)
+        {
+            _subheading = Subheading(text, Color.White);
+        }
+
+        protected override void OnMount()
+        {
+            _subheading.Mount(Context!);
+            if (_subheading is IViewContainer container)
+            {
+                foreach (var child in container.GetChildren())
+                {
+                    if (child is Text textView)
+                    {
+                        textView.Color = Context!.Theme.WarningColor;
+                    }
+                }
+            }
+        }
+
+        protected override void OnUnmount() => _subheading.Unmount();
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _subheading;
+        }
+    }
+
+    private class ThemedPanelView : ViewComponent, IViewContainer
+    {
+        private readonly Panel _panel;
+
+        public ThemedPanelView(Panel panel)
+        {
+            _panel = panel;
+        }
+
+        protected override void OnMount()
+        {
+            _panel.Mount(Context!);
+            _panel.BorderColor = Context!.Theme.PrimaryColor;
+            _panel.BorderThickness = 1f;
+        }
+
+        protected override void OnUnmount() => _panel.Unmount();
+
+        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+        {
+        }
+
+        public IEnumerable<IView> GetChildren()
+        {
+            yield return _panel;
+        }
     }
 
     private void SetupReactiveLogging()

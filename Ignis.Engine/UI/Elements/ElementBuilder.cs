@@ -124,7 +124,7 @@ namespace Ignis.Engine.UI.Elements
         /// </summary>
         public static IView Rule(Color? color = null, float thickness = 1f)
         {
-            var box = new Box(color ?? new Color(63, 63, 70))
+            var box = new Box(color)
             {
                 Layout =
                 {
