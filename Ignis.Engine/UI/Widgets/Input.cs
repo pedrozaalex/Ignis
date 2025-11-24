@@ -1,6 +1,5 @@
 using FontStashSharp;
 using Ignis.Engine.Reactive;
-using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
@@ -235,24 +234,34 @@ namespace Ignis.Engine.UI.Widgets
                 }
             });
 
-            // Update border color when focused
-            CreateEffect(() =>
-            {
-                if (CurrentState.HasFlag(WidgetState.Focused))
-                {
-                    _container.BorderColor = Context!.Theme.BorderFocus;
-                }
-                else
-                {
-                    _container.BorderColor = Context!.Theme.Border;
-                }
-            });
-
             // Set background color
             if (_container.BackgroundColor == null)
             {
                 _container.BackgroundColor = Context!.Theme.InputBackground;
             }
+
+            // Update visual state (Border & Background)
+            CreateEffect(() =>
+            {
+                var state = CurrentState;
+
+                if (state.HasFlag(WidgetState.Focused))
+                {
+                    _container.BorderColor = Context!.Theme.BorderFocus;
+                    _container.BackgroundColor = Context!.Theme.InputBackground;
+                }
+                else if (state.HasFlag(WidgetState.Hovered))
+                {
+                    _container.BorderColor = Color.Lerp(Context!.Theme.Border, Context!.Theme.Primary, 0.5f);
+                    // Lighten background slightly on hover for better visibility
+                    _container.BackgroundColor = Color.Lerp(Context!.Theme.InputBackground, Color.White, 0.05f);
+                }
+                else
+                {
+                    _container.BorderColor = Context!.Theme.Border;
+                    _container.BackgroundColor = Context!.Theme.InputBackground;
+                }
+            });
         }
 
         private void TryUpdateValue()

@@ -1,11 +1,10 @@
 using Ignis.Engine.Reactive;
-using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 
-namespace Ignis.Engine.UI.Abstractions
+namespace Ignis.Engine.UI.Core
 {
     /// <summary>
     /// Base class for view components with reactive capabilities.

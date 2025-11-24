@@ -1,7 +1,6 @@
 using Ignis.Engine.Core;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
-using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
@@ -256,14 +255,9 @@ public class TransformInspectorSample : IgnisGame
     }
 
     // Helper component that resolves color from theme after mounting
-    private class ThemedLabelView : ViewComponent, IViewContainer
+    private class ThemedLabelView(string text) : ViewComponent, IViewContainer
     {
-        private readonly IView _label;
-
-        public ThemedLabelView(string text)
-        {
-            _label = Label(text, null, Color.White);
-        }
+        private readonly IView _label = Label(text, null, Color.White);
 
         protected override void OnMount()
         {

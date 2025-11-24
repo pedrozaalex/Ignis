@@ -1,4 +1,4 @@
-namespace Ignis.Engine.UI.Abstractions
+namespace Ignis.Engine.UI.Core
 {
     /// <summary>
     /// Fluent extension methods for styling IView elements declaratively.

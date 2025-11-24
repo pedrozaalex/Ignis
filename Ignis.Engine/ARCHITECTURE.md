@@ -37,10 +37,9 @@ Ignis/
 │   │   ├── Effect.cs                   # Side Effects
 │   │   └── SignalList.cs               # Observable Collections
 │   ├── UI/                             # (Phase 4)
-│   │   ├── Abstractions/
+│   │   ├── Core/
 │   │   │   ├── IView.cs
 │   │   │   └── ViewComponent.cs
-│   │   ├── Core/
 │   │   │   ├── UIContext.cs            # Renderer & Input Router
 │   │   │   └── Bind.cs                 # Control Flow (If, For)
 │   │   └── Elements/

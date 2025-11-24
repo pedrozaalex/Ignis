@@ -1,8 +1,7 @@
-using Ignis.Engine.UI.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Ignis.Engine.UI.Abstractions
+namespace Ignis.Engine.UI.Core
 {
     /// <summary>
     /// IView - Represents a node in the UI tree.

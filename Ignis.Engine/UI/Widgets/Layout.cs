@@ -1,5 +1,4 @@
 using Ignis.Engine.Reactive;
-using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;

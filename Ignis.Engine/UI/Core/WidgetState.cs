@@ -1,4 +1,4 @@
-namespace Ignis.Engine.UI.Abstractions;
+namespace Ignis.Engine.UI.Core;
 
 [Flags]
 public enum WidgetState
