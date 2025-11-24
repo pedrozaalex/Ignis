@@ -295,7 +295,7 @@ public class ButtonView : ViewComponent, IViewContainer
         
         System.Console.WriteLine($"[Button {Layout.ElementId}] Mounted, initial state: {CurrentState}");
         
-        // Update background color based on widget state
+        // Update background color based on widget state using theme colors
         CreateEffect(() =>
         {
             var state = CurrentState;
@@ -303,15 +303,15 @@ public class ButtonView : ViewComponent, IViewContainer
             
             if (state.HasFlag(WidgetState.Active))
             {
-                _panel.BackgroundColor = Context!.Theme.ButtonActiveColor;
+                _panel.BackgroundColor = Context!.Theme.PrimaryActive;
             }
             else if (state.HasFlag(WidgetState.Hovered))
             {
-                _panel.BackgroundColor = Context!.Theme.ButtonHoverColor;
+                _panel.BackgroundColor = Context!.Theme.PrimaryHover;
             }
             else
             {
-                _panel.BackgroundColor = Context!.Theme.PrimaryColor;
+                _panel.BackgroundColor = Context!.Theme.Primary;
             }
         });
     }

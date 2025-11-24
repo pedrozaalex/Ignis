@@ -107,11 +107,11 @@ namespace Ignis.Engine.UI.Widgets
             {
                 if (CurrentState.HasFlag(WidgetState.Focused))
                 {
-                    _root.BorderColor = Context!.Theme.InputFocusBorderColor;
+                    _root.BorderColor = Context!.Theme.BorderFocus;
                 }
                 else
                 {
-                    _root.BorderColor = Context!.Theme.BorderColor;
+                    _root.BorderColor = Context!.Theme.Border;
                 }
             });
         }
@@ -238,11 +238,11 @@ namespace Ignis.Engine.UI.Widgets
             {
                 if (CurrentState.HasFlag(WidgetState.Focused))
                 {
-                    _container.BorderColor = Context!.Theme.InputFocusBorderColor;
+                    _container.BorderColor = Context!.Theme.BorderFocus;
                 }
                 else
                 {
-                    _container.BorderColor = Context!.Theme.BorderColor;
+                    _container.BorderColor = Context!.Theme.Border;
                 }
             });
             
@@ -430,8 +430,8 @@ namespace Ignis.Engine.UI.Widgets
             var trackBounds = new Rectangle(bounds.X, trackY, bounds.Width, trackHeight);
 
             // Resolve colors from theme
-            var trackColor = TrackColor != default ? TrackColor : Context.Theme.BorderColor;
-            var fillColor = FillColor != default ? FillColor : Context.Theme.PrimaryColor;
+            var trackColor = TrackColor != default ? TrackColor : Context.Theme.SliderTrack;
+            var fillColor = FillColor != default ? FillColor : Context.Theme.Primary;
             
             // Draw track background
             batch.DrawFilledRectangle(trackBounds, trackColor);
@@ -446,14 +446,14 @@ namespace Ignis.Engine.UI.Widgets
                 batch.DrawFilledRectangle(fillBounds, fillColor);
             }
 
-            // Resolve thumb color based on state
+            // Resolve thumb color based on state using theme colors
             Color thumbColor;
             if (CurrentState.HasFlag(WidgetState.Active))
-                thumbColor = Context.Theme.PrimaryColor;
+                thumbColor = Context.Theme.Primary;
             else if (CurrentState.HasFlag(WidgetState.Hovered))
-                thumbColor = Context.Theme.SliderThumbHoverColor;
+                thumbColor = Context.Theme.SliderThumbHover;
             else
-                thumbColor = ThumbColor != default ? ThumbColor : Context.Theme.SliderThumbColor;
+                thumbColor = ThumbColor != default ? ThumbColor : Context.Theme.SliderThumb;
             
             // Draw thumb
             var thumbBounds = new Rectangle(

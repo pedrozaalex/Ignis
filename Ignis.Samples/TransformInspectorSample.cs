@@ -270,7 +270,7 @@ public class TransformInspectorSample : IgnisGame
             _label.Mount(Context!);
             if (_label is Text textView)
             {
-                textView.Color = Context!.Theme.InfoColor;
+                textView.Color = Context!.Theme.Info;
             }
         }
 

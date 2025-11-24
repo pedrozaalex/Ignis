@@ -27,7 +27,7 @@ namespace Ignis.Engine.UI.Elements
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            var color = Color ?? Context?.Theme.BorderColor ?? Microsoft.Xna.Framework.Color.Gray;
+            var color = Color ?? Context?.Theme.Border ?? Microsoft.Xna.Framework.Color.Gray;
             Context?.PrimitiveBatch?.DrawFilledRectangle(bounds, color);
         }
     }

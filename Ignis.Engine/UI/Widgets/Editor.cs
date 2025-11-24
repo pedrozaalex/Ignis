@@ -372,9 +372,9 @@ namespace Ignis.Engine.UI.Widgets
             
             return axis switch
             {
-                "X" => Context.Theme.Accent1,  // Red-ish for X axis
-                "Y" => Context.Theme.Accent2,  // Green-ish for Y axis
-                "Z" => Context.Theme.Accent3,  // Blue-ish for Z axis
+                "X" => Context.Theme.Error,    // Red for X axis
+                "Y" => Context.Theme.Success,  // Green for Y axis
+                "Z" => Context.Theme.Info,     // Blue for Z axis
                 _ => Color.White
             };
         }
@@ -544,9 +544,9 @@ namespace Ignis.Engine.UI.Widgets
             
             return level switch
             {
-                LogLevel.Error => Context.Theme.ErrorColor,
-                LogLevel.Warning => Context.Theme.WarningColor,
-                LogLevel.Info => Context.Theme.InfoColor,
+                LogLevel.Error => Context.Theme.Error,
+                LogLevel.Warning => Context.Theme.Warning,
+                LogLevel.Info => Context.Theme.Info,
                 _ => Color.LightGray
             };
         }

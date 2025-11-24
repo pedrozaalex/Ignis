@@ -195,7 +195,7 @@ public class BasicWidgetsSample : IgnisGame
                 {
                     if (child is Text textView)
                     {
-                        textView.Color = Context!.Theme.InfoColor;
+                        textView.Color = Context!.Theme.Info;
                     }
                 }
             }
@@ -231,7 +231,7 @@ public class BasicWidgetsSample : IgnisGame
                 {
                     if (child is Text textView)
                     {
-                        textView.Color = Context!.Theme.WarningColor;
+                        textView.Color = Context!.Theme.Warning;
                     }
                 }
             }
@@ -261,7 +261,7 @@ public class BasicWidgetsSample : IgnisGame
         protected override void OnMount()
         {
             _panel.Mount(Context!);
-            _panel.BorderColor = Context!.Theme.PrimaryColor;
+            _panel.BorderColor = Context!.Theme.Primary;
             _panel.BorderThickness = 1f;
         }
 

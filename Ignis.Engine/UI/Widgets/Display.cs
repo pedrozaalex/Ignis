@@ -119,9 +119,9 @@ namespace Ignis.Engine.UI.Widgets
 
             var batch = Context.PrimitiveBatch;
             
-            var bg = BackgroundColor ?? Context.Theme.BackgroundColor;
-            var fill = FillColor ?? Context.Theme.PrimaryColor;
-            var border = BorderColor ?? Context.Theme.BorderColor;
+            var bg = BackgroundColor ?? Context.Theme.Background;
+            var fill = FillColor ?? Context.Theme.Primary;
+            var border = BorderColor ?? Context.Theme.Border;
             
             // Draw background
             batch.DrawFilledRectangle(bounds, bg);
@@ -168,7 +168,7 @@ namespace Ignis.Engine.UI.Widgets
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
             if (Context?.PrimitiveBatch == null) return;
-            var color = Color ?? Context.Theme.BorderColor;
+            var color = Color ?? Context.Theme.Border;
             Context.PrimitiveBatch.DrawFilledRectangle(bounds, color);
         }
     }

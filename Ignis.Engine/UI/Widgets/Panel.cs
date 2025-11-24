@@ -13,8 +13,18 @@ namespace Ignis.Engine.UI.Widgets
     public class Panel : ViewComponent, IViewContainer
     {
         private readonly List<IView> _children = [];
+        private Color? _originalBackgroundColor;
+        private Color? _currentBackgroundColor;
 
-        public Color? BackgroundColor { get; set; }
+        public Color? BackgroundColor 
+        { 
+            get => _currentBackgroundColor ?? _originalBackgroundColor;
+            set
+            {
+                _originalBackgroundColor = value;
+                _currentBackgroundColor = value;
+            }
+        }
         public Color? BorderColor { get; set; }
         public float BorderThickness { get; set; }
         public float CornerRadius { get; set; }
@@ -76,6 +86,41 @@ namespace Ignis.Engine.UI.Widgets
             {
                 child.Mount(Context!);
             }
+            
+            // If this panel has a click handler, apply hover effects
+            if (EventHandlers.OnPointerUp != null || EventHandlers.OnPointerDown != null)
+            {
+                System.Console.WriteLine($"[Panel {Layout.ElementId}] Has click handler, enabling hover effects");
+                
+                CreateEffect(() =>
+                {
+                    var state = CurrentState;
+                    System.Console.WriteLine($"[Panel {Layout.ElementId}] State changed to: {state}");
+                    
+                    // Apply hover/active color changes using theme state colors
+                    if (state.HasFlag(WidgetState.Active))
+                    {
+                        // Use theme's active state color
+                        var baseColor = _originalBackgroundColor ?? Context!.Theme.Surface;
+                        _currentBackgroundColor = baseColor == Context!.Theme.Primary 
+                            ? Context.Theme.PrimaryActive 
+                            : Context.Theme.SurfaceActive;
+                    }
+                    else if (state.HasFlag(WidgetState.Hovered))
+                    {
+                        // Use theme's hover state color
+                        var baseColor = _originalBackgroundColor ?? Context!.Theme.Surface;
+                        _currentBackgroundColor = baseColor == Context!.Theme.Primary 
+                            ? Context.Theme.PrimaryHover 
+                            : Context.Theme.SurfaceHover;
+                    }
+                    else
+                    {
+                        // Normal state
+                        _currentBackgroundColor = _originalBackgroundColor;
+                    }
+                });
+            }
         }
 
         protected override void OnUnmount()
@@ -92,8 +137,8 @@ namespace Ignis.Engine.UI.Widgets
 
             var primitiveBatch = Context.PrimitiveBatch;
 
-            var bg = BackgroundColor ?? Context.Theme.SurfaceColor;
-            var border = BorderColor ?? Context.Theme.BorderColor;
+            var bg = BackgroundColor ?? Context.Theme.Surface;
+            var border = BorderColor ?? Context.Theme.Border;
 
             // Draw background
             if (bg.A > 0)

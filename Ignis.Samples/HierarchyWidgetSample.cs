@@ -261,9 +261,9 @@ public class HierarchyWidgetSample : IgnisGame
         protected override void OnMount()
         {
             _button.Mount(Context!);
-            _button.BackgroundColor = Context!.Theme.PrimaryColor;
+            _button.BackgroundColor = Context!.Theme.Primary;
             // Slightly darker border for depth
-            _button.BorderColor = Color.Lerp(Context!.Theme.PrimaryColor, Color.Black, 0.2f);
+            _button.BorderColor = Color.Lerp(Context!.Theme.Primary, Color.Black, 0.2f);
         }
 
         protected override void OnUnmount() => _button.Unmount();
