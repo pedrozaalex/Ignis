@@ -19,8 +19,8 @@ namespace Ignis.Engine.UI.Widgets
         public bool HorizontalScrollEnabled { get; set; } = false;
         public bool VerticalScrollEnabled { get; set; } = true;
 
-        public Color ScrollbarColor { get; set; } = new(104, 104, 104);
-        public Color TrackColor { get; set; } = new(62, 62, 66);
+        public Color? ScrollbarColor { get; set; }
+        public Color? TrackColor { get; set; }
 
         public ScrollView(IView content)
         {
@@ -66,9 +66,9 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Panel _tabBar;
         private readonly Panel _contentArea;
 
-        public Color TabBackgroundColor { get; set; } = new(45, 45, 48);
-        public Color ActiveTabColor { get; set; } = new(0, 122, 204);
-        public Color InactiveTabColor { get; set; } = new(62, 62, 66);
+        public Color? TabBackgroundColor { get; set; }
+        public Color? ActiveTabColor { get; set; }
+        public Color? InactiveTabColor { get; set; }
 
         public TabView(Signal<int>? selectedIndex = null)
         {
@@ -76,7 +76,6 @@ namespace Ignis.Engine.UI.Widgets
 
             _tabBar = new Panel
             {
-                BackgroundColor = TabBackgroundColor,
                 Layout =
                 {
                     LayoutType = LayoutType.Row,
@@ -293,7 +292,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Panel _container;
         private readonly List<Menu> _menus = [];
 
-        public Color BackgroundColor
+        public Color? BackgroundColor
         {
             get => _container.BackgroundColor;
             set => _container.BackgroundColor = value;
@@ -303,7 +302,6 @@ namespace Ignis.Engine.UI.Widgets
         {
             _container = new Panel
             {
-                BackgroundColor = new Color(45, 45, 48),
                 Layout =
                 {
                     LayoutType = LayoutType.Row,

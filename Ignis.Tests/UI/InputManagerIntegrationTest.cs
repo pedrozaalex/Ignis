@@ -38,7 +38,6 @@ namespace Ignis.Tests.UI
             // Arrange
             var value = new Signal<int>(50);
             var numberField = new NumberField<int>(
-                "Test",
                 value,
                 x => x + 10,
                 x => x - 10
@@ -126,7 +125,6 @@ namespace Ignis.Tests.UI
             // Arrange
             var value = new Signal<int>(0);
             var numberField = new NumberField<int>(
-                "Counter",
                 value,
                 x => x + 1,
                 x => x - 1

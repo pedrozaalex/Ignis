@@ -14,8 +14,8 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly List<IView> _children = [];
 
-        public Color BackgroundColor { get; set; } = new(45, 45, 48); // Dark gray (VS theme)
-        public Color BorderColor { get; set; } = new(63, 63, 70);
+        public Color? BackgroundColor { get; set; }
+        public Color? BorderColor { get; set; }
         public float BorderThickness { get; set; }
         public float CornerRadius { get; set; }
 
@@ -92,16 +92,19 @@ namespace Ignis.Engine.UI.Widgets
 
             var primitiveBatch = Context.PrimitiveBatch;
 
+            var bg = BackgroundColor ?? Context.Theme.SurfaceColor;
+            var border = BorderColor ?? Context.Theme.BorderColor;
+
             // Draw background
-            if (BackgroundColor.A > 0)
+            if (bg.A > 0)
             {
-                primitiveBatch.DrawRoundedRectangle(bounds, CornerRadius, BackgroundColor);
+                primitiveBatch.DrawRoundedRectangle(bounds, CornerRadius, bg);
             }
 
             // Draw border
-            if (BorderThickness > 0 && BorderColor.A > 0)
+            if (BorderThickness > 0 && border.A > 0)
             {
-                primitiveBatch.DrawBorder(bounds, BorderThickness, BorderColor, CornerRadius);
+                primitiveBatch.DrawBorder(bounds, BorderThickness, border, CornerRadius);
             }
         }
 
@@ -129,8 +132,7 @@ namespace Ignis.Engine.UI.Widgets
             var titleLabel = new Text { Content = title, Color = Color.White };
             _titleBar = new Panel(titleLabel)
             {
-                BackgroundColor = new Color(37, 37, 38),
-                BorderColor = new Color(63, 63, 70)
+                BackgroundColor = new Color(37, 37, 38)
             };
             _titleBar.Layout.Height = Units.Pixels(30);
             _titleBar.Layout.Width = Units.Stretch(1);
@@ -141,9 +143,7 @@ namespace Ignis.Engine.UI.Widgets
             AddChild(_titleBar);
             AddChild(_content);
 
-            // Style
-            BackgroundColor = new Color(45, 45, 48);
-            BorderColor = new Color(63, 63, 70);
+            // Style (colors will be resolved from theme)
             BorderThickness = 1f;
             Layout.Width = Units.Pixels(400);
             Layout.Height = Units.Pixels(300);
@@ -161,7 +161,7 @@ namespace Ignis.Engine.UI.Widgets
 
         public float SplitRatio { get; set; } = 0.5f;
         public float DividerThickness { get; set; } = 4f;
-        public Color DividerColor { get; set; } = new(63, 63, 70);
+        public Color? DividerColor { get; set; }
 
         public Splitter(IView first, IView second, bool isVertical = false)
         {

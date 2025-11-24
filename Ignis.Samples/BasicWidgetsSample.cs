@@ -22,7 +22,7 @@ public class BasicWidgetsSample : IgnisGame
     private SpriteBatch? _spriteBatch;
 
     // Reactive state
-    private readonly Signal<string?> _playerName = new("Player");
+    private readonly Signal<string?> _playerName = new("Player Name");
     private readonly Signal<int> _health = new(100);
     private readonly Signal<bool> _isAlive = new(true);
     private readonly Signal<float> _volume = new(0.75f);
@@ -30,8 +30,8 @@ public class BasicWidgetsSample : IgnisGame
     public BasicWidgetsSample() : base(new IgnisApp(new EngineSettings
     {
         WindowTitle = "Ignis UI - Basic Widgets Sample",
-        WindowWidth = 800,
-        WindowHeight = 600
+        WindowWidth = 1200,
+        WindowHeight = 800
     }))
     {
         // Create UIContext early so it's available in LoadContent
@@ -49,6 +49,7 @@ public class BasicWidgetsSample : IgnisGame
 
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice);
+        _uiContext.SetGame(this); // Set game reference for FontSystem access
 
         // Use the automatically loaded default font
         if (DefaultFont != null)
@@ -83,30 +84,41 @@ public class BasicWidgetsSample : IgnisGame
         var contentPanel = Panel()
             .Background(new Color(37, 37, 38))
             .Border(new Color(63, 63, 70), 2f)
-            .Width(500)
+            .Width(Units.Auto)
             .Height(Units.Auto)
             .Padding(30)
             .Children(
                 Column(
-                    // Title
-                    Label("Basic Widgets Demo", null, new Color(100, 200, 255)),
+                    // Title using the new Title() helper (32pt)
+                    Title("Basic Widgets Demo", new Color(100, 200, 255)),
+                    Rule(),
 
-                    // Player Name Row
-                    Row(
-                        Label("Player Name:", null, Color.LightGray),
-                        new TextField(_playerName).Width(300)
-                    ).AlignCenter(),
+                    // Section Heading (24pt)
+                    Heading("User Profile", Color.LightGray),
+                    Column(
+                            // Player Name Row
+                            Row(
+                                Label("Player Name:", null, Color.LightGray),
+                                new TextField(_playerName) { Placeholder = "Type here..." }.Width(300)
+                            ).AlignCenter(),
 
-                    // Health Field
-                    new NumberField<int>(
-                        "Health",
-                        _health,
-                        x => Math.Min(100, x + 10),
-                        x => Math.Max(0, x - 10)
-                    ).Width(300),
+                            // Health Field with custom label
+                            Row(
+                                Label("Health:", null, Color.LightGray),
+                                new NumberField<int>(
+                                    _health,
+                                    x => Math.Min(100, x + 10),
+                                    x => Math.Max(0, x - 10)
+                                ).Width(300)
+                            ).AlignCenter(),
 
-                    // Alive Checkbox
-                    new Checkbox("Is Alive", _isAlive),
+                            // Alive Checkbox
+                            new Checkbox("Is Alive", _isAlive))
+                        .Gap(5),
+                    Rule(),
+
+                    // Another section with Heading (24pt)
+                    Heading("Settings", Color.LightGray),
 
                     // Volume Label
                     Label(Computed<string>.From(() => $"Volume: {_volume.Value * 100:F0}%")),
@@ -114,15 +126,16 @@ public class BasicWidgetsSample : IgnisGame
                     // Volume Slider
                     new Slider(_volume)
                         .Width(300),
+                    Rule(),
 
-                    // Status Panel
+                    // Status Panel with Subheading (18pt)
                     Panel()
                         .Background(new Color(45, 45, 48))
                         .Border(new Color(0, 122, 204))
                         .Padding(15)
                         .Gap(5)
                         .Children(
-                            Label("Current State (Reactive)", null, new Color(255, 200, 100)),
+                            Subheading("Current State (Reactive)", new Color(255, 200, 100)),
                             Label(Computed<string>.From(() => $"Name: {_playerName.Value ?? "(empty)"}")),
                             Label(Computed<string>.From(() => $"Health: {_health.Value}/100")),
                             Label(Computed<string>.From(() => $"Alive: {(_isAlive.Value ? "Yes" : "No")}")),

@@ -1,3 +1,4 @@
+using FontStashSharp;
 using Ignis.Engine.Assets;
 using Ignis.Engine.Graphics.Systems;
 using Microsoft.Xna.Framework;
@@ -21,9 +22,14 @@ public class IgnisGame : Game
     public IgnisApp App { get; }
     
     /// <summary>
+    /// FontSystem for dynamic font loading using FontStashSharp.
+    /// </summary>
+    public FontSystem? FontSystem { get; private set; }
+    
+    /// <summary>
     /// The default font for UI rendering. Automatically loaded during LoadContent().
     /// </summary>
-    public SpriteFont? DefaultFont { get; private set; }
+    public SpriteFontBase? DefaultFont { get; private set; }
 
     public IgnisGame(IgnisApp? app = null)
     {
@@ -39,6 +45,7 @@ public class IgnisGame : Game
 
         IsMouseVisible = true;
         Window.Title = App.Settings.WindowTitle;
+        Window.AllowUserResizing = true;
 
     }
 
@@ -54,9 +61,12 @@ public class IgnisGame : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _renderSystem = new RenderSystem(GraphicsDevice);
 
-        // Automatically load default font for UI rendering
-        var contentPath = Path.Combine(Directory.GetCurrentDirectory(), Content.RootDirectory);
-        DefaultFont = DefaultFontProvider.EnsureAndLoadDefaultFont(Content, contentPath);
+        // Create FontSystem with optimal scaling parameters
+        FontSystem = DefaultFontProvider.CreateDefaultFontSystem();
+        if (FontSystem != null)
+        {
+            DefaultFont = DefaultFontProvider.GetDefaultFont(FontSystem);
+        }
 
         App.LoadContent();
     }

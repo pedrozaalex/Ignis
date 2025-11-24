@@ -1,3 +1,4 @@
+using FontStashSharp;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
@@ -14,7 +15,7 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly IView _container;
 
-        public Label(string text, SpriteFont? font = null, Color? color = null)
+        public Label(string text, SpriteFontBase? font = null, Color? color = null)
         {
             var textView = new Text(font) 
             { 
@@ -32,7 +33,7 @@ namespace Ignis.Engine.UI.Widgets
             _container.Layout.PaddingBottom = Units.Pixels(2);
         }
 
-        public Label(Signal<string> text, SpriteFont? font = null, Color? color = null)
+        public Label(Signal<string> text, SpriteFontBase? font = null, Color? color = null)
         {
             var textView = new ReactiveText(text, font)
             {
@@ -47,7 +48,7 @@ namespace Ignis.Engine.UI.Widgets
             _container.Layout.PaddingRight = Units.Pixels(4);
         }
 
-        public Label(Computed<string> text, SpriteFont? font = null, Color? color = null)
+        public Label(Computed<string> text, SpriteFontBase? font = null, Color? color = null)
         {
             var textView = new ReactiveText(text, font)
             {
@@ -89,9 +90,9 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly Signal<float> _progress;
 
-        public Color BackgroundColor { get; set; } = new(51, 51, 55);
-        public Color FillColor { get; set; } = new(0, 122, 204);
-        public Color BorderColor { get; set; } = new(63, 63, 70);
+        public Color? BackgroundColor { get; set; }
+        public Color? FillColor { get; set; }
+        public Color? BorderColor { get; set; }
 
         public ProgressBar(Signal<float> progress)
         {
@@ -118,8 +119,12 @@ namespace Ignis.Engine.UI.Widgets
 
             var batch = Context.PrimitiveBatch;
             
+            var bg = BackgroundColor ?? new Color(51, 51, 55);
+            var fill = FillColor ?? Context.Theme.PrimaryColor;
+            var border = BorderColor ?? Context.Theme.BorderColor;
+            
             // Draw background
-            batch.DrawFilledRectangle(bounds, BackgroundColor);
+            batch.DrawFilledRectangle(bounds, bg);
 
             // Draw fill (based on progress)
             var progress = Math.Clamp(_progress.Value, 0f, 1f);
@@ -127,11 +132,11 @@ namespace Ignis.Engine.UI.Widgets
             {
                 var fillWidth = (int)(bounds.Width * progress);
                 var fillBounds = new Rectangle(bounds.X, bounds.Y, fillWidth, bounds.Height);
-                batch.DrawFilledRectangle(fillBounds, FillColor);
+                batch.DrawFilledRectangle(fillBounds, fill);
             }
 
             // Draw border
-            batch.DrawBorder(bounds, 1f, BorderColor);
+            batch.DrawBorder(bounds, 1f, border);
         }
     }
 
@@ -140,7 +145,7 @@ namespace Ignis.Engine.UI.Widgets
     /// </summary>
     public class Separator : ViewComponent
     {
-        public Color Color { get; set; } = new(63, 63, 70);
+        public Color? Color { get; set; }
         public float Thickness { get; set; } = 1f;
         public bool IsVertical { get; set; }
 
@@ -162,7 +167,9 @@ namespace Ignis.Engine.UI.Widgets
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
-            Context?.PrimitiveBatch.DrawFilledRectangle(bounds, Color);
+            if (Context?.PrimitiveBatch == null) return;
+            var color = Color ?? Context.Theme.BorderColor;
+            Context.PrimitiveBatch.DrawFilledRectangle(bounds, color);
         }
     }
 
@@ -207,7 +214,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly IView _content;
         private readonly Signal<bool> _isVisible;
 
-        public Tooltip(string text, Signal<bool> isVisible, SpriteFont? font = null)
+        public Tooltip(string text, Signal<bool> isVisible, SpriteFontBase? font = null)
         {
             _isVisible = isVisible;
 
@@ -259,13 +266,13 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly IView _container;
 
-        public Badge(string text, SpriteFont? font = null, Color? backgroundColor = null)
+        public Badge(string text, SpriteFontBase? font = null, Color? backgroundColor = null)
         {
             var textView = new Text(font) { Content = text, Color = Color.White };
 
             _container = new Panel(textView)
             {
-                BackgroundColor = backgroundColor ?? new Color(0, 122, 204),
+                BackgroundColor = backgroundColor,
                 CornerRadius = 10f
             };
             _container.Layout.PaddingLeft = Units.Pixels(6);
@@ -277,7 +284,7 @@ namespace Ignis.Engine.UI.Widgets
             Layout.Height = Units.Pixels(20);
         }
 
-        public Badge(Signal<int> count, SpriteFont? font = null, Color? backgroundColor = null)
+        public Badge(Signal<int> count, SpriteFontBase? font = null, Color? backgroundColor = null)
         {
             var textView = new ReactiveText(
                 Computed<string>.From(() => count.Value.ToString()),
@@ -289,7 +296,7 @@ namespace Ignis.Engine.UI.Widgets
 
             _container = new Panel(textView)
             {
-                BackgroundColor = backgroundColor ?? new Color(0, 122, 204),
+                BackgroundColor = backgroundColor,
                 CornerRadius = 10f
             };
             _container.Layout.PaddingLeft = Units.Pixels(6);

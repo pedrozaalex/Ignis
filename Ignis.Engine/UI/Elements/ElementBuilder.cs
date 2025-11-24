@@ -1,3 +1,5 @@
+using FontStashSharp;
+using Ignis.Engine.Assets;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Abstractions;
@@ -47,7 +49,7 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a text label with static text.
         /// </summary>
-        public static IView Label(string text, SpriteFont? font = null, Color? color = null)
+        public static IView Label(string text, SpriteFontBase? font = null, Color? color = null)
         {
             var textView = new Text(font) { Content = text };
             if (color.HasValue)
@@ -58,7 +60,7 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a text label bound to a signal.
         /// </summary>
-        public static IView Label(Signal<string> textSignal, SpriteFont? font = null, Color? color = null)
+        public static IView Label(Signal<string> textSignal, SpriteFontBase? font = null, Color? color = null)
         {
             var reactiveText = new ReactiveText(textSignal, font);
             if (color.HasValue)
@@ -69,7 +71,7 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a text label bound to a computed value.
         /// </summary>
-        public static IView Label(Computed<string> textComputed, SpriteFont? font = null, Color? color = null)
+        public static IView Label(Computed<string> textComputed, SpriteFontBase? font = null, Color? color = null)
         {
             var reactiveText = new ReactiveText(textComputed, font);
             if (color.HasValue)
@@ -96,7 +98,7 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a button.
         /// </summary>
-        public static IView Button(string label, Action onClick, SpriteFont? font = null)
+        public static IView Button(string label, Action onClick, SpriteFontBase? font = null)
         {
             return new ButtonView(label, onClick, font);
         }
@@ -104,7 +106,7 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a button with enabled state signal.
         /// </summary>
-        public static IView Button(string label, Action onClick, Signal<bool>? isEnabled, SpriteFont? font = null)
+        public static IView Button(string label, Action onClick, Signal<bool>? isEnabled, SpriteFontBase? font = null)
         {
             return new ButtonView(label, onClick, font) { IsEnabled = isEnabled };
         }
@@ -112,7 +114,7 @@ namespace Ignis.Engine.UI.Elements
         /// <summary>
         /// Creates a float input field.
         /// </summary>
-        public static IView FloatField(string label, Signal<float> value, SpriteFont? font = null)
+        public static IView FloatField(string label, Signal<float> value, SpriteFontBase? font = null)
         {
             return new FloatFieldView(label, value, font);
         }
@@ -206,6 +208,38 @@ namespace Ignis.Engine.UI.Elements
         {
             return new Panel();
         }
+
+        public static Text Title(string text, Color? color = null)
+        {
+            var textView = new Text { Content = text, FontSize = (int)(DefaultFontProvider.DefaultFontSize * 1.5f) };
+            if (color.HasValue)
+                textView.Color = color.Value;
+            return textView;
+        }
+
+        public static Text Heading(string text, Color? color = null)
+        {
+            var textView = new Text { Content = text, FontSize = (int)(DefaultFontProvider.DefaultFontSize * 1.2f) };
+            if (color.HasValue)
+                textView.Color = color.Value;
+            return textView;
+        }
+
+        public static Text Subheading(string text, Color? color = null)
+        {
+            var textView = new Text { Content = text, FontSize = (int)(DefaultFontProvider.DefaultFontSize * 1.1f) };
+            if (color.HasValue)
+                textView.Color = color.Value;
+            return textView;
+        }
+
+        public static Text Small(string text, Color? color = null)
+        {
+            var textView = new Text { Content = text, FontSize = (int)(DefaultFontProvider.DefaultFontSize * 0.75f) };
+            if (color.HasValue)
+                textView.Color = color.Value;
+            return textView;
+        }
     }
 }
 
@@ -216,12 +250,12 @@ public class ReactiveText : Text
 {
     private readonly Func<string> _textGetter;
 
-    public ReactiveText(Signal<string> textSignal, SpriteFont? font) : base(font)
+    public ReactiveText(Signal<string> textSignal, SpriteFontBase? font) : base(font)
     {
         _textGetter = () => textSignal.Value;
     }
 
-    public ReactiveText(Computed<string> textComputed, SpriteFont? font) : base(font)
+    public ReactiveText(Computed<string> textComputed, SpriteFontBase? font) : base(font)
     {
         _textGetter = () => textComputed.Value;
     }
@@ -241,10 +275,9 @@ public class ButtonView : ViewComponent, IViewContainer
 
     public Signal<bool>? IsEnabled { get; set; }
 
-    public ButtonView(string label, Action onClick, SpriteFont? font)
+    public ButtonView(string label, Action onClick, SpriteFontBase? font)
     {
         var panel = new Panel(new Text(font) { Content = label, Color = Color.White })
-                .Background(new Color(100, 100, 200))
                 .Width(100)
                 .Height(30)
                 .AlignCenter()
@@ -283,7 +316,7 @@ public class FloatFieldView : ViewComponent, IViewContainer
 {
     private readonly IView _content;
 
-    public FloatFieldView(string label, Signal<float> value, SpriteFont? font)
+    public FloatFieldView(string label, Signal<float> value, SpriteFontBase? font)
     {
         // Build as: [Label] [Value] [+] [-]
         var labelText = new Text(font) { Content = label };

@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="FontStashSharp.MonoGame" Version="1.5.2" />
     <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
     <PackageReference Include="Friflo.Json.Fliox" Version="1.0.4" />
 <!--    <PackageReference Include="MonoGame.Framework.Content.Pipeline" Version="3.8.5-develop.13" />-->

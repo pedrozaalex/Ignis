@@ -13,30 +13,21 @@ namespace Ignis.Engine.Reactive
     /// </summary>
     public static class ReactiveContext
     {
-        [ThreadStatic]
-        private static IObserver? _currentObserver;
-
-        public static IObserver? CurrentObserver => _currentObserver;
+        [field: ThreadStatic]
+        public static IObserver? CurrentObserver { get; private set; }
 
         public static IDisposable Track(IObserver observer)
         {
-            var previous = _currentObserver;
-            _currentObserver = observer;
+            var previous = CurrentObserver;
+            CurrentObserver = observer;
             return new ObserverScope(previous);
         }
 
-        private class ObserverScope : IDisposable
+        private class ObserverScope(IObserver? previous) : IDisposable
         {
-            private readonly IObserver? _previous;
-
-            public ObserverScope(IObserver? previous)
-            {
-                _previous = previous;
-            }
-
             public void Dispose()
             {
-                _currentObserver = _previous;
+                CurrentObserver = previous;
             }
         }
     }
@@ -45,15 +36,10 @@ namespace Ignis.Engine.Reactive
     /// Signal&lt;T&gt; - The Atom of State.
     /// A state container that tracks dependencies on read and notifies observers on write.
     /// </summary>
-    public class Signal<T>
+    public class Signal<T>(T initialValue)
     {
-        private T _value;
+        private T _value = initialValue;
         private readonly List<IObserver> _observers = [];
-
-        public Signal(T initialValue)
-        {
-            _value = initialValue;
-        }
 
         public T Value
         {

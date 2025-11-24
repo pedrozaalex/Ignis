@@ -1,3 +1,4 @@
+using FontStashSharp;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
@@ -15,7 +16,7 @@ namespace Ignis.Engine.UI.Widgets
     {
         private readonly Signal<string?> _text;
         private readonly Text _textView;
-        private readonly Panel _background;
+        private readonly Panel _root;
         private string? _placeholder;
 
         public string Placeholder
@@ -24,29 +25,33 @@ namespace Ignis.Engine.UI.Widgets
             set => _placeholder = value;
         }
 
-        public Color BackgroundColor
+        public Color? BackgroundColor
         {
-            get => _background.BackgroundColor;
-            set => _background.BackgroundColor = value;
+            set => _root.BackgroundColor = value;
         }
 
-        public TextField(Signal<string?> text, SpriteFont? font = null)
+        public TextField(Signal<string?> text, SpriteFontBase? font = null)
         {
             _text = text;
-            _textView = new Text(font);
-        
+            _textView = new ReactiveText(Computed<string>.From(() =>
+            {
+                if (string.IsNullOrEmpty(_text.Value) && !string.IsNullOrEmpty(Placeholder))
+                    return Placeholder;
+
+                return _text.Value ?? "";
+            }), font);
+
             // Internal panel for visuals (Background, Border, Padding)
-            _background = new Panel(_textView)
+            _root = new Panel(_textView)
             {
                 BackgroundColor = new Color(51, 51, 55),
-                BorderColor = new Color(63, 63, 70),
                 BorderThickness = 1f,
                 Layout =
                 {
                     // Fill the wrapper component
                     Width = Units.Stretch(1),
                     Height = Units.Auto,
-                    
+
                     // Padding for the text inside
                     PaddingLeft = Units.Pixels(8),
                     PaddingRight = Units.Pixels(8),
@@ -54,25 +59,22 @@ namespace Ignis.Engine.UI.Widgets
                     PaddingBottom = Units.Pixels(6)
                 }
             };
-        
+
             // Default Height
             Layout.Height = Units.Auto;
         }
 
         protected override void OnMount()
         {
-            _background.Mount(Context!);
+            _root.Mount(Context!);
 
             // Update text view when signal changes
-            CreateEffect(() =>
-            {
-                _textView.Content = _text.Value ?? "";
-            });
+            CreateEffect(() => { _textView.Content = _text.Value ?? ""; });
         }
 
         protected override void OnUnmount()
         {
-            _background.Unmount();
+            _root.Unmount();
         }
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
@@ -82,7 +84,7 @@ namespace Ignis.Engine.UI.Widgets
 
         public IEnumerable<IView> GetChildren()
         {
-            yield return _background;
+            yield return _root;
         }
     }
 
@@ -94,20 +96,9 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Signal<T> _value;
         private readonly IView _container;
 
-        public NumberField(string label, Signal<T> value, Func<T, T> increment, Func<T, T> decrement,
-            SpriteFont? font = null)
+        public NumberField(Signal<T> value, Func<T, T> increment, Func<T, T> decrement, SpriteFontBase? font = null)
         {
             _value = value;
-
-            // Build layout: [Label] [Value Display] [-] [+]
-            var labelView = new Text(font)
-            {
-                Content = label, Color = Color.White,
-                Layout =
-                {
-                    Width = Units.Pixels(80)
-                }
-            };
 
             var valueText = new ReactiveText(
                 Computed<string>.From(() => _value.Value.ToString() ?? "0"),
@@ -120,16 +111,23 @@ namespace Ignis.Engine.UI.Widgets
                 }
             };
 
-            _container = Row(
-                labelView,
+            _container = new Panel(
+                Button("-", () => _value.Value = decrement(_value.Value)),
                 valueText,
-                Row(
-                    Button("-", () => _value.Value = decrement(_value.Value)),
-                    Button("+", () => _value.Value = increment(_value.Value))
-                ).Gap(0)
-            );
-
-            Layout.Height = Units.Pixels(30);
+                // Row(
+                Button("+", () => _value.Value = increment(_value.Value))
+                // ).Gap(2)
+            )
+            {
+                BackgroundColor = new Color(51, 51, 55),
+                BorderColor = new Color(63, 63, 70),
+                Layout =
+                {
+                    LayoutType = LayoutType.Row,
+                    Alignment = Alignment.Center,
+                    Height = Units.Auto,
+                }
+            };
         }
 
         private static IView Button(string label, Action onClick)
@@ -173,7 +171,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Signal<bool> _isChecked;
         private readonly IView _container;
 
-        public Checkbox(string label, Signal<bool> isChecked, SpriteFont? font = null)
+        public Checkbox(string label, Signal<bool> isChecked, SpriteFontBase? font = null)
         {
             _isChecked = isChecked;
 
@@ -341,9 +339,12 @@ namespace Ignis.Engine.UI.Widgets
             _isChecked = isChecked;
         }
 
-        protected override void OnMount() 
+        protected override void OnMount()
         {
-            CreateEffect(() => { var v = _isChecked.Value; }); 
+            CreateEffect(() =>
+            {
+                var v = _isChecked.Value;
+            });
         }
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)

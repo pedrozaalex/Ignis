@@ -1,3 +1,5 @@
+using FontStashSharp;
+using Ignis.Engine.Core;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Graphics;
 using Ignis.Engine.UI.Input;
@@ -17,23 +19,26 @@ namespace Ignis.Engine.UI.Core
         private readonly Dictionary<object, Rectangle> _bounds = new();
         private readonly Dictionary<long, Rectangle> _boundsById = new();
         private bool _isDisposed;
-        private SpriteFont? _defaultFont;
+        private SpriteFontBase? _defaultFont;
         private readonly int _instanceId;
         private static int _nextInstanceId;
         
         private readonly InputManager _inputManager;
 
         public PrimitiveBatch? PrimitiveBatch { get; }
-        public SpriteFont? DefaultFont => _defaultFont;
+        public SpriteFontBase? DefaultFont => _defaultFont;
         public InputManager Input => _inputManager;
+        public IgnisGame? Game { get; private set; }
+        public Theme Theme { get; set; } = Theme.Dark;
 
-        public UIContext(GraphicsDevice? graphicsDevice, SpriteFont? defaultFont = null)
+        public UIContext(GraphicsDevice? graphicsDevice, SpriteFontBase? defaultFont = null, Theme? theme = null)
         {
             _instanceId = Interlocked.Increment(ref _nextInstanceId);
             Console.WriteLine($"[UIContext #{_instanceId}] Created");
             
             _graphicsDevice = graphicsDevice;
             _defaultFont = defaultFont;
+            if (theme != null) Theme = theme;
             if (graphicsDevice != null)
             {
                 PrimitiveBatch = new PrimitiveBatch(graphicsDevice);
@@ -44,13 +49,20 @@ namespace Ignis.Engine.UI.Core
         }
 
         /// <summary>
+        /// Sets the game instance reference for accessing FontSystem and other game-level resources.
+        /// </summary>
+        public void SetGame(IgnisGame game)
+        {
+            Game = game;
+        }
+
+        /// <summary>
         /// Sets the default font for the UI context.
         /// </summary>
-        public void SetDefaultFont(SpriteFont font)
+        public void SetDefaultFont(SpriteFontBase font)
         {
             _defaultFont = font;
             Console.WriteLine($"[UIContext #{_instanceId}] SetDefaultFont called. Font is now: {(_defaultFont != null ? "SET" : "NULL")}");
-            Console.WriteLine($"[UIContext #{_instanceId}] Font details: LineSpacing={_defaultFont?.LineSpacing}");
         }
 
         /// <summary>

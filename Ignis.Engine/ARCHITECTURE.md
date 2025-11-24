@@ -7,6 +7,7 @@ The engine features a **Reactive Editor Architecture**. The UI is built on **Cru
 *   **Core**: .NET 8.0+
 *   **Data**: [Friflo.Engine.ECS](https://friflo.gitbook.io/friflo.engine.ecs)
 *   **Graphics**: [MonoGame 3.8.1+](https://monogame.net/)
+*   **Fonts**: [FontStashSharp](https://github.com/FontStashSharp/FontStashSharp) - Dynamic TrueType font rendering with optimal scaling
 *   **Reactivity**: **Crucible** (Custom Signal library defined in Phase 4).
     *   *Philosophy*: Synchronous, atomic propagation. No `INotifyPropertyChanged`.
 *   **UI**: **Ignis.UI** (Declarative "Render-as-Function" framework over MonoGame SpriteBatch).
@@ -188,6 +189,8 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
 
 #### Class: `UIContext`
 *   **Role**: The Root Renderer.
+*   **Properties**:
+    *   `Theme Theme`: Active theme for the UI (defaults to `Theme.Dark`)
 *   **Logic**:
     *   **Update**:
         1.  Polls Input (Mouse/Keyboard).
@@ -196,6 +199,25 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
     *   **Draw**:
         1.  Calculates Flexbox-style layout (measure/arrange).
         2.  Draws the tree using the hybrid rendering strategy (see below).
+
+#### Record: `Theme`
+*   **Role**: Centralized color palette for consistent UI styling.
+*   **Properties**:
+    *   `Color PrimaryColor`: Accent color for buttons, progress bars, badges
+    *   `Color BackgroundColor`: Main background color
+    *   `Color SurfaceColor`: Panel and container backgrounds
+    *   `Color BorderColor`: Border and separator colors
+    *   `Color TextColor`: Default text color
+    *   `SpriteFontBase? DefaultFont`: Optional default font
+*   **Built-in Themes**:
+    *   `Theme.Dark`: Dark theme (default) with blue accents
+    *   `Theme.Light`: Light theme with softer blue accents
+*   **Usage**: Widgets use nullable colors that fall back to theme colors:
+    ```csharp
+    var panel = new Panel { BackgroundColor = null }; // Uses Theme.SurfaceColor
+    var panel2 = new Panel { BackgroundColor = Color.Red }; // Explicit override
+    ```
+*   **Setting Theme**: Pass to UIContext constructor or set `context.Theme = Theme.Light`
 
 
 #### 5.4. Module: Ignis.Engine.UI (Rendering Strategy)
@@ -251,6 +273,71 @@ Ignis.UI employs a hybrid rendering strategy combining low-level primitive batch
 *   **Flexibility**: Easy to add gradients, per-vertex colors, or custom shapes (arcs, polygons).
 *   **Performance**: Single `DrawUserIndexedPrimitives` call per frame for all UI shapes (typical case).
 *   **Extensibility**: Future support for textured primitives, anti-aliasing, or custom shaders via `BasicEffect` replacement.
+
+#### 5.5. Font Rendering System (FontStackSharp)
+
+**Dynamic Font Rendering with Optimal Scaling**
+
+Ignis uses **FontStackSharp** instead of the MonoGame content pipeline for font rendering. This provides several key advantages:
+
+1.  **Runtime Font Loading**:
+    *   Fonts are loaded from TrueType files at runtime, eliminating build-time dependencies on MGCB
+    *   No need for `.spritefont` XML descriptors or prebuilt `.xnb` files
+    *   Supports loading from system fonts or embedded resources
+
+2.  **Dynamic Font Sizing**:
+    *   `FontSystem.GetFont(size)` creates fonts at any size on-demand
+    *   Glyphs are rasterized to a dynamic texture atlas
+    *   UI can use multiple font sizes without separate font files
+
+3.  **Enhanced Scaling Quality**:
+    *   Configured with optimal parameters for high-quality rendering at any scale:
+        ```csharp
+        FontSystemDefaults.FontResolutionFactor = 2.0f;  // 2x resolution for crisp scaling
+        FontSystemDefaults.KernelWidth = 2;               // Enhanced horizontal filtering
+        FontSystemDefaults.KernelHeight = 2;              // Enhanced vertical filtering
+        ```
+    *   `FontResolutionFactor` controls glyph atlas resolution (higher = better scaling, more memory)
+    *   `KernelWidth/Height` improve anti-aliasing via `stbtt__h_prefilter`/`stbtt__v_prefilter`
+
+4.  **Architecture**:
+    *   **`DefaultFontProvider`**: Manages FontSystem creation and font loading
+        *   Attempts to load system fonts (Arial, Calibri, Segoe UI)
+        *   Falls back gracefully if fonts are unavailable
+        *   Returns `SpriteFontBase` instances at requested sizes
+    *   **`IgnisGame.FontSystem`**: Global FontSystem instance
+        *   Created during `LoadContent()`
+        *   Accessible to all UI components
+    *   **`UIContext.DefaultFont`**: Default SpriteFontBase for UI text
+        *   Set automatically on context creation
+        *   Individual widgets can override with custom fonts
+
+5.  **API Changes**:
+    *   All font parameters changed from `SpriteFont?` to `SpriteFontBase?`
+    *   `DrawString` uses FontStackSharp extension with simplified signature:
+        ```csharp
+        spriteBatch.DrawString(font, text, position, color, scale);
+        // vs MonoGame: DrawString(font, text, pos, color, rotation, origin, scale, effects, depth)
+        ```
+    *   `MeasureString` works identically to MonoGame's API
+
+6.  **Performance**:
+    *   Glyphs cached in texture atlas per font size
+    *   First use of a character triggers rasterization
+    *   Subsequent uses are direct texture lookups
+    *   Atlas automatically grows as needed (configurable max size)
+
+**Integration with UI System**:
+*   Text widgets (`Text`, `Label`, `Button`) accept optional `SpriteFontBase` parameter
+*   Falls back to `UIContext.DefaultFont` if not specified
+*   `ReactiveText` updates efficiently when bound Signal changes
+*   Supports Unicode, including extended character sets and emoji (if font supports them)
+
+**Migration from MonoGame Fonts**:
+*   Old: Fonts required MGCB build step, `.spritefont` files, and ContentManager loading
+*   New: Fonts loaded directly from TTF files, no build step required
+*   Breaking change: `SpriteFont` → `SpriteFontBase` throughout UI system
+*   Benefit: Simpler workflow, better scaling, runtime font selection
 
 ---
 

@@ -1,3 +1,4 @@
+using FontStashSharp;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
@@ -295,7 +296,7 @@ namespace Ignis.Engine.UI.Widgets
         private readonly Signal<Vector3> _vector;
         private readonly Panel _container;
 
-        public Vector3Field(string label, Signal<Vector3> vector, SpriteFont? font = null)
+        public Vector3Field(string label, Signal<Vector3> vector, SpriteFontBase? font = null)
         {
             _vector = vector;
 

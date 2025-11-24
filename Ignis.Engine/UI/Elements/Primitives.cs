@@ -1,3 +1,4 @@
+using FontStashSharp;
 using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Microsoft.Xna.Framework;
@@ -34,24 +35,28 @@ namespace Ignis.Engine.UI.Elements
     /// <summary>
     /// Text label view.
     /// </summary>
-    public class Text(SpriteFont? font = null) : ViewComponent
+    public class Text(SpriteFontBase? font = null) : ViewComponent
     {
-        private const float TextScalingFactor = 0.5f;
         public string Content { get; set; } = "";
 
         public Color Color { get; set; } = Color.White;
+
+        /// <summary>
+        /// Optional font size override. If set, will get a font at this size from the game's FontSystem.
+        /// Use this to easily create titles (e.g., 32), headings (e.g., 24), or small text (e.g., 12).
+        /// </summary>
+        public int? FontSize { get; set; }
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
         {
             if (string.IsNullOrEmpty(Content))
                 return;
 
-            // Priority: custom font > context default font
-            var fontToUse = font ?? Context?.DefaultFont;
+            var fontToUse = GetFont();
 
             if (fontToUse != null)
             {
-                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color, 0f, Vector2.Zero, TextScalingFactor, SpriteEffects.None, 0f);
+                spriteBatch.DrawString(fontToUse, Content, new Vector2(bounds.X, bounds.Y), Color);
             }
         }
 
@@ -60,13 +65,24 @@ namespace Ignis.Engine.UI.Elements
             if (string.IsNullOrEmpty(Content))
                 return (0, 0);
 
-            // Priority: custom font > context default font > approximate
-            var fontToUse = font ?? Context?.DefaultFont;
+            var fontToUse = GetFont();
 
             if (fontToUse == null) return (Content.Length * 8f, 14f);
 
-            var size = fontToUse.MeasureString(Content) * TextScalingFactor;
+            var size = fontToUse.MeasureString(Content);
             return (size.X, size.Y);
+        }
+
+        private SpriteFontBase? GetFont()
+        {
+            // If FontSize is specified, try to get a font at that size from the FontSystem
+            if (FontSize.HasValue && Context?.Game?.FontSystem != null)
+            {
+                return Context.Game.FontSystem.GetFont(FontSize.Value);
+            }
+
+            // Otherwise: custom font > context default font
+            return font ?? Context?.DefaultFont;
         }
     }
 
