@@ -293,13 +293,10 @@ public class ButtonView : ViewComponent, IViewContainer
     {
         _panel.Mount(Context!);
         
-        System.Console.WriteLine($"[Button {Layout.ElementId}] Mounted, initial state: {CurrentState}");
-        
         // Update background color based on widget state using theme colors
         CreateEffect(() =>
         {
             var state = CurrentState;
-            System.Console.WriteLine($"[Button {Layout.ElementId}] State changed to: {state}");
             
             if (state.HasFlag(WidgetState.Active))
             {

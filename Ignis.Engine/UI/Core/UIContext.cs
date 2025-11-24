@@ -93,8 +93,6 @@ namespace Ignis.Engine.UI.Core
             var viewport = _graphicsDevice.Viewport;
             LayoutEngine.Layout(_root, this, this, viewport.Width, viewport.Height);
             
-            // Console.WriteLine($"[UIContext] After layout: {_boundsById.Count} bounds stored");
-            
             // Process input events (now bounds are available)
             _inputManager.Update();
         }

@@ -90,12 +90,9 @@ namespace Ignis.Engine.UI.Widgets
             // If this panel has a click handler, apply hover effects
             if (EventHandlers.OnPointerUp != null || EventHandlers.OnPointerDown != null)
             {
-                System.Console.WriteLine($"[Panel {Layout.ElementId}] Has click handler, enabling hover effects");
-                
                 CreateEffect(() =>
                 {
                     var state = CurrentState;
-                    System.Console.WriteLine($"[Panel {Layout.ElementId}] State changed to: {state}");
                     
                     // Apply hover/active color changes using theme state colors
                     if (state.HasFlag(WidgetState.Active))

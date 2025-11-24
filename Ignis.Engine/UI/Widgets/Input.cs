@@ -56,7 +56,7 @@ namespace Ignis.Engine.UI.Widgets
                     PaddingRight = Units.Pixels(8),
                     PaddingTop = Units.Pixels(6),
                     PaddingBottom = Units.Pixels(6),
-                    
+
                     // Make the panel focusable so clicks on it trigger focus
                     Focusable = true
                 }
@@ -70,9 +70,7 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _root.Mount(Context!);
-            
-            System.Console.WriteLine($"[TextField {Layout.ElementId}] Mounted, Focusable: {Layout.Focusable}");
-            
+
             // Set default background to InputBackground from theme if not explicitly set
             if (_root.BackgroundColor == null)
             {
@@ -81,18 +79,16 @@ namespace Ignis.Engine.UI.Widgets
 
             // Update text view when signal changes
             CreateEffect(() => { _textView.Content = _text.Value ?? ""; });
-            
+
             // Handle text input
             this.OnTextInput(character =>
             {
                 if (char.IsControl(character))
                     return;
-                    
+
                 _text.Value = (_text.Value ?? "") + character;
             });
-            
-            System.Console.WriteLine($"[TextField {Layout.ElementId}] OnTextInput handler registered: {EventHandlers.OnTextInput != null}");
-            
+
             // Handle backspace
             this.OnKeyDown(evt =>
             {
@@ -101,17 +97,26 @@ namespace Ignis.Engine.UI.Widgets
                     _text.Value = _text.Value[..^1];
                 }
             });
-            
-            // Update border color when focused
+
+            // Update visual state (Border & Background)
             CreateEffect(() =>
             {
-                if (CurrentState.HasFlag(WidgetState.Focused))
+                var state = CurrentState;
+
+                if (state.HasFlag(WidgetState.Focused))
                 {
                     _root.BorderColor = Context!.Theme.BorderFocus;
+                    _root.BackgroundColor = Context!.Theme.InputBackground;
+                }
+                else if (state.HasFlag(WidgetState.Hovered))
+                {
+                    _root.BorderColor = Color.Lerp(Context!.Theme.Border, Context!.Theme.Primary, 0.5f);
+                    _root.BackgroundColor = Color.Lerp(Context!.Theme.InputBackground, Color.White, 0.05f);
                 }
                 else
                 {
                     _root.BorderColor = Context!.Theme.Border;
+                    _root.BackgroundColor = Context!.Theme.InputBackground;
                 }
             });
         }
@@ -177,7 +182,7 @@ namespace Ignis.Engine.UI.Widgets
                     Focusable = true
                 }
             };
-            
+
             Layout.Focusable = true;
         }
 
@@ -195,13 +200,10 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _container.Mount(Context!);
-            
+
             // Sync edit text with value
-            CreateEffect(() =>
-            {
-                _editText.Value = _value.Value.ToString() ?? "0";
-            });
-            
+            CreateEffect(() => { _editText.Value = _value.Value.ToString() ?? "0"; });
+
             // Handle text input for numbers
             this.OnTextInput(character =>
             {
@@ -210,7 +212,7 @@ namespace Ignis.Engine.UI.Widgets
                     _editText.Value += character;
                 }
             });
-            
+
             // Handle backspace
             this.OnKeyDown(evt =>
             {
@@ -232,7 +234,7 @@ namespace Ignis.Engine.UI.Widgets
                     _value.Value = _decrement(_value.Value);
                 }
             });
-            
+
             // Update border color when focused
             CreateEffect(() =>
             {
@@ -245,14 +247,14 @@ namespace Ignis.Engine.UI.Widgets
                     _container.BorderColor = Context!.Theme.Border;
                 }
             });
-            
+
             // Set background color
             if (_container.BackgroundColor == null)
             {
                 _container.BackgroundColor = Context!.Theme.InputBackground;
             }
         }
-        
+
         private void TryUpdateValue()
         {
             if (typeof(T) == typeof(int))
@@ -319,8 +321,15 @@ namespace Ignis.Engine.UI.Widgets
                 }
             };
 
-            // Using Row helper
-            _container = Row(checkBoxVisual, labelView);
+            // Using Row helper - store as Panel so we can call OnClick
+            var row = Row(checkBoxVisual, labelView);
+
+            if (row is ViewComponent component)
+                component.OnClick(() => _isChecked.Value = !_isChecked.Value); // Allow clicking text too
+            else
+                throw new InvalidOperationException("Row did not return a ViewComponent");
+            
+            _container = row;
 
             Layout.Height = Units.Pixels(24);
         }
@@ -370,8 +379,6 @@ namespace Ignis.Engine.UI.Widgets
 
         protected override void OnMount()
         {
-            System.Console.WriteLine($"[Slider {Layout.ElementId}] Mounting...");
-            
             CreateEffect(() =>
             {
                 var val = _value.Value;
@@ -379,37 +386,33 @@ namespace Ignis.Engine.UI.Widgets
                 if (val < _min) _value.Value = _min;
                 if (val > _max) _value.Value = _max;
             });
-            
+
             // Handle mouse down (start drag)
             this.OnPointerDown(evt =>
             {
-                System.Console.WriteLine($"[Slider {Layout.ElementId}] OnPointerDown at {evt.Position}");
                 evt.StopPropagation();
                 UpdateValueFromMouse(evt.Position);
             });
-            
+
             // Handle dragging
             this.OnPointerMove(evt =>
             {
                 // Only update if this element is active (being pressed)
                 if (Context?.Input.ActiveElementId.Value == Layout.ElementId)
                 {
-                    System.Console.WriteLine($"[Slider {Layout.ElementId}] OnPointerMove (dragging) at {evt.Position}");
                     UpdateValueFromMouse(evt.Position);
                 }
             });
-            
-            System.Console.WriteLine($"[Slider {Layout.ElementId}] Handlers registered - Down: {EventHandlers.OnPointerDown != null}, Move: {EventHandlers.OnPointerMove != null}");
         }
-        
+
         private void UpdateValueFromMouse(Vector2 mousePos)
         {
             if (Context == null) return;
-            
+
             var bounds = Context.GetBounds(this);
             // Calculate normalized position (0.0 to 1.0)
             float t = (mousePos.X - bounds.X) / bounds.Width;
-            
+
             // Map to Min/Max range
             float newValue = _min + Math.Clamp(t, 0f, 1f) * (_max - _min);
             _value.Value = newValue;
@@ -432,7 +435,7 @@ namespace Ignis.Engine.UI.Widgets
             // Resolve colors from theme
             var trackColor = TrackColor != default ? TrackColor : Context.Theme.SliderTrack;
             var fillColor = FillColor != default ? FillColor : Context.Theme.Primary;
-            
+
             // Draw track background
             batch.DrawFilledRectangle(trackBounds, trackColor);
 
@@ -446,7 +449,7 @@ namespace Ignis.Engine.UI.Widgets
                 batch.DrawFilledRectangle(fillBounds, fillColor);
             }
 
-            // Resolve thumb color based on state using theme colors
+            // Resolve thumb color based on state
             Color thumbColor;
             if (CurrentState.HasFlag(WidgetState.Active))
                 thumbColor = Context.Theme.Primary;
@@ -454,7 +457,7 @@ namespace Ignis.Engine.UI.Widgets
                 thumbColor = Context.Theme.SliderThumbHover;
             else
                 thumbColor = ThumbColor != default ? ThumbColor : Context.Theme.SliderThumb;
-            
+
             // Draw thumb
             var thumbBounds = new Rectangle(
                 thumbX - thumbSize / 2,
@@ -533,6 +536,11 @@ namespace Ignis.Engine.UI.Widgets
             var batch = Context.PrimitiveBatch;
             if (batch == null) return;
 
+            var state = CurrentState;
+            var borderColor = state.HasFlag(WidgetState.Hovered)
+                ? Color.Lerp(BorderColor, Color.White, 0.3f)
+                : BorderColor;
+
             // Draw background
             batch.DrawFilledRectangle(bounds, BackgroundColor);
 
@@ -549,7 +557,7 @@ namespace Ignis.Engine.UI.Widgets
             }
 
             // Draw border
-            batch.DrawBorder(bounds, 1f, BorderColor);
+            batch.DrawBorder(bounds, 1f, borderColor);
         }
     }
 }

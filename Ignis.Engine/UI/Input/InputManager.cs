@@ -44,13 +44,20 @@ namespace Ignis.Engine.UI.Input
         
         private void OnTextInput(object? sender, TextInputEventArgs e)
         {
-            // Forward text input to focused element
+            // Forward text input to focused element AND bubble up
             if (_focusedElementId.Value.HasValue && _root != null)
             {
                 var focusedView = FindViewById(_focusedElementId.Value.Value, _root);
-                if (focusedView is ViewComponent component)
+                
+                // Bubble text input event up the tree
+                var current = focusedView;
+                while (current != null)
                 {
-                    component.EventHandlers.InvokeTextInput(e.Character);
+                    if (current is ViewComponent component)
+                    {
+                        component.EventHandlers.InvokeTextInput(e.Character);
+                    }
+                    current = FindParent(current, _root);
                 }
             }
         }
@@ -78,21 +85,12 @@ namespace Ignis.Engine.UI.Input
             // Find the topmost view under the cursor (depth-first search, reverse order for Z-index)
             var hitView = FindViewAt(mousePos, _root!);
             
-            // Debug logging
-            var isJustPressed = _input.IsMouseButtonJustPressed(0);
-            if (isJustPressed)
-            {
-                Console.WriteLine($"[InputManager] IsMouseButtonJustPressed(0) = TRUE at {mousePos}, bounds count: {_bounds.Count}, hitView: {(hitView != null ? $"ID {hitView.Layout.ElementId}" : "NULL")}");
-            }
-            
             // Update hover state
             var previousHovered = _hoveredElementId.Value;
             var currentHovered = hitView?.Layout.ElementId;
 
             if (previousHovered != currentHovered)
             {
-                Console.WriteLine($"[InputManager] Hover changed from {previousHovered} to {currentHovered}");
-                
                 // Fire leave event on previous
                 if (previousHovered.HasValue)
                 {
@@ -130,23 +128,23 @@ namespace Ignis.Engine.UI.Input
 
         private void HandleMouseDown(Vector2 position, int button, IView? hitView)
         {
+            // Logic to clear focus if clicking outside or on non-focusable element
+            bool focusHandled = false;
+
             if (hitView is ViewComponent component)
             {
-                Console.WriteLine($"[InputManager] HandleMouseDown on element {component.Layout.ElementId}, focusable: {component.Layout.Focusable}");
-                
                 // Set active element (pressed/dragging state)
                 _activeElementId.Value = component.Layout.ElementId;
                 
                 // Set focus if focusable
                 if (component.Layout.Focusable)
                 {
-                    Console.WriteLine($"[InputManager] Setting focus to {component.Layout.ElementId}");
                     _focusedElementId.Value = component.Layout.ElementId;
+                    focusHandled = true;
                 }
 
                 // Fire pointer down event with bubbling
                 var evt = new PointerEvent(position, button, PointerType.Mouse, PointerEventType.Down);
-                Console.WriteLine($"[InputManager] Invoking PointerDown on {component.Layout.ElementId}");
                 BubbleEvent(component, view =>
                 {
                     if (view is ViewComponent vc)
@@ -158,9 +156,11 @@ namespace Ignis.Engine.UI.Input
                 // Store drag start position
                 _dragStartPosition = position;
             }
-            else
+            
+            // If we clicked something that wasn't focusable, or clicked nothing at all, clear focus
+            if (!focusHandled)
             {
-                Console.WriteLine($"[InputManager] HandleMouseDown but hitView is not a ViewComponent");
+                _focusedElementId.Value = null;
             }
         }
 
@@ -310,18 +310,10 @@ namespace Ignis.Engine.UI.Input
         {
             if (!_bounds.TryGetValue(root.Layout.ElementId, out var bounds))
             {
-                if (_input.IsMouseButtonJustPressed(0))
-                {
-                    Console.WriteLine($"[FindViewAt] No bounds for element ID {root.Layout.ElementId}");
-                }
                 return null;
             }
 
             var contains = bounds.Contains(position);
-            if (_input.IsMouseButtonJustPressed(0))
-            {
-                Console.WriteLine($"[FindViewAt] ID {root.Layout.ElementId}, bounds {bounds}, contains {position}: {contains}");
-            }
             
             if (!contains)
                 return null;

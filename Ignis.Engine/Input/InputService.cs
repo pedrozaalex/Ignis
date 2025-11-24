@@ -10,7 +10,6 @@ public class InputService : IInputProvider
     private MouseState _prevMouse;
     private KeyboardState _currentKey;
     private KeyboardState _prevKey;
-    private static int _frameCount = 0;
 
     public event EventHandler<TextInputEventArgs>? TextInput;
 
@@ -18,18 +17,11 @@ public class InputService : IInputProvider
 
     public void Update()
     {
-        _frameCount++;
         _prevMouse = _currentMouse;
         _currentMouse = Mouse.GetState();
         
         _prevKey = _currentKey;
         _currentKey = Keyboard.GetState();
-        
-        // Debug: Log ALL button state changes
-        if (_currentMouse.LeftButton != _prevMouse.LeftButton)
-        {
-            Console.WriteLine($"[InputService Frame {_frameCount}] Left button state changed: {_prevMouse.LeftButton} -> {_currentMouse.LeftButton} at {MousePosition}");
-        }
     }
 
     public bool IsMouseButtonPressed(int buttonIndex)
