@@ -3,27 +3,30 @@ using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Widgets;
+using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Console = System.Console;
 using ReactiveEffect = Ignis.Engine.Reactive.Effect;
+using static Ignis.Engine.UI.Elements.Elements;
+
 
 namespace Ignis.Samples;
 
 /// <summary>
-///     HierarchyWidgetSample - Demonstrates TreeView, Hierarchy, and dynamic list updates.
-///     Shows how to build and manipulate hierarchical data structures reactively.
+/// HierarchyWidgetSample - Demonstrates TreeView, Hierarchy, and dynamic list updates.
+/// Shows how to build and manipulate hierarchical data structures reactively.
 /// </summary>
 public class HierarchyWidgetSample : IgnisGame
 {
-    private readonly SignalList<LogEntry> _logEntries = new();
-
-    // Reactive state
-    private readonly SignalList<TreeNode<string>> _sceneNodes = new();
-    private readonly Signal<string?> _selectedNode = new(null);
-    private int _entityCounter;
-    private SpriteBatch? _spriteBatch;
     private UIContext? _uiContext;
+    private SpriteBatch? _spriteBatch;
+    
+    // Reactive state
+    private readonly SignalList<TreeNode<string>> _sceneNodes = new SignalList<TreeNode<string>>();
+    private readonly Signal<string?> _selectedNode = new Signal<string?>(null);
+    private readonly SignalList<LogEntry> _logEntries = new SignalList<LogEntry>();
+    private int _entityCounter;
 
     public HierarchyWidgetSample() : base(new IgnisApp(new EngineSettings
     {
@@ -37,80 +40,63 @@ public class HierarchyWidgetSample : IgnisGame
     protected override void Initialize()
     {
         base.Initialize();
-
+        
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         _uiContext = new UIContext(GraphicsDevice, App.Input);
 
         // Use the automatically loaded default font
-        if (DefaultFont != null) _uiContext.SetDefaultFont(DefaultFont);
-
+        if (DefaultFont != null)
+        {
+            _uiContext.SetDefaultFont(DefaultFont);
+        }
+        
         // Setup initial scene
         InitializeScene();
-
+        
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
-
+        
         // Setup reactive logging
         SetupReactiveEffects();
-
+        
         LogInfo("Hierarchy Widget Sample initialized");
-        LogInfo("Watch the hierarchy and console update reactively!");
     }
-
 
     private void InitializeScene()
     {
         var root = new TreeNode<string>("Scene Root")
         {
-            IsExpanded =
-            {
-                Value = true
-            }
+            IsExpanded = { Value = true }
         };
 
-        var camera = new TreeNode<string>("Main Camera", 1);
-        var light = new TreeNode<string>("Directional Light", 1);
-
-        var player = new TreeNode<string>("Player", 1)
-        {
-            IsExpanded =
-            {
-                Value = true
-            }
-        };
+        root.AddChild(new TreeNode<string>("Main Camera", 1));
+        root.AddChild(new TreeNode<string>("Directional Light", 1));
+        
+        var player = new TreeNode<string>("Player", 1) { IsExpanded = { Value = true } };
         player.AddChild(new TreeNode<string>("Mesh Renderer", 2));
         player.AddChild(new TreeNode<string>("Collider", 2));
-        player.AddChild(new TreeNode<string>("Script", 2));
 
-        root.AddChild(camera);
-        root.AddChild(light);
         root.AddChild(player);
 
         _sceneNodes.Add(root);
-        _entityCounter = 3; // Camera, Light, Player
+        _entityCounter = 3; 
     }
 
     private IView BuildUI()
     {
-        // Left side - Hierarchy
+        // 1. Hierarchy Panel
         var hierarchyPanel = CreateHierarchyPanel();
-
-        // Right side - Console and Controls
+        
+        // 2. Right Panel (Controls + Console)
         var rightPanel = CreateRightPanel();
 
-        // Main split view
-        var splitter = new Splitter(hierarchyPanel, rightPanel)
+        // 3. Main Split
+        return new Splitter(hierarchyPanel, rightPanel, isVertical: false)
         {
-            SplitRatio = 0.5f,
-            Layout =
-            {
-                Width = Units.Stretch(1),
-                Height = Units.Stretch(1)
-            }
+            SplitRatio = 0.4f,
+            Layout = { Width = Units.Stretch(1), Height = Units.Stretch(1) }
         };
-
-        return splitter;
     }
 
     private IView CreateHierarchyPanel()
@@ -123,22 +109,14 @@ public class HierarchyWidgetSample : IgnisGame
             _selectedNode
         )
         {
-            Layout =
-            {
-                Height = Units.Stretch(1)
-            }
+            Layout = { Height = Units.Stretch(1) }
         };
 
-        var panel = new Panel(title, hierarchy)
+        return new Panel(title, hierarchy)
         {
             BorderThickness = 1f,
-            Layout =
-            {
-                LayoutType = LayoutType.Column
-            }
+            Layout = { LayoutType = LayoutType.Column }
         };
-
-        return panel;
     }
 
     private IView CreateRightPanel()
@@ -146,273 +124,173 @@ public class HierarchyWidgetSample : IgnisGame
         var controlsPanel = CreateControlsPanel();
         var consolePanel = CreateConsolePanel();
 
-        var splitter = new Splitter(controlsPanel, consolePanel, true)
+        return new Splitter(controlsPanel, consolePanel, isVertical: true)
         {
-            SplitRatio = 0.35f
+            SplitRatio = 0.4f,
+            Layout = { Width = Units.Stretch(1), Height = Units.Stretch(1) }
         };
-
-        return splitter;
     }
 
     private IView CreateControlsPanel()
     {
         var title = CreateTitle("Controls");
 
-        // Selection info
-        var selectionLabel = new Label("Selected:", null, Color.LightGray)
-        {
-            Layout =
-            {
-                PaddingBottom = Units.Pixels(5)
-            }
-        };
-
-        var selectedName = new Label(
-            Computed<string>.From(() => _selectedNode.Value ?? "(none)")
+        // Selected Item Info
+        var infoPanel = new Panel(
+            new Label("Selected Entity:", null, Color.Gray),
+            new Label(Computed<string>.From(() => _selectedNode.Value ?? "None"), null, Color.White)
         )
         {
-            Layout =
-            {
-                PaddingBottom = Units.Pixels(20)
-            }
+            Layout = { PaddingBottom = Units.Pixels(20) }
         };
 
-        // Buttons (Note: Clicks not wired yet, but showing structure)
-        var buttonPanel = CreateButtonPanel();
-
-        var container = new Panel(
-            title,
-            selectionLabel,
-            selectedName,
-            buttonPanel
+        // Buttons
+        var buttons = new Panel(
+            Button("Add New Entity", AddRootEntity).Width(200).Height(30),
+            Button("Add Child to Selected", AddChildEntity).Width(200).Height(30),
+            Button("Remove Selected", RemoveSelectedEntity).Width(200).Height(30),
+            Button("Clear Console", () => _logEntries.Clear()).Width(200).Height(30)
         )
         {
-            BorderThickness = 1f,
-            Layout =
-            {
-                LayoutType = LayoutType.Column,
-                PaddingLeft = Units.Pixels(15),
-                PaddingRight = Units.Pixels(15)
-            }
+            Layout = { LayoutType = LayoutType.Column, RowGap = Units.Pixels(5) }
         };
 
-        return container;
-    }
-
-    private IView CreateButtonPanel()
-    {
-        var addButton = CreateButton("Add Entity");
-        var addChildButton = CreateButton("Add Child");
-        var removeButton = CreateButton("Remove");
-        var clearLogsButton = CreateButton("Clear Logs");
-
-        var panel = new Panel(
-            addButton,
-            addChildButton,
-            removeButton,
-            clearLogsButton
-        )
+        return new Panel(title, infoPanel, buttons)
         {
-            BackgroundColor = Color.Transparent,
-            Layout =
-            {
-                LayoutType = LayoutType.Column
-            }
+            Layout = { PaddingLeft = Units.Pixels(15), PaddingRight = Units.Pixels(15) }
         };
-
-        return panel;
-    }
-
-    private IView CreateButton(string text)
-    {
-        var label = new Label(text, null, Color.White);
-
-        var button = new Panel(label)
-        {
-            BorderThickness = 1f,
-            Layout =
-            {
-                Width = Units.Pixels(150),
-                Height = Units.Pixels(32),
-                PaddingLeft = Units.Pixels(15),
-                PaddingTop = Units.Pixels(8),
-                PaddingBottom = Units.Pixels(10)
-            }
-        };
-
-        // Wrap to set button colors from theme after mount
-        return new ThemedButton(button);
     }
 
     private IView CreateConsolePanel()
     {
-        var title = CreateTitle("Console");
-
-        var consoleWidget = new Engine.UI.Widgets.Console(_logEntries)
+        var title = CreateTitle("Console Log");
+        
+        var console = new Engine.UI.Widgets.Console(_logEntries)
         {
-            Layout =
-            {
-                Height = Units.Stretch(1)
-            }
+            Layout = { Height = Units.Stretch(1) }
         };
 
-        // Stats
-        var statsLabel = new Label(
-            Computed<string>.From(() => $"Entries: {_logEntries.Count}")
-        )
-        {
-            Layout =
-            {
-                Height = Units.Pixels(25),
-                PaddingLeft = Units.Pixels(10),
-                PaddingTop = Units.Pixels(5)
-            }
-        };
-
-        var panel = new Panel(title, consoleWidget, statsLabel)
+        return new Panel(title, console)
         {
             BorderThickness = 1f,
-            Layout =
-            {
-                LayoutType = LayoutType.Column
-            }
+            Layout = { LayoutType = LayoutType.Column }
         };
-
-        return panel;
     }
 
     private IView CreateTitle(string text)
     {
-        var label = new Label(text, null, Color.White);
-
-        var panel = new Panel(label)
+        return new Panel(new Label(text, null, Color.White))
         {
-            Layout =
-            {
-                Height = Units.Pixels(30),
-                PaddingLeft = Units.Pixels(10),
-                PaddingTop = Units.Pixels(7)
-            }
+            Layout = { Height = Units.Pixels(30), PaddingLeft = Units.Pixels(10), PaddingTop = Units.Pixels(5) },
+            BackgroundColor = Color.FromNonPremultiplied(40, 40, 40, 255)
         };
-
-        return panel;
     }
+
+    // --- Interaction Logic ---
+
+    private void AddRootEntity()
+    {
+        if (_sceneNodes.Count == 0) return; // Guard
+        
+        _entityCounter++;
+        var newEntity = new TreeNode<string>($"Entity {_entityCounter}", 1);
+        _sceneNodes[0].AddChild(newEntity); // Add to root
+        LogInfo($"Added {newEntity.Data} to root");
+    }
+
+    private void AddChildEntity()
+    {
+        var selectedName = _selectedNode.Value;
+        if (selectedName == null)
+        {
+            LogWarning("No entity selected!");
+            return;
+        }
+
+        // Find selected node
+        var node = FindNode(_sceneNodes[0], selectedName);
+        if (node != null)
+        {
+            _entityCounter++;
+            var child = new TreeNode<string>($"Child {_entityCounter}");
+            node.AddChild(child);
+            node.IsExpanded.Value = true; // Auto-expand
+            LogInfo($"Added {child.Data} to {node.Data}");
+        }
+    }
+
+    private void RemoveSelectedEntity()
+    {
+        var selectedName = _selectedNode.Value;
+        if (selectedName == null) return;
+        
+        if (selectedName == "Scene Root")
+        {
+            LogError("Cannot remove Scene Root!");
+            return;
+        }
+
+        if (RemoveNode(_sceneNodes[0], selectedName))
+        {
+            LogInfo($"Removed {selectedName}");
+            _selectedNode.Value = null;
+        }
+    }
+
+    // Helper: Recursive find
+    private TreeNode<string>? FindNode(TreeNode<string> root, string name)
+    {
+        if (root.Data == name) return root;
+        foreach (var child in root.Children.Items)
+        {
+            var found = FindNode(child, name);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    // Helper: Recursive remove
+    private bool RemoveNode(TreeNode<string> root, string name)
+    {
+        // Check children
+        var toRemove = root.Children.Items.FirstOrDefault(c => c.Data == name);
+        if (toRemove != null)
+        {
+            root.Children.Remove(toRemove);
+            return true;
+        }
+
+        foreach (var child in root.Children.Items)
+        {
+            if (RemoveNode(child, name)) return true;
+        }
+        return false;
+    }
+
+    // --- Helpers ---
+
+    private void LogInfo(string msg) => _logEntries.Add(new LogEntry(LogLevel.Info, msg));
+    private void LogWarning(string msg) => _logEntries.Add(new LogEntry(LogLevel.Warning, msg));
+    private void LogError(string msg) => _logEntries.Add(new LogEntry(LogLevel.Error, msg));
 
     private void SetupReactiveEffects()
     {
-        // Log selection changes
         new ReactiveEffect(() =>
         {
-            var selected = _selectedNode.Value;
-            if (selected != null) LogInfo($"Selected: {selected}");
+            if (_selectedNode.Value != null)
+                Console.WriteLine($"[Sample] Selection changed: {_selectedNode.Value}");
         });
-
-        // Log hierarchy changes
-        _sceneNodes.ItemAdded += (item, index) => { LogInfo($"Node added to hierarchy: {item.Data}"); };
-
-        _sceneNodes.ItemRemoved += (item, index) => { LogWarning($"Node removed from hierarchy: {item.Data}"); };
     }
 
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
         _uiContext?.Update(gameTime);
-
-        // Auto-demo: Add entities every 5 seconds
-        var totalSeconds = gameTime.TotalGameTime.TotalSeconds;
-        if (totalSeconds % 5.0 < 0.016 && totalSeconds > 2.0) AddRandomEntity();
-    }
-
-    private void AddRandomEntity()
-    {
-        if (_sceneNodes.Count == 0) return;
-
-        _entityCounter++;
-        var entityTypes = new[] { "Cube", "Sphere", "Plane", "Light", "Camera", "Empty" };
-        var randomType = entityTypes[new Random().Next(entityTypes.Length)];
-        var entityName = $"{randomType} {_entityCounter}";
-
-        var newNode = new TreeNode<string>(entityName, 1);
-
-        // Add to root
-        var root = _sceneNodes[0];
-        root.AddChild(newNode);
-
-        LogInfo($"Auto-created: {entityName}");
-
-        // Auto-expand root if collapsed
-        if (!root.IsExpanded.Value) root.IsExpanded.Value = true;
-    }
-
-    private void LogInfo(string message)
-    {
-        _logEntries.Add(new LogEntry(LogLevel.Info, message));
-        Console.WriteLine($"[INFO] {message}");
-    }
-
-    private void LogWarning(string message)
-    {
-        _logEntries.Add(new LogEntry(LogLevel.Warning, message));
-        Console.WriteLine($"[WARNING] {message}");
-    }
-
-    private void LogError(string message)
-    {
-        _logEntries.Add(new LogEntry(LogLevel.Error, message));
-        Console.WriteLine($"[ERROR] {message}");
     }
 
     protected override void OnRenderUI(SpriteBatch spriteBatch)
     {
         base.OnRenderUI(spriteBatch);
-
-        if (_uiContext != null)
-            // UIContext.Draw handles Begin/End internally now to ensure correct draw order
-            // of primitives vs text. Do NOT wrap this in spriteBatch.Begin/End.
-            _uiContext.Draw(spriteBatch);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _spriteBatch?.Dispose();
-            _uiContext?.Dispose();
-        }
-
-        base.Dispose(disposing);
-    }
-
-    // Helper class to apply theme colors to buttons
-    private class ThemedButton : ViewComponent, IViewContainer
-    {
-        private readonly Panel _button;
-
-        public ThemedButton(Panel button)
-        {
-            _button = button;
-        }
-
-        public IEnumerable<IView> GetChildren()
-        {
-            yield return _button;
-        }
-
-        protected override void OnMount()
-        {
-            _button.Mount(Context!);
-            _button.BackgroundColor = Context!.Theme.Primary;
-            // Slightly darker border for depth
-            _button.BorderColor = Color.Lerp(Context!.Theme.Primary, Color.Black, 0.2f);
-        }
-
-        protected override void OnUnmount()
-        {
-            _button.Unmount();
-        }
-
-        public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
-        {
-        }
+        _uiContext?.Draw(spriteBatch);
     }
 }

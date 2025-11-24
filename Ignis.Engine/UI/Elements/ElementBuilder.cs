@@ -274,13 +274,13 @@ public class ButtonView : ViewComponent, IViewContainer
     {
         _labelText = new Text(font) { Content = label, Color = Color.White };
         _panel = new Panel(_labelText)
-            .Width(100)
-            .Height(30)
             .AlignCenter()
             .Rounded(4)
             .OnClick(onClick);
 
         _panel.Layout.Focusable = false; // Buttons don't need focus, just hover/active
+        _panel.Layout.Width = Units.Stretch(1);
+        _panel.Layout.Height = Units.Stretch(1);
     }
 
     public Signal<bool>? IsEnabled { get; set; }

@@ -38,26 +38,11 @@ public record Theme
     public Color SurfaceHover { get; init; }
     public Color SurfaceActive { get; init; }
 
-    // Slider specific
-    public Color SliderTrack { get; init; }
-    public Color SliderThumb { get; init; }
-    public Color SliderThumbHover { get; init; }
 
     // Overlay colors
     public Color TooltipBackground { get; init; }
 
     public SpriteFontBase? DefaultFont { get; init; }
-
-    // Legacy compatibility properties (deprecated - use semantic names)
-    [Obsolete("Use Primary instead")] public Color PrimaryColor => Primary;
-
-    [Obsolete("Use Background instead")] public Color BackgroundColor => Background;
-
-    [Obsolete("Use Surface instead")] public Color SurfaceColor => Surface;
-
-    [Obsolete("Use Border instead")] public Color BorderColor => Border;
-
-    [Obsolete("Use TextMain instead")] public Color TextColor => TextMain;
 
     public static Theme Dark => new()
     {
@@ -94,10 +79,6 @@ public record Theme
         SurfaceHover = new Color(60, 60, 65),
         SurfaceActive = new Color(35, 35, 38),
 
-        // Slider
-        SliderTrack = new Color(63, 63, 70),
-        SliderThumb = new Color(180, 180, 180),
-        SliderThumbHover = new Color(220, 220, 220),
 
         // Overlay
         TooltipBackground = new Color(30, 30, 30, 240)
@@ -138,10 +119,6 @@ public record Theme
         SurfaceHover = new Color(235, 235, 235),
         SurfaceActive = new Color(220, 220, 220),
 
-        // Slider
-        SliderTrack = new Color(200, 200, 200),
-        SliderThumb = new Color(100, 100, 100),
-        SliderThumbHover = new Color(60, 60, 60),
 
         // Overlay
         TooltipBackground = new Color(50, 50, 50, 240)

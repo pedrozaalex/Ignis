@@ -409,9 +409,9 @@ public class Slider : ViewComponent
         var trackY = bounds.Y + (bounds.Height - trackHeight) / 2;
         var trackBounds = new Rectangle(bounds.X, trackY, bounds.Width, trackHeight);
 
-        // Resolve colors from theme
-        var trackColor = TrackColor != default ? TrackColor : Context.Theme.SliderTrack;
-        var fillColor = FillColor != default ? FillColor : Context.Theme.Primary;
+            // Resolve colors from theme
+            var trackColor = TrackColor != default ? TrackColor : Context.Theme.Border;
+            var fillColor = FillColor != default ? FillColor : Context.Theme.Primary;
 
         // Draw track background
         batch.DrawFilledRectangle(trackBounds, trackColor);
@@ -426,14 +426,14 @@ public class Slider : ViewComponent
             batch.DrawFilledRectangle(fillBounds, fillColor);
         }
 
-        // Resolve thumb color based on state
-        Color thumbColor;
-        if (CurrentState.HasFlag(WidgetState.Active))
-            thumbColor = Context.Theme.Primary;
-        else if (CurrentState.HasFlag(WidgetState.Hovered))
-            thumbColor = Context.Theme.SliderThumbHover;
-        else
-            thumbColor = ThumbColor != default ? ThumbColor : Context.Theme.SliderThumb;
+            // Resolve thumb color based on state using semantic colors
+            Color thumbColor;
+            if (CurrentState.HasFlag(WidgetState.Active))
+                thumbColor = Context.Theme.Primary;
+            else if (CurrentState.HasFlag(WidgetState.Hovered))
+                thumbColor = Context.Theme.OnSurface; // Brighter on hover
+            else
+                thumbColor = ThumbColor != default ? ThumbColor : Context.Theme.TextMuted; // Default to muted text color
 
         // Draw thumb
         var thumbBounds = new Rectangle(
