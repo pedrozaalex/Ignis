@@ -271,41 +271,64 @@ public class ReactiveText : Text
 /// </summary>
 public class ButtonView : ViewComponent, IViewContainer
 {
-    private readonly IView _content;
+    private readonly Panel _panel;
+    private readonly Text _labelText;
 
     public Signal<bool>? IsEnabled { get; set; }
 
     public ButtonView(string label, Action onClick, SpriteFontBase? font)
     {
-        var panel = new Panel(new Text(font) { Content = label, Color = Color.White })
+        _labelText = new Text(font) { Content = label, Color = Color.White };
+        _panel = new Panel(_labelText)
                 .Width(100)
                 .Height(30)
                 .AlignCenter()
                 .Rounded(4)
-                .OnClick(onClick)
-            ;
+                .OnClick(onClick);
 
-        _content = panel;
+        _panel.Layout.Focusable = false; // Buttons don't need focus, just hover/active
     }
 
     protected override void OnMount()
     {
-        _content.Mount(Context!);
+        _panel.Mount(Context!);
+        
+        System.Console.WriteLine($"[Button {Layout.ElementId}] Mounted, initial state: {CurrentState}");
+        
+        // Update background color based on widget state
+        CreateEffect(() =>
+        {
+            var state = CurrentState;
+            System.Console.WriteLine($"[Button {Layout.ElementId}] State changed to: {state}");
+            
+            if (state.HasFlag(WidgetState.Active))
+            {
+                _panel.BackgroundColor = Context!.Theme.ButtonActiveColor;
+            }
+            else if (state.HasFlag(WidgetState.Hovered))
+            {
+                _panel.BackgroundColor = Context!.Theme.ButtonHoverColor;
+            }
+            else
+            {
+                _panel.BackgroundColor = Context!.Theme.PrimaryColor;
+            }
+        });
     }
 
     protected override void OnUnmount()
     {
-        _content.Unmount();
+        _panel.Unmount();
     }
 
     public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
     {
-        // TODO: Handle click detection
+        // Drawing is handled by the panel
     }
 
     public IEnumerable<IView> GetChildren()
     {
-        yield return _content;
+        yield return _panel;
     }
 }
 

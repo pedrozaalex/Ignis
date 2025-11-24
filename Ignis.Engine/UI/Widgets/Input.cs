@@ -55,7 +55,10 @@ namespace Ignis.Engine.UI.Widgets
                     PaddingLeft = Units.Pixels(8),
                     PaddingRight = Units.Pixels(8),
                     PaddingTop = Units.Pixels(6),
-                    PaddingBottom = Units.Pixels(6)
+                    PaddingBottom = Units.Pixels(6),
+                    
+                    // Make the panel focusable so clicks on it trigger focus
+                    Focusable = true
                 }
             };
 
@@ -67,6 +70,8 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _root.Mount(Context!);
+            
+            System.Console.WriteLine($"[TextField {Layout.ElementId}] Mounted, Focusable: {Layout.Focusable}");
             
             // Set default background to InputBackground from theme if not explicitly set
             if (_root.BackgroundColor == null)
@@ -85,6 +90,8 @@ namespace Ignis.Engine.UI.Widgets
                     
                 _text.Value = (_text.Value ?? "") + character;
             });
+            
+            System.Console.WriteLine($"[TextField {Layout.ElementId}] OnTextInput handler registered: {EventHandlers.OnTextInput != null}");
             
             // Handle backspace
             this.OnKeyDown(evt =>
@@ -131,14 +138,21 @@ namespace Ignis.Engine.UI.Widgets
     public class NumberField<T> : ViewComponent, IViewContainer where T : struct
     {
         private readonly Signal<T> _value;
-        private readonly IView _container;
+        private readonly Func<T, T> _increment;
+        private readonly Func<T, T> _decrement;
+        private readonly Signal<string> _editText;
+        private readonly Panel _container;
+        private readonly ReactiveText _valueText;
 
         public NumberField(Signal<T> value, Func<T, T> increment, Func<T, T> decrement, SpriteFontBase? font = null)
         {
             _value = value;
+            _increment = increment;
+            _decrement = decrement;
+            _editText = new Signal<string>(value.Value.ToString() ?? "0");
 
-            var valueText = new ReactiveText(
-                Computed<string>.From(() => _value.Value.ToString() ?? "0"),
+            _valueText = new ReactiveText(
+                Computed<string>.From(() => _editText.Value),
                 font
             )
             {
@@ -150,19 +164,21 @@ namespace Ignis.Engine.UI.Widgets
 
             _container = new Panel(
                 Button("-", () => _value.Value = decrement(_value.Value)),
-                valueText,
-                // Row(
+                _valueText,
                 Button("+", () => _value.Value = increment(_value.Value))
-                // ).Gap(2)
             )
             {
+                BorderThickness = 1f,
                 Layout =
                 {
                     LayoutType = LayoutType.Row,
                     Alignment = Alignment.Center,
                     Height = Units.Auto,
+                    Focusable = true
                 }
             };
+            
+            Layout.Focusable = true;
         }
 
         private static IView Button(string label, Action onClick)
@@ -179,6 +195,87 @@ namespace Ignis.Engine.UI.Widgets
         protected override void OnMount()
         {
             _container.Mount(Context!);
+            
+            // Sync edit text with value
+            CreateEffect(() =>
+            {
+                _editText.Value = _value.Value.ToString() ?? "0";
+            });
+            
+            // Handle text input for numbers
+            this.OnTextInput(character =>
+            {
+                if (char.IsDigit(character) || character == '-' || character == '.')
+                {
+                    _editText.Value += character;
+                }
+            });
+            
+            // Handle backspace
+            this.OnKeyDown(evt =>
+            {
+                if (evt.Key == Microsoft.Xna.Framework.Input.Keys.Back && _editText.Value.Length > 0)
+                {
+                    _editText.Value = _editText.Value[..^1];
+                }
+                else if (evt.Key == Microsoft.Xna.Framework.Input.Keys.Enter)
+                {
+                    // Try to parse and update value on Enter
+                    TryUpdateValue();
+                }
+                else if (evt.Key == Microsoft.Xna.Framework.Input.Keys.Up)
+                {
+                    _value.Value = _increment(_value.Value);
+                }
+                else if (evt.Key == Microsoft.Xna.Framework.Input.Keys.Down)
+                {
+                    _value.Value = _decrement(_value.Value);
+                }
+            });
+            
+            // Update border color when focused
+            CreateEffect(() =>
+            {
+                if (CurrentState.HasFlag(WidgetState.Focused))
+                {
+                    _container.BorderColor = Context!.Theme.InputFocusBorderColor;
+                }
+                else
+                {
+                    _container.BorderColor = Context!.Theme.BorderColor;
+                }
+            });
+            
+            // Set background color
+            if (_container.BackgroundColor == null)
+            {
+                _container.BackgroundColor = Context!.Theme.InputBackground;
+            }
+        }
+        
+        private void TryUpdateValue()
+        {
+            if (typeof(T) == typeof(int))
+            {
+                if (int.TryParse(_editText.Value, out var intValue))
+                {
+                    _value.Value = (T)(object)intValue;
+                }
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                if (float.TryParse(_editText.Value, out var floatValue))
+                {
+                    _value.Value = (T)(object)floatValue;
+                }
+            }
+            else if (typeof(T) == typeof(double))
+            {
+                if (double.TryParse(_editText.Value, out var doubleValue))
+                {
+                    _value.Value = (T)(object)doubleValue;
+                }
+            }
         }
 
         protected override void OnUnmount()
@@ -273,6 +370,8 @@ namespace Ignis.Engine.UI.Widgets
 
         protected override void OnMount()
         {
+            System.Console.WriteLine($"[Slider {Layout.ElementId}] Mounting...");
+            
             CreateEffect(() =>
             {
                 var val = _value.Value;
@@ -284,6 +383,7 @@ namespace Ignis.Engine.UI.Widgets
             // Handle mouse down (start drag)
             this.OnPointerDown(evt =>
             {
+                System.Console.WriteLine($"[Slider {Layout.ElementId}] OnPointerDown at {evt.Position}");
                 evt.StopPropagation();
                 UpdateValueFromMouse(evt.Position);
             });
@@ -294,9 +394,12 @@ namespace Ignis.Engine.UI.Widgets
                 // Only update if this element is active (being pressed)
                 if (Context?.Input.ActiveElementId.Value == Layout.ElementId)
                 {
+                    System.Console.WriteLine($"[Slider {Layout.ElementId}] OnPointerMove (dragging) at {evt.Position}");
                     UpdateValueFromMouse(evt.Position);
                 }
             });
+            
+            System.Console.WriteLine($"[Slider {Layout.ElementId}] Handlers registered - Down: {EventHandlers.OnPointerDown != null}, Move: {EventHandlers.OnPointerMove != null}");
         }
         
         private void UpdateValueFromMouse(Vector2 mousePos)

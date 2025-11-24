@@ -86,7 +86,16 @@ namespace Ignis.Engine.UI.Core
         /// </summary>
         public void Update(GameTime gameTime)
         {
-            // Process input events
+            if (_root == null || _graphicsDevice == null)
+                return;
+                
+            // Calculate layout BEFORE processing input so bounds are available
+            var viewport = _graphicsDevice.Viewport;
+            LayoutEngine.Layout(_root, this, this, viewport.Width, viewport.Height);
+            
+            // Console.WriteLine($"[UIContext] After layout: {_boundsById.Count} bounds stored");
+            
+            // Process input events (now bounds are available)
             _inputManager.Update();
         }
 
@@ -104,12 +113,7 @@ namespace Ignis.Engine.UI.Core
                 Console.WriteLine($"[UIContext #{_instanceId}.Draw] WARNING: DefaultFont is NULL at draw time!");
             }
 
-            // Get viewport dimensions for layout constraint
-            var viewport = _graphicsDevice.Viewport;
-
-            // Calculate layout with viewport as constraint
-            LayoutEngine.Layout(_root, this, this, viewport.Width, viewport.Height);
-
+            // Layout was already calculated in Update(), just draw now
             // Start both batches - primitives render independently, text uses SpriteBatch
             PrimitiveBatch?.Begin();
             spriteBatch.Begin();

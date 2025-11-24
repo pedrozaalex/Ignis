@@ -41,19 +41,57 @@ namespace Ignis.Engine.UI.Abstractions
                 var state = WidgetState.Normal;
                 var elementId = Layout.ElementId;
                 
-                if (_context.Input.HoveredElementId.Value == elementId)
+                // Check if this element or any descendant is hovered
+                if (IsThisOrDescendant(_context.Input.HoveredElementId.Value))
                     state |= WidgetState.Hovered;
                     
-                if (_context.Input.ActiveElementId.Value == elementId)
+                // Check if this element or any descendant is active
+                if (IsThisOrDescendant(_context.Input.ActiveElementId.Value))
                     state |= WidgetState.Active;
                     
-                if (_context.Input.FocusedElementId.Value == elementId)
+                // Check if this element or any descendant is focused
+                if (IsThisOrDescendant(_context.Input.FocusedElementId.Value))
                     state |= WidgetState.Focused;
                 
                 return state;
             });
             
             OnMount();
+        }
+        
+        private bool IsThisOrDescendant(long? targetId)
+        {
+            if (!targetId.HasValue) return false;
+            if (Layout.ElementId == targetId.Value) return true;
+            
+            // Check if target is a descendant of this element
+            if (this is IViewContainer container)
+            {
+                foreach (var child in container.GetChildren())
+                {
+                    if (IsDescendant(child, targetId.Value))
+                        return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        private static bool IsDescendant(IView view, long targetId)
+        {
+            if (view.Layout.ElementId == targetId)
+                return true;
+                
+            if (view is IViewContainer container)
+            {
+                foreach (var child in container.GetChildren())
+                {
+                    if (IsDescendant(child, targetId))
+                        return true;
+                }
+            }
+            
+            return false;
         }
 
         public virtual void Unmount()
