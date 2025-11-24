@@ -2,6 +2,7 @@ using Ignis.Engine.Input;
 using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using TextInputEventArgs = Ignis.Engine.Input.TextInputEventArgs;
 
 namespace Ignis.Tests.UI;
 
@@ -12,6 +13,8 @@ public class MockInputProvider : IInputProvider
     private readonly Dictionary<int, bool> _prevMouseButtons = new();
     private readonly HashSet<Keys> _keysDown = new();
     private readonly HashSet<Keys> _prevKeysDown = new();
+
+    public event EventHandler<TextInputEventArgs>? TextInput;
 
     public Vector2 MousePosition
     {
@@ -86,6 +89,11 @@ public class MockInputProvider : IInputProvider
         if (IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt))
             modifiers |= ModifierKeys.Alt;
         return modifiers;
+    }
+    
+    public void SimulateTextInput(char character, Keys key = Keys.None)
+    {
+        TextInput?.Invoke(this, new TextInputEventArgs(character, key));
     }
 }
 

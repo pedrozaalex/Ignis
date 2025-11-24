@@ -52,6 +52,13 @@ public class IgnisGame : Game
     protected override void Initialize()
     {
         base.Initialize();
+        
+        // Hook up text input events to InputService
+        Window.TextInput += (sender, args) =>
+        {
+            App.Input.RaiseTextInput(args.Character, args.Key);
+        };
+        
         App.Initialize();
     }
 

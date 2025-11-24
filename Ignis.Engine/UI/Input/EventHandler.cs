@@ -6,6 +6,7 @@ namespace Ignis.Engine.UI.Input
     public delegate void PointerEventHandler(PointerEvent evt);
     public delegate void KeyboardEventHandler(KeyboardEvent evt);
     public delegate void DragEventHandler(DragEvent evt);
+    public delegate void TextInputEventHandler(char character);
 
     /// <summary>
     /// Collection of event handlers for a view.
@@ -21,6 +22,8 @@ namespace Ignis.Engine.UI.Input
         public KeyboardEventHandler? OnKeyDown { get; set; }
         public KeyboardEventHandler? OnKeyUp { get; set; }
         
+        public TextInputEventHandler? OnTextInput { get; set; }
+        
         public DragEventHandler? OnDragStart { get; set; }
         public DragEventHandler? OnDragOver { get; set; }
         public DragEventHandler? OnDrop { get; set; }
@@ -34,6 +37,8 @@ namespace Ignis.Engine.UI.Input
         
         public void InvokeKeyDown(KeyboardEvent evt) => OnKeyDown?.Invoke(evt);
         public void InvokeKeyUp(KeyboardEvent evt) => OnKeyUp?.Invoke(evt);
+        
+        public void InvokeTextInput(char character) => OnTextInput?.Invoke(character);
         
         public void InvokeDragStart(DragEvent evt) => OnDragStart?.Invoke(evt);
         public void InvokeDragOver(DragEvent evt) => OnDragOver?.Invoke(evt);

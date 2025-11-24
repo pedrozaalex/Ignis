@@ -15,5 +15,19 @@ public interface IInputProvider
     bool IsKeyPressed(Keys key);
     
     ModifierKeys GetModifiers();
+    
+    event EventHandler<TextInputEventArgs>? TextInput;
+}
+
+public class TextInputEventArgs : EventArgs
+{
+    public char Character { get; }
+    public Keys Key { get; }
+    
+    public TextInputEventArgs(char character, Keys key)
+    {
+        Character = character;
+        Key = key;
+    }
 }
 

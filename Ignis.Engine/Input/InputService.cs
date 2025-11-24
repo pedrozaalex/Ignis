@@ -11,6 +11,8 @@ public class InputService : IInputProvider
     private KeyboardState _currentKey;
     private KeyboardState _prevKey;
 
+    public event EventHandler<TextInputEventArgs>? TextInput;
+
     public Vector2 MousePosition => new(_currentMouse.X, _currentMouse.Y);
 
     public void Update()
@@ -78,5 +80,10 @@ public class InputService : IInputProvider
     
     public Keys[] GetPressedKeys() => _currentKey.GetPressedKeys();
     public Keys[] GetPreviousPressedKeys() => _prevKey.GetPressedKeys();
+    
+    internal void RaiseTextInput(char character, Keys key)
+    {
+        TextInput?.Invoke(this, new TextInputEventArgs(character, key));
+    }
 }
 

@@ -1,3 +1,4 @@
+using Ignis.Engine.Reactive;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Input;
 using Microsoft.Xna.Framework;
@@ -13,18 +14,45 @@ namespace Ignis.Engine.UI.Abstractions
     {
         private UIContext? _context;
         private readonly List<ReactiveEffect> _effects = [];
+        private Computed<WidgetState>? _currentState;
 
         public IViewLayout Layout { get; } = new ViewLayout();
         public EventHandlers EventHandlers { get; } = new();
         public ShortcutCollection Shortcuts { get; } = new();
 
         protected UIContext? Context => _context;
+        
+        /// <summary>
+        /// Reactive computed property that tracks the current widget state (hover, active, focused).
+        /// </summary>
+        public WidgetState CurrentState => _currentState?.Value ?? WidgetState.Normal;
 
         public abstract void Draw(SpriteBatch spriteBatch, Rectangle bounds);
 
         public virtual void Mount(UIContext context)
         {
             _context = context;
+            
+            // Initialize CurrentState computed property
+            _currentState = Computed<WidgetState>.From(() =>
+            {
+                if (_context == null) return WidgetState.Normal;
+                
+                var state = WidgetState.Normal;
+                var elementId = Layout.ElementId;
+                
+                if (_context.Input.HoveredElementId.Value == elementId)
+                    state |= WidgetState.Hovered;
+                    
+                if (_context.Input.ActiveElementId.Value == elementId)
+                    state |= WidgetState.Active;
+                    
+                if (_context.Input.FocusedElementId.Value == elementId)
+                    state |= WidgetState.Focused;
+                
+                return state;
+            });
+            
             OnMount();
         }
 

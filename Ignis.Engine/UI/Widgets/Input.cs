@@ -59,8 +59,9 @@ namespace Ignis.Engine.UI.Widgets
                 }
             };
 
-            // Default Height
+            // Default Height and make focusable
             Layout.Height = Units.Auto;
+            Layout.Focusable = true;
         }
 
         protected override void OnMount()
@@ -75,6 +76,37 @@ namespace Ignis.Engine.UI.Widgets
 
             // Update text view when signal changes
             CreateEffect(() => { _textView.Content = _text.Value ?? ""; });
+            
+            // Handle text input
+            this.OnTextInput(character =>
+            {
+                if (char.IsControl(character))
+                    return;
+                    
+                _text.Value = (_text.Value ?? "") + character;
+            });
+            
+            // Handle backspace
+            this.OnKeyDown(evt =>
+            {
+                if (evt.Key == Microsoft.Xna.Framework.Input.Keys.Back && !string.IsNullOrEmpty(_text.Value))
+                {
+                    _text.Value = _text.Value[..^1];
+                }
+            });
+            
+            // Update border color when focused
+            CreateEffect(() =>
+            {
+                if (CurrentState.HasFlag(WidgetState.Focused))
+                {
+                    _root.BorderColor = Context!.Theme.InputFocusBorderColor;
+                }
+                else
+                {
+                    _root.BorderColor = Context!.Theme.BorderColor;
+                }
+            });
         }
 
         protected override void OnUnmount()
@@ -248,6 +280,36 @@ namespace Ignis.Engine.UI.Widgets
                 if (val < _min) _value.Value = _min;
                 if (val > _max) _value.Value = _max;
             });
+            
+            // Handle mouse down (start drag)
+            this.OnPointerDown(evt =>
+            {
+                evt.StopPropagation();
+                UpdateValueFromMouse(evt.Position);
+            });
+            
+            // Handle dragging
+            this.OnPointerMove(evt =>
+            {
+                // Only update if this element is active (being pressed)
+                if (Context?.Input.ActiveElementId.Value == Layout.ElementId)
+                {
+                    UpdateValueFromMouse(evt.Position);
+                }
+            });
+        }
+        
+        private void UpdateValueFromMouse(Vector2 mousePos)
+        {
+            if (Context == null) return;
+            
+            var bounds = Context.GetBounds(this);
+            // Calculate normalized position (0.0 to 1.0)
+            float t = (mousePos.X - bounds.X) / bounds.Width;
+            
+            // Map to Min/Max range
+            float newValue = _min + Math.Clamp(t, 0f, 1f) * (_max - _min);
+            _value.Value = newValue;
         }
 
         public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
@@ -264,8 +326,12 @@ namespace Ignis.Engine.UI.Widgets
             var trackY = bounds.Y + (bounds.Height - trackHeight) / 2;
             var trackBounds = new Rectangle(bounds.X, trackY, bounds.Width, trackHeight);
 
+            // Resolve colors from theme
+            var trackColor = TrackColor != default ? TrackColor : Context.Theme.BorderColor;
+            var fillColor = FillColor != default ? FillColor : Context.Theme.PrimaryColor;
+            
             // Draw track background
-            batch.DrawFilledRectangle(trackBounds, TrackColor);
+            batch.DrawFilledRectangle(trackBounds, trackColor);
 
             // Draw fill (from start to thumb)
             var normalizedValue = (_value.Value - _min) / (_max - _min);
@@ -274,9 +340,18 @@ namespace Ignis.Engine.UI.Widgets
             if (fillWidth > 0)
             {
                 var fillBounds = new Rectangle(bounds.X, trackY, fillWidth, trackHeight);
-                batch.DrawFilledRectangle(fillBounds, FillColor);
+                batch.DrawFilledRectangle(fillBounds, fillColor);
             }
 
+            // Resolve thumb color based on state
+            Color thumbColor;
+            if (CurrentState.HasFlag(WidgetState.Active))
+                thumbColor = Context.Theme.PrimaryColor;
+            else if (CurrentState.HasFlag(WidgetState.Hovered))
+                thumbColor = Context.Theme.SliderThumbHoverColor;
+            else
+                thumbColor = ThumbColor != default ? ThumbColor : Context.Theme.SliderThumbColor;
+            
             // Draw thumb
             var thumbBounds = new Rectangle(
                 thumbX - thumbSize / 2,
@@ -284,7 +359,7 @@ namespace Ignis.Engine.UI.Widgets
                 thumbSize,
                 thumbSize
             );
-            batch.DrawCircle(thumbBounds.Center.ToVector2(), (float)thumbSize / 2, ThumbColor);
+            batch.DrawCircle(thumbBounds.Center.ToVector2(), (float)thumbSize / 2, thumbColor);
         }
     }
 

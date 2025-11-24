@@ -4,6 +4,7 @@ using Ignis.Engine.UI.Abstractions;
 using Ignis.Engine.UI.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using TextInputEventArgs = Ignis.Engine.Input.TextInputEventArgs;
 
 namespace Ignis.Engine.UI.Input
 {
@@ -15,6 +16,7 @@ namespace Ignis.Engine.UI.Input
     {
         private readonly Signal<long?> _focusedElementId = new(null);
         private readonly Signal<long?> _hoveredElementId = new(null);
+        private readonly Signal<long?> _activeElementId = new(null);
         
         private readonly IInputProvider _input;
         
@@ -29,11 +31,28 @@ namespace Ignis.Engine.UI.Input
 
         public Signal<long?> FocusedElementId => _focusedElementId;
         public Signal<long?> HoveredElementId => _hoveredElementId;
+        public Signal<long?> ActiveElementId => _activeElementId;
 
         public InputManager(Dictionary<long, Rectangle> bounds, IInputProvider input)
         {
             _bounds = bounds;
             _input = input;
+            
+            // Subscribe to text input events
+            _input.TextInput += OnTextInput;
+        }
+        
+        private void OnTextInput(object? sender, TextInputEventArgs e)
+        {
+            // Forward text input to focused element
+            if (_focusedElementId.Value.HasValue && _root != null)
+            {
+                var focusedView = FindViewById(_focusedElementId.Value.Value, _root);
+                if (focusedView is ViewComponent component)
+                {
+                    component.EventHandlers.InvokeTextInput(e.Character);
+                }
+            }
         }
 
         public void SetRoot(IView root)
@@ -104,6 +123,9 @@ namespace Ignis.Engine.UI.Input
         {
             if (hitView is ViewComponent component)
             {
+                // Set active element (pressed/dragging state)
+                _activeElementId.Value = component.Layout.ElementId;
+                
                 // Set focus if focusable
                 if (component.Layout.Focusable)
                 {
@@ -127,6 +149,9 @@ namespace Ignis.Engine.UI.Input
 
         private void HandleMouseUp(Vector2 position, int button, IView? hitView)
         {
+            // Clear active element
+            _activeElementId.Value = null;
+            
             if (_isDragging)
             {
                 // End drag

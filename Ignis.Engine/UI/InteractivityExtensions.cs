@@ -58,6 +58,13 @@ namespace Ignis.Engine.UI
             view.EventHandlers.OnKeyUp += handler;
             return view;
         }
+        
+        // Text Input
+        public static T OnTextInput<T>(this T view, TextInputEventHandler handler) where T : ViewComponent
+        {
+            view.EventHandlers.OnTextInput += handler;
+            return view;
+        }
 
         // Drag Events
         public static T OnDragStart<T>(this T view, DragEventHandler handler) where T : ViewComponent
