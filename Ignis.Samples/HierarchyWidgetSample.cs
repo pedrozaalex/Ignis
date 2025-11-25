@@ -227,7 +227,7 @@ public class HierarchyWidgetSample() : IgnisGame(new EngineSettings
     }
 
     // Helper: Recursive find
-    private TreeNode<string>? FindNode(TreeNode<string> root, string name)
+    private static TreeNode<string>? FindNode(TreeNode<string> root, string name)
     {
         if (root.Data == name) return root;
         foreach (var child in root.Children.Items)
@@ -240,22 +240,14 @@ public class HierarchyWidgetSample() : IgnisGame(new EngineSettings
     }
 
     // Helper: Recursive remove
-    private bool RemoveNode(TreeNode<string> root, string name)
+    private static bool RemoveNode(TreeNode<string> root, string name)
     {
         // Check children
         var toRemove = root.Children.Items.FirstOrDefault(c => c.Data == name);
-        if (toRemove != null)
-        {
-            root.Children.Remove(toRemove);
-            return true;
-        }
 
-        foreach (var child in root.Children.Items)
-        {
-            if (RemoveNode(child, name)) return true;
-        }
-
-        return false;
+        return toRemove == null
+            ? root.Children.Items.Any(child => RemoveNode(child, name))
+            : root.Children.Remove(toRemove);
     }
 
     // --- Helpers ---
