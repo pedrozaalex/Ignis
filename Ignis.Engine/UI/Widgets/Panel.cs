@@ -69,6 +69,16 @@ public class Panel : ViewComponent, IViewContainer
 
     public void AddChild(IView child)
     {
+        // Auto-apply stretch constraints based on panel layout direction
+        if (Layout.LayoutType == LayoutType.Column && child.Layout.Width.IsAuto)
+        {
+            child.Layout.Width = Units.Stretch(1);
+        }
+        else if (Layout.LayoutType == LayoutType.Row && child.Layout.Height.IsAuto)
+        {
+            child.Layout.Height = Units.Stretch(1);
+        }
+        
         _children.Add(child);
         if (Context != null) child.Mount(Context);
     }
@@ -81,7 +91,19 @@ public class Panel : ViewComponent, IViewContainer
 
     protected override void OnMount()
     {
-        foreach (var child in _children) child.Mount(Context!);
+        // Apply auto-stretch constraints before mounting
+        foreach (var child in _children)
+        {
+            if (Layout.LayoutType == LayoutType.Column && child.Layout.Width.IsAuto)
+            {
+                child.Layout.Width = Units.Stretch(1);
+            }
+            else if (Layout.LayoutType == LayoutType.Row && child.Layout.Height.IsAuto)
+            {
+                child.Layout.Height = Units.Stretch(1);
+            }
+            child.Mount(Context!);
+        }
 
         // If this panel has a click handler, apply hover effects
         if (EventHandlers.OnPointerUp != null || EventHandlers.OnPointerDown != null)

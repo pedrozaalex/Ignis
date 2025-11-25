@@ -63,6 +63,7 @@ public class ComponentInspector
         {
             Layout =
             {
+                Width = Units.Stretch(1), // Fill the row width
                 Height = Units.Pixels(28),
                 PaddingLeft = Units.Pixels(8),
                 PaddingTop = Units.Pixels(2)

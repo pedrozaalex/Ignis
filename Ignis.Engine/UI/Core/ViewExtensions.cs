@@ -184,4 +184,37 @@ public static class ViewExtensions
         view.Layout.ColumnGap = Units.Pixels(gap);
         return view;
     }
+
+    // Fill shortcuts - Explicit helpers to prevent layout collapse
+    
+    /// <summary>
+    ///     Makes the view stretch to fill both width and height of its container.
+    ///     Use this when you want an element to occupy all available space.
+    /// </summary>
+    public static T Fill<T>(this T view) where T : IView
+    {
+        view.Layout.Width = Units.Stretch(1);
+        view.Layout.Height = Units.Stretch(1);
+        return view;
+    }
+
+    /// <summary>
+    ///     Makes the view stretch to fill the width of its container.
+    ///     Essential for interactive elements in vertical stacks to prevent collapse.
+    /// </summary>
+    public static T FillWidth<T>(this T view) where T : IView
+    {
+        view.Layout.Width = Units.Stretch(1);
+        return view;
+    }
+
+    /// <summary>
+    ///     Makes the view stretch to fill the height of its container.
+    ///     Useful for sidebar panels and vertical navigation elements.
+    /// </summary>
+    public static T FillHeight<T>(this T view) where T : IView
+    {
+        view.Layout.Height = Units.Stretch(1);
+        return view;
+    }
 }

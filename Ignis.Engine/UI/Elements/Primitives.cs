@@ -99,13 +99,35 @@ public class Container : ViewComponent, IViewContainer
 
     public void AddChild(IView child)
     {
+        // Auto-apply stretch constraints based on container layout direction
+        if (Layout.LayoutType == LayoutType.Column && child.Layout.Width.IsAuto)
+        {
+            child.Layout.Width = Units.Stretch(1);
+        }
+        else if (Layout.LayoutType == LayoutType.Row && child.Layout.Height.IsAuto)
+        {
+            child.Layout.Height = Units.Stretch(1);
+        }
+        
         _children.Add(child);
         if (Context != null) child.Mount(Context);
     }
 
     protected override void OnMount()
     {
-        foreach (var child in _children) child.Mount(Context!);
+        // Apply auto-stretch constraints before mounting
+        foreach (var child in _children)
+        {
+            if (Layout.LayoutType == LayoutType.Column && child.Layout.Width.IsAuto)
+            {
+                child.Layout.Width = Units.Stretch(1);
+            }
+            else if (Layout.LayoutType == LayoutType.Row && child.Layout.Height.IsAuto)
+            {
+                child.Layout.Height = Units.Stretch(1);
+            }
+            child.Mount(Context!);
+        }
     }
 
     protected override void OnUnmount()

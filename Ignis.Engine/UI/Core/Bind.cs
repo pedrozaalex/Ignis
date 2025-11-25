@@ -63,6 +63,19 @@ public static class Bind
                 // Build new child based on condition
                 _currentChild = _condition.Value ? _trueBuilder() : _falseBuilder?.Invoke();
 
+                // Apply auto-stretch constraints to child
+                if (_currentChild != null)
+                {
+                    if (Layout.LayoutType == LayoutType.Column && _currentChild.Layout.Width.IsAuto)
+                    {
+                        _currentChild.Layout.Width = Units.Stretch(1);
+                    }
+                    else if (Layout.LayoutType == LayoutType.Row && _currentChild.Layout.Height.IsAuto)
+                    {
+                        _currentChild.Layout.Height = Units.Stretch(1);
+                    }
+                }
+
                 // Mount new child
                 if (_currentChild != null && Context != null) _currentChild.Mount(Context);
             });
@@ -104,6 +117,19 @@ public static class Bind
                 // Build new child based on condition
                 _currentChild = _condition.Value ? _trueBuilder() : _falseBuilder?.Invoke();
 
+                // Apply auto-stretch constraints to child
+                if (_currentChild != null)
+                {
+                    if (Layout.LayoutType == LayoutType.Column && _currentChild.Layout.Width.IsAuto)
+                    {
+                        _currentChild.Layout.Width = Units.Stretch(1);
+                    }
+                    else if (Layout.LayoutType == LayoutType.Row && _currentChild.Layout.Height.IsAuto)
+                    {
+                        _currentChild.Layout.Height = Units.Stretch(1);
+                    }
+                }
+
                 // Mount new child
                 if (_currentChild != null && Context != null) _currentChild.Mount(Context);
             });
@@ -139,6 +165,11 @@ public static class Bind
             foreach (var item in _list.Items)
             {
                 var view = _builder(item);
+                // In a vertical stack (default), children should fill width to prevent collapse
+                if (Layout.LayoutType == LayoutType.Column && view.Layout.Width.IsAuto)
+                {
+                    view.Layout.Width = Units.Stretch(1);
+                }
                 view.Mount(Context!);
                 _children.Add(view);
             }
@@ -162,6 +193,11 @@ public static class Bind
         private void OnItemAdded(T item, int index)
         {
             var view = _builder(item);
+            // Apply same width constraint as OnMount
+            if (Layout.LayoutType == LayoutType.Column && view.Layout.Width.IsAuto)
+            {
+                view.Layout.Width = Units.Stretch(1);
+            }
             if (Context != null) view.Mount(Context);
             _children.Insert(index, view);
         }

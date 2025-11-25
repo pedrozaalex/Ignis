@@ -69,13 +69,23 @@ public class PropertyGrid : ViewComponent, IViewContainer
 
     public void Clear()
     {
-        foreach (var prop in _properties) prop.Unmount();
+        foreach (var prop in _properties) _container.RemoveChild(prop);
         _properties.Clear();
         // Clear container children
     }
 
     protected override void OnMount()
     {
+        // Apply auto-stretch constraints to container
+        if (Layout.LayoutType == LayoutType.Column && _container.Layout.Width.IsAuto)
+        {
+            _container.Layout.Width = Units.Stretch(1);
+        }
+        else if (Layout.LayoutType == LayoutType.Row && _container.Layout.Height.IsAuto)
+        {
+            _container.Layout.Height = Units.Stretch(1);
+        }
+        
         _container.Mount(Context!);
     }
 

@@ -181,7 +181,28 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
     * `IView PaddingLeft/Right/Top/Bottom(float padding)` - Individual sides
     * `IView Align/AlignCenter/AlignLeft/AlignRight()`
     * `IView Left/Right/Top/Bottom(float pixels)` - Absolute positioning
+    * **`IView Fill(this IView view)`** - Stretches both width and height (Stretch(1))
+    * **`IView FillWidth(this IView view)`** - Stretches width only (essential for vertical stacks)
+    * **`IView FillHeight(this IView view)`** - Stretches height only (essential for horizontal stacks)
 * **Design**: All methods return the view for chaining. Internally modify `view.Layout` properties.
+* **Layout Safety**: The `Fill*` methods make intent explicit and prevent common collapse issues.
+
+#### Static Class: `Stack` (Type-Safe Layout Builders)
+
+* **Role**: Type-safe builders that automatically configure children for proper layout
+* **Methods**:
+    * **`IView Vertical(params IView[] children)`** - Creates a Column that auto-applies `FillWidth` to children
+    * **`IView Horizontal(params IView[] children)`** - Creates a Row that auto-applies `FillHeight` to children
+* **Design**: Prevents common pitfall where interactive elements collapse to zero size by automatically applying
+  appropriate stretch constraints to children (only if they haven't explicitly set a size).
+* **Example**:
+  ```csharp
+  Stack.Vertical(
+      new Header(),      // Auto-fills width
+      new TreeView(),    // Auto-fills width
+      new Footer()       // Auto-fills width
+  )
+  ```
 
 #### Static Class: `Elements` (The Builder API)
 
@@ -206,14 +227,41 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
       .Children(content)  // Children declared last for better readability
   ```
 
+#### Class: `Container` and `Panel` (Automatic Layout Safety)
+
+* **Automatic Stretch Behavior**: When children are added to a Container or Panel, they automatically receive appropriate
+  stretch constraints based on the container's layout direction:
+    * **Column containers**: Children with `Width = Auto` get `Width = Stretch(1)` applied automatically
+    * **Row containers**: Children with `Height = Auto` get `Height = Stretch(1)` applied automatically
+* **Design Rationale**: Prevents the common pitfall where interactive elements collapse to zero size in stacks
+* **Override**: If a child explicitly sets a width/height before being added, it will be respected
+* **Applied**: Constraints are applied both when `AddChild()` is called and when the container is mounted
+* **Row Layout Note**: In Row layouts, children still need explicit widths or `Width = Stretch(1)` to fill horizontal
+  space. The auto-stretch only applies to the cross-axis (Height). This is intentional to support fixed-width columns
+  in rows.
+* **Example**:
+  ```csharp
+  var panel = new Panel { Layout = { LayoutType = LayoutType.Column } };
+  panel.AddChild(new Button("Click"));  // Button automatically gets Width = Stretch(1)
+  panel.AddChild(new Text("Label"));    // Text automatically gets Width = Stretch(1)
+  
+  var row = new Panel { Layout = { LayoutType = LayoutType.Row } };
+  row.AddChild(new Text("Label").Width(100));  // Fixed width
+  row.AddChild(new TextBox().Width(Units.Stretch(1))); // Fill remaining space
+  ```
+
 #### Class: `Bind` (Control Flow)
 
 * **`Bind.If(Signal<bool> condition, Func<IView> trueBuilder, Func<IView> falseBuilder)`**:
     * Creates a view that swaps its child when `condition` changes.
     * Ensures the old child is Unmounted (disposed) before the new one is Mounted.
+    * **Automatic Layout Safety**: Like Container/Panel, applies appropriate stretch constraints to its child based on
+      layout direction.
 * **`Bind.For<T>(SignalList<T> list, Func<Signal<T>, IView> builder)`**:
     * Maintains a dictionary of active Views mapped to list items.
     * Efficiently inserts/removes Views from the layout without rebuilding unaffected items.
+    * **Automatic Layout Safety**: In vertical stacks (default), automatically applies `FillWidth` to children to
+      prevent collapse. Only applies if child hasn't explicitly set a width.
 
 #### Class: `UIContext`
 
@@ -228,6 +276,12 @@ Connecting Data-Oriented ECS (Structs/Chunks) to Object-Oriented UI (Signals).
     * **Draw**:
         1. Calculates Flexbox-style layout (measure/arrange).
         2. Draws the tree using the hybrid rendering strategy (see below).
+        3. **Debug Mode** (if `EngineSettings.DebugUI = true`):
+            - Draws colored borders around all UI elements (Magenta = normal, Cyan = interactive)
+            - Highlights zero-size elements with colored circles (Orange = zero-size, Red = zero-size + interactive)
+            - Logs warnings for interactive elements with zero size (unclickable elements)
+* **Zero-Size Detection**: At draw time, checks if any element with event handlers has collapsed to zero size and logs
+  a warning. This catches layout errors where developers forgot to apply `FillWidth` or `Stretch` constraints.
 
 #### Record: `Theme`
 

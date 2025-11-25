@@ -29,4 +29,9 @@ public record struct EngineSettings()
     ///     Enable VSync
     /// </summary>
     public bool VSync { get; set; } = true;
+
+    /// <summary>
+    ///     Enable UI debug visualization (draws bounds around all UI elements, highlights zero-size elements)
+    /// </summary>
+    public bool DebugUI { get; set; } = false;
 }

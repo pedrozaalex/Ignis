@@ -34,6 +34,16 @@ public class ScrollView : ViewComponent, IViewContainer
 
     protected override void OnMount()
     {
+        // Apply auto-stretch constraints to content
+        if (Layout.LayoutType == LayoutType.Column && _content.Layout.Width.IsAuto)
+        {
+            _content.Layout.Width = Units.Stretch(1);
+        }
+        else if (Layout.LayoutType == LayoutType.Row && _content.Layout.Height.IsAuto)
+        {
+            _content.Layout.Height = Units.Stretch(1);
+        }
+        
         _content.Mount(Context!);
 
         CreateEffect(() =>
@@ -184,8 +194,7 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
 
         // Build tree using Bind.For into the root container
         var listView = Bind.For(_rootNodes, CreateNodeView);
-        // Ensure list view stretches to fill container, otherwise it collapses in Auto columns
-        listView.Layout.Width = Units.Stretch(1);
+        // Container now automatically applies FillWidth to children in vertical stacks
         _rootContainer.AddChild(listView);
 
         // TreeView itself is just a wrapper around the root container
@@ -207,8 +216,8 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
             BackgroundColor = Color.Transparent,
             Layout =
             {
-                LayoutType = LayoutType.Column,
-                Width = Units.Stretch(1) // Ensure node panel stretches to fill ListView
+                LayoutType = LayoutType.Column
+                // Width auto-filled by ListView
             }
         };
 
@@ -276,8 +285,8 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
 
         var childrenContainer = Bind.If(
             node.IsExpanded,
-            () => Bind.For(node.Children, CreateNodeView).Width(Units.Stretch(1)) // Ensure nested list also stretches
-        ).Width(Units.Stretch(1)); // Ensure the conditional container stretches
+            () => Bind.For(node.Children, CreateNodeView) // Auto-stretches now
+        ); // ConditionalView auto-stretches its child
 
         nodePanel.AddChild(childrenContainer);
 

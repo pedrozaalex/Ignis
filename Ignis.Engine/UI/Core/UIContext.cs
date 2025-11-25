@@ -340,10 +340,45 @@ public class UIContext : ILayoutNode, ILayoutCache, IDisposable
         var bounds = GetBounds(view);
         view.Draw(spriteBatch, bounds);
 
+        // Debug visualization if enabled
+        if (Game?.App.Settings.DebugUI == true && PrimitiveBatch != null)
+        {
+            DrawDebugBounds(view, bounds);
+        }
+
         // Recursively draw children
         if (view is IViewContainer container)
             foreach (var child in container.GetChildren())
                 DrawView(spriteBatch, child);
+    }
+
+    private void DrawDebugBounds(IView view, Rectangle bounds)
+    {
+        // Check if element has interaction but zero size (logic error)
+        var hasInteraction = view is ViewComponent vc && 
+                            (vc.EventHandlers.OnPointerDown != null || 
+                             vc.EventHandlers.OnPointerUp != null ||
+                             vc.EventHandlers.OnPointerEnter != null ||
+                             vc.EventHandlers.OnPointerLeave != null);
+
+        if (bounds.Width <= 0 || bounds.Height <= 0)
+        {
+            // Zero-size element - draw error marker
+            var color = hasInteraction ? Color.Red : Color.Orange;
+            PrimitiveBatch!.DrawCircle(new Vector2(bounds.X, bounds.Y), 5, color);
+            
+            if (hasInteraction)
+            {
+                // Log warning for interactive zero-size elements
+                Console.WriteLine($"[UI WARNING] Interactive element {view.GetType().Name} has zero size at ({bounds.X}, {bounds.Y}). It will be unclickable.");
+            }
+        }
+        else
+        {
+            // Normal element - draw debug border
+            var color = hasInteraction ? Color.Cyan : Color.Magenta;
+            PrimitiveBatch!.DrawBorder(bounds, 1, color);
+        }
     }
 
     public Rectangle GetBounds(object node)
