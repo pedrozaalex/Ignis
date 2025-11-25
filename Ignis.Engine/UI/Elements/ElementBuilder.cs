@@ -97,7 +97,7 @@ public static class Elements
     /// </summary>
     public static IView Button(string label, Action onClick, SpriteFontBase? font = null)
     {
-        return new ButtonView(label, onClick, font);
+        return new ButtonBase(label, onClick, font).Width(200).Height(30);
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public static class Elements
     /// </summary>
     public static IView Button(string label, Action onClick, Signal<bool>? isEnabled, SpriteFontBase? font = null)
     {
-        return new ButtonView(label, onClick, font) { IsEnabled = isEnabled };
+        return new ButtonBase(label, onClick, font) { IsEnabled = isEnabled };
     }
 
     /// <summary>
@@ -265,12 +265,12 @@ public class ReactiveText : Text
 /// <summary>
 ///     Simple button view.
 /// </summary>
-public class ButtonView : ViewComponent, IViewContainer
+public class ButtonBase : ViewComponent, IViewContainer
 {
     private readonly Text _labelText;
     private readonly Panel _panel;
 
-    public ButtonView(string label, Action onClick, SpriteFontBase? font)
+    public ButtonBase(string label, Action onClick, SpriteFontBase? font)
     {
         _labelText = new Text(font) { Content = label, Color = Color.White };
         _panel = new Panel(_labelText)

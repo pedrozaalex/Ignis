@@ -32,6 +32,11 @@ public class IgnisGame : Game
         Window.Title = App.Settings.WindowTitle;
         Window.AllowUserResizing = true;
     }
+    
+    public IgnisGame(EngineSettings settings)
+        : this(new IgnisApp(settings))
+    {
+    }
 
     /// <summary>
     ///     The headless core application

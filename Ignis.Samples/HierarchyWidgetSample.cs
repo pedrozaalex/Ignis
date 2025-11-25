@@ -3,7 +3,6 @@ using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Widgets;
-using Ignis.Engine.UI.Elements;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Console = System.Console;
@@ -17,31 +16,21 @@ namespace Ignis.Samples;
 /// HierarchyWidgetSample - Demonstrates TreeView, Hierarchy, and dynamic list updates.
 /// Shows how to build and manipulate hierarchical data structures reactively.
 /// </summary>
-public class HierarchyWidgetSample : IgnisGame
+public class HierarchyWidgetSample() : IgnisGame(new EngineSettings
+    { WindowTitle = "Ignis UI - Hierarchy & Lists Sample", WindowWidth = 1200, WindowHeight = 700 })
 {
     private UIContext? _uiContext;
-    private SpriteBatch? _spriteBatch;
-    
-    // Reactive state
-    private readonly SignalList<TreeNode<string>> _sceneNodes = new SignalList<TreeNode<string>>();
-    private readonly Signal<string?> _selectedNode = new Signal<string?>(null);
-    private readonly SignalList<LogEntry> _logEntries = new SignalList<LogEntry>();
-    private int _entityCounter;
 
-    public HierarchyWidgetSample() : base(new IgnisApp(new EngineSettings
-    {
-        WindowTitle = "Ignis UI - Hierarchy & Lists Sample",
-        WindowWidth = 1200,
-        WindowHeight = 700
-    }))
-    {
-    }
+    // Reactive state
+    private readonly SignalList<TreeNode<string>> _sceneNodes = new();
+    private readonly Signal<string?> _selectedNode = new(null);
+    private readonly SignalList<LogEntry> _logEntries = new();
+    private int _entityCounter;
 
     protected override void Initialize()
     {
         base.Initialize();
-        
-        _spriteBatch = new SpriteBatch(GraphicsDevice);
+
         _uiContext = new UIContext(GraphicsDevice, App.Input);
 
         // Use the automatically loaded default font
@@ -49,17 +38,17 @@ public class HierarchyWidgetSample : IgnisGame
         {
             _uiContext.SetDefaultFont(DefaultFont);
         }
-        
+
         // Setup initial scene
         InitializeScene();
-        
+
         // Build UI
         var ui = BuildUI();
         _uiContext.SetRoot(ui);
-        
+
         // Setup reactive logging
         SetupReactiveEffects();
-        
+
         LogInfo("Hierarchy Widget Sample initialized");
     }
 
@@ -72,7 +61,7 @@ public class HierarchyWidgetSample : IgnisGame
 
         root.AddChild(new TreeNode<string>("Main Camera", 1));
         root.AddChild(new TreeNode<string>("Directional Light", 1));
-        
+
         var player = new TreeNode<string>("Player", 1) { IsExpanded = { Value = true } };
         player.AddChild(new TreeNode<string>("Mesh Renderer", 2));
         player.AddChild(new TreeNode<string>("Collider", 2));
@@ -80,14 +69,14 @@ public class HierarchyWidgetSample : IgnisGame
         root.AddChild(player);
 
         _sceneNodes.Add(root);
-        _entityCounter = 3; 
+        _entityCounter = 3;
     }
 
     private IView BuildUI()
     {
         // 1. Hierarchy Panel
         var hierarchyPanel = CreateHierarchyPanel();
-        
+
         // 2. Right Panel (Controls + Console)
         var rightPanel = CreateRightPanel();
 
@@ -99,7 +88,7 @@ public class HierarchyWidgetSample : IgnisGame
         };
     }
 
-    private IView CreateHierarchyPanel()
+    private Panel CreateHierarchyPanel()
     {
         var title = CreateTitle("Scene Hierarchy");
 
@@ -119,7 +108,7 @@ public class HierarchyWidgetSample : IgnisGame
         };
     }
 
-    private IView CreateRightPanel()
+    private Splitter CreateRightPanel()
     {
         var controlsPanel = CreateControlsPanel();
         var consolePanel = CreateConsolePanel();
@@ -131,7 +120,7 @@ public class HierarchyWidgetSample : IgnisGame
         };
     }
 
-    private IView CreateControlsPanel()
+    private Panel CreateControlsPanel()
     {
         var title = CreateTitle("Controls");
 
@@ -146,10 +135,10 @@ public class HierarchyWidgetSample : IgnisGame
 
         // Buttons
         var buttons = new Panel(
-            Button("Add New Entity", AddRootEntity).Width(200).Height(30),
-            Button("Add Child to Selected", AddChildEntity).Width(200).Height(30),
-            Button("Remove Selected", RemoveSelectedEntity).Width(200).Height(30),
-            Button("Clear Console", () => _logEntries.Clear()).Width(200).Height(30)
+            Button("Add New Entity", AddRootEntity),
+            Button("Add Child to Selected", AddChildEntity),
+            Button("Remove Selected", RemoveSelectedEntity),
+            Button("Clear Console", () => _logEntries.Clear())
         )
         {
             Layout = { LayoutType = LayoutType.Column, RowGap = Units.Pixels(5) }
@@ -164,7 +153,7 @@ public class HierarchyWidgetSample : IgnisGame
     private IView CreateConsolePanel()
     {
         var title = CreateTitle("Console Log");
-        
+
         var console = new Engine.UI.Widgets.Console(_logEntries)
         {
             Layout = { Height = Units.Stretch(1) }
@@ -177,7 +166,7 @@ public class HierarchyWidgetSample : IgnisGame
         };
     }
 
-    private IView CreateTitle(string text)
+    private static Panel CreateTitle(string text)
     {
         return new Panel(new Label(text, null, Color.White))
         {
@@ -191,7 +180,7 @@ public class HierarchyWidgetSample : IgnisGame
     private void AddRootEntity()
     {
         if (_sceneNodes.Count == 0) return; // Guard
-        
+
         _entityCounter++;
         var newEntity = new TreeNode<string>($"Entity {_entityCounter}", 1);
         _sceneNodes[0].AddChild(newEntity); // Add to root
@@ -223,7 +212,7 @@ public class HierarchyWidgetSample : IgnisGame
     {
         var selectedName = _selectedNode.Value;
         if (selectedName == null) return;
-        
+
         if (selectedName == "Scene Root")
         {
             LogError("Cannot remove Scene Root!");
@@ -246,6 +235,7 @@ public class HierarchyWidgetSample : IgnisGame
             var found = FindNode(child, name);
             if (found != null) return found;
         }
+
         return null;
     }
 
@@ -264,6 +254,7 @@ public class HierarchyWidgetSample : IgnisGame
         {
             if (RemoveNode(child, name)) return true;
         }
+
         return false;
     }
 
@@ -275,7 +266,7 @@ public class HierarchyWidgetSample : IgnisGame
 
     private void SetupReactiveEffects()
     {
-        new ReactiveEffect(() =>
+        _ = new ReactiveEffect(() =>
         {
             if (_selectedNode.Value != null)
                 Console.WriteLine($"[Sample] Selection changed: {_selectedNode.Value}");

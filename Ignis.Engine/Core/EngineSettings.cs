@@ -3,7 +3,7 @@ namespace Ignis.Engine.Core;
 /// <summary>
 ///     Configuration POCO for engine settings
 /// </summary>
-public class EngineSettings
+public record struct EngineSettings()
 {
     /// <summary>
     ///     Target frames per second for the simulation
