@@ -96,21 +96,21 @@ public class EditorGame : IgnisGame
 
         foreach (var entity in rootEntities)
         {
-            _hierarchyNodes.Add(TreeNode(entity));
+            _hierarchyNodes.Add(TreeNode(entity, 0));
         }
     }
 
-    private TreeNode<Entity> TreeNode(Entity entity)
+    private TreeNode<Entity> TreeNode(Entity entity, int depth)
     {
         _ = entity.TryGetComponent<EntityName>(out var entityName)
             ? entityName.value
             : $"Entity {entity.Id}";
 
-        var node = new TreeNode<Entity>(entity) { IsExpanded = { Value = false } };
+        var node = new TreeNode<Entity>(entity, depth) { IsExpanded = { Value = false } };
 
         foreach (var child in entity.ChildEntities)
         {
-            node.AddChild(TreeNode(child));
+            node.AddChild(TreeNode(child, depth + 1));
         }
 
         return node;
@@ -210,16 +210,23 @@ public class EditorGame : IgnisGame
     {
         var header = PanelHeader("Hierarchy");
 
+        // Ensure the Hierarchy widget stretches to fill the panel width
         var hierarchyWidget = new Hierarchy<Entity>(
             _hierarchyNodes,
             entity => entity.TryGetComponent<EntityName>(out var name) ? name.value : $"Entity {entity.Id}",
             _selectionSystem.SelectedEntity
         )
         {
-            Layout = { Height = Units.Stretch(1) }
+            Layout =
+            {
+                Height = Units.Stretch(1),
+                Width = Units.Stretch(1)
+            }
         };
 
-        return new Panel(header, hierarchyWidget)
+        return new Panel(
+            // header,
+            hierarchyWidget)
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
@@ -245,7 +252,9 @@ public class EditorGame : IgnisGame
             BackgroundColor = _uiContext!.Theme.Surface
         };
 
-        return new Panel(header, content)
+        return new Panel(
+            // header,
+            content)
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
@@ -263,7 +272,9 @@ public class EditorGame : IgnisGame
             VerticalScrollEnabled = true
         };
 
-        return new Panel(header, scrollView)
+        return new Panel(
+            // header,
+            scrollView)
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
@@ -274,16 +285,14 @@ public class EditorGame : IgnisGame
 
     private Panel PanelHeader(string title)
     {
-        return new Panel(Label(title))
-        {
-            Layout =
-            {
-                Height = Units.Pixels(30),
-                PaddingLeft = Units.Pixels(10),
-                PaddingTop = Units.Pixels(5)
-            },
-            BackgroundColor = _uiContext!.Theme.SurfaceOverlay
-        };
+        return Panel()
+                .Height(30)
+                .Padding(10, 5)
+                .Background(_uiContext!.Theme.SurfaceOverlay)
+                .Children(
+                    Label(title)
+                )
+            ;
     }
 
     protected override void Update(GameTime gameTime)

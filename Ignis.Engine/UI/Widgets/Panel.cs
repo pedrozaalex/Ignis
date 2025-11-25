@@ -188,19 +188,24 @@ public class Splitter : Panel
         _second = second;
         _isVertical = isVertical;
 
-        Layout.LayoutType = isVertical ? LayoutType.Column : LayoutType.Row;
-
-        // Configure first panel
-        _first.Layout.Width = isVertical ? Units.Stretch(1) : Units.Percentage(SplitRatio * 100);
-        _first.Layout.Height = isVertical ? Units.Percentage(SplitRatio * 100) : Units.Stretch(1);
-
-        // Configure second panel
-        _second.Layout.Width = isVertical ? Units.Stretch(1) : Units.Percentage((1 - SplitRatio) * 100);
-        _second.Layout.Height = isVertical ? Units.Percentage((1 - SplitRatio) * 100) : Units.Stretch(1);
-
         AddChild(_first);
         // TODO: Add divider view
         AddChild(_second);
+    }
+
+    public override void Mount(UIContext context)
+    {
+        base.Mount(context);
+        
+        Layout.LayoutType = _isVertical ? LayoutType.Column : LayoutType.Row;
+
+        // Configure first panel
+        _first.Layout.Width = _isVertical ? Units.Stretch(1) : Units.Percentage(SplitRatio * 100);
+        _first.Layout.Height = _isVertical ? Units.Percentage(SplitRatio * 100) : Units.Stretch(1);
+
+        // Configure second panel
+        _second.Layout.Width = _isVertical ? Units.Stretch(1) : Units.Percentage((1 - SplitRatio) * 100);
+        _second.Layout.Height = _isVertical ? Units.Percentage((1 - SplitRatio) * 100) : Units.Stretch(1);
     }
 
     public float SplitRatio { get; set; } = 0.5f;

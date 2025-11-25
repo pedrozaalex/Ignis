@@ -255,22 +255,21 @@ public class InputManager
             var evt = new KeyboardEvent(key, modifiers, KeyboardEventType.Down);
 
             // Try shortcuts first on focused element, then bubble
-            if (FocusedElementId.Value.HasValue)
-            {
-                var focusedView = FindViewById(FocusedElementId.Value.Value, _root!);
-                if (focusedView != null)
-                {
-                    // Try to handle with shortcuts, bubbling up
-                    BubbleShortcut(focusedView, key, modifiers, out var handled);
+            if (!FocusedElementId.Value.HasValue) continue;
 
-                    if (!handled)
-                        // Fire keyboard event
-                        BubbleEvent(focusedView, view =>
-                        {
-                            if (view is ViewComponent vc) vc.EventHandlers.InvokeKeyDown(evt);
-                        }, evt);
-                }
-            }
+            var focusedView = FindViewById(FocusedElementId.Value.Value, _root!);
+
+            if (focusedView == null) continue;
+
+            // Try to handle with shortcuts, bubbling up
+            BubbleShortcut(focusedView, key, modifiers, out var handled);
+
+            if (!handled)
+                // Fire keyboard event
+                BubbleEvent(focusedView, view =>
+                {
+                    if (view is ViewComponent vc) vc.EventHandlers.InvokeKeyDown(evt);
+                }, evt);
         }
     }
 
@@ -317,14 +316,15 @@ public class InputManager
             return null;
 
         // Check children first (depth-first)
-        if (root is IViewContainer container)
-            // Reverse order to respect Z-index (last child is on top)
-            foreach (var child in container.GetChildren().Reverse())
-            {
-                var hit = FindViewAt(position, child);
-                if (hit != null)
-                    return hit;
-            }
+        if (root is not IViewContainer container) return root;
+
+        // Reverse order to respect Z-index (last child is on top)
+        foreach (var child in container.GetChildren().Reverse())
+        {
+            var hit = FindViewAt(position, child);
+            if (hit != null)
+                return hit;
+        }
 
         return root;
     }
@@ -337,15 +337,13 @@ public class InputManager
         if (root.Layout.ElementId == id)
             return root;
 
-        if (root is IViewContainer container)
-            foreach (var child in container.GetChildren())
-            {
-                var found = FindViewById(id, child);
-                if (found != null)
-                    return found;
-            }
-
-        return null;
+        return root is not IViewContainer container
+            ? null
+            : container
+                .GetChildren()
+                .Select(child => FindViewById(id, child))
+                .OfType<IView>()
+                .FirstOrDefault();
     }
 
     /// <summary>

@@ -109,7 +109,10 @@ public class Hierarchy<T> : ViewComponent, IViewContainer where T : notnull
             BorderThickness = 1f,
             Layout =
             {
-                PaddingTop = Units.Pixels(4)
+                PaddingTop = Units.Pixels(4),
+                // Ensure the container fills the Hierarchy component's space
+                Width = Units.Stretch(1),
+                Height = Units.Stretch(1)
             }
         };
     }

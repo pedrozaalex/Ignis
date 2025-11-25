@@ -153,6 +153,7 @@ public class TabView : ViewComponent, IViewContainer
     }
 }
 
+
 /// <summary>
 ///     TreeView - Hierarchical tree structure display.
 /// </summary>
@@ -183,6 +184,8 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
 
         // Build tree using Bind.For into the root container
         var listView = Bind.For(_rootNodes, CreateNodeView);
+        // Ensure list view stretches to fill container, otherwise it collapses in Auto columns
+        listView.Layout.Width = Units.Stretch(1);
         _rootContainer.AddChild(listView);
 
         // TreeView itself is just a wrapper around the root container
@@ -204,7 +207,8 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
             BackgroundColor = Color.Transparent,
             Layout =
             {
-                LayoutType = LayoutType.Column
+                LayoutType = LayoutType.Column,
+                Width = Units.Stretch(1) // Ensure node panel stretches to fill ListView
             }
         };
 
@@ -261,7 +265,7 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
             // Set up reactive background color for selection highlighting
             headerComponent.CreateEffect(() =>
             {
-                header.BackgroundColor = isSelected.Value ? Context!.Theme.SurfaceActive : Context!.Theme.Surface;
+                header.BackgroundColor = isSelected.Value ? Context!.Theme.SurfaceActive : Color.Transparent;
             });
         }
 
@@ -272,8 +276,9 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
 
         var childrenContainer = Bind.If(
             node.IsExpanded,
-            () => Bind.For(node.Children, CreateNodeView)
-        );
+            () => Bind.For(node.Children, CreateNodeView).Width(Units.Stretch(1)) // Ensure nested list also stretches
+        ).Width(Units.Stretch(1)); // Ensure the conditional container stretches
+
         nodePanel.AddChild(childrenContainer);
 
         return nodePanel;
