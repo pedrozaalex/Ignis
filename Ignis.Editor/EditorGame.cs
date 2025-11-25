@@ -7,6 +7,7 @@ using Ignis.Engine.ECS.Bridge;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
 using Ignis.Engine.UI.Widgets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -43,10 +44,10 @@ public class EditorGame : IgnisGame
 
         if (DefaultFont != null)
         {
-            _uiContext.SetDefaultFont(DefaultFont);
+            _uiContext!.SetDefaultFont(DefaultFont);
         }
 
-        _uiContext.SetRoot(BuildMainLayout());
+        _uiContext!.SetRoot(MainLayout());
     }
 
     private void InitializeScene()
@@ -66,11 +67,14 @@ public class EditorGame : IgnisGame
         player.Add(new EntityName("Player"));
         sceneRoot.AddChild(player);
 
+        var playerController = App.World.CreateEntity(new EntityName("PlayerController"));
+        player.AddChild(playerController);
+
         var mesh = App.World.CreateGameObject();
         mesh.Add(new EntityName("Mesh Renderer"));
         player.AddChild(mesh);
 
-        _entityQuery = new ReactiveQuery(App.World.Query<Position>());
+        _entityQuery = new ReactiveQuery(App.World.Query());
         RebuildHierarchy();
 
         _ = new ReactiveEffect(() =>
@@ -78,42 +82,44 @@ public class EditorGame : IgnisGame
             var selected = _selectionSystem.SelectedEntity.Value;
             _inspector.Inspect(selected);
         });
+
+        _ = new ReactiveEffect(() => { Window.Title = $"Ignis Editor - {_sceneTitle.Value}"; });
     }
 
     private void RebuildHierarchy()
     {
         _hierarchyNodes.Clear();
 
-        var rootEntities = App.World.Query<Position>().Entities
+        var rootEntities = App.World.Query().Entities
             .Where(e => e.Parent.IsNull)
             .ToList();
 
         foreach (var entity in rootEntities)
         {
-            _hierarchyNodes.Add(BuildTreeNode(entity));
+            _hierarchyNodes.Add(TreeNode(entity));
         }
     }
 
-    private TreeNode<Entity> BuildTreeNode(Entity entity)
+    private TreeNode<Entity> TreeNode(Entity entity)
     {
-        var name = entity.TryGetComponent<EntityName>(out var entityName)
+        _ = entity.TryGetComponent<EntityName>(out var entityName)
             ? entityName.value
             : $"Entity {entity.Id}";
 
-        var node = new TreeNode<Entity>(entity) { IsExpanded = { Value = true } };
+        var node = new TreeNode<Entity>(entity) { IsExpanded = { Value = false } };
 
         foreach (var child in entity.ChildEntities)
         {
-            node.AddChild(BuildTreeNode(child));
+            node.AddChild(TreeNode(child));
         }
 
         return node;
     }
 
-    private IView BuildMainLayout()
+    private IView MainLayout()
     {
-        var menuBar = BuildMenuBar();
-        var mainContent = BuildMainContent();
+        var menuBar = MenuBar();
+        var mainContent = MainContent();
 
         var root = new Panel(menuBar, mainContent)
         {
@@ -122,44 +128,64 @@ public class EditorGame : IgnisGame
                 LayoutType = LayoutType.Column, Width = Units.Pixels(Window.ClientBounds.Width),
                 Height = Units.Pixels(Window.ClientBounds.Height)
             },
-            BackgroundColor = Color.FromNonPremultiplied(30, 30, 30, 255)
+            BackgroundColor = _uiContext!.Theme.Background
         };
-        
-        Window.ClientSizeChanged += (s, e) =>
+
+        Window.ClientSizeChanged += (_, _) =>
         {
             root.Layout.Width = Units.Pixels(Window.ClientBounds.Width);
             root.Layout.Height = Units.Pixels(Window.ClientBounds.Height);
         };
-        
+
         return root;
     }
 
-    private IView BuildMenuBar()
+    private IView MenuBar()
     {
-        return new Panel(
-            Label("File"),
-            Label("Edit"),
-            Label("View"),
-            Label("Help")
-        )
+        var fileMenu = CreateMenuButton("File", () => LogMessage("File menu clicked"));
+        var editMenu = CreateMenuButton("Edit", () => LogMessage("Edit menu clicked"));
+        var viewMenu = CreateMenuButton("View", () => LogMessage("View menu clicked"));
+        var helpMenu = CreateMenuButton("Help", () => LogMessage("Help menu clicked"));
+
+        return new Panel(fileMenu, editMenu, viewMenu, helpMenu)
         {
             Layout =
             {
                 LayoutType = LayoutType.Row,
                 Height = Units.Pixels(30),
-                PaddingLeft = Units.Pixels(10),
-                ColumnGap = Units.Pixels(20),
-                PaddingTop = Units.Pixels(5)
+                ColumnGap = Units.Pixels(0),
             },
-            BackgroundColor = Color.FromNonPremultiplied(40, 40, 40, 255),
+            BackgroundColor = _uiContext!.Theme.SurfaceActive,
             BorderThickness = 0f
         };
     }
 
-    private IView BuildMainContent()
+    private IView CreateMenuButton(string text, Action onClick)
     {
-        var leftPanel = BuildHierarchyPanel();
-        var centerAndRight = BuildCenterAndRightPanels();
+        var button = Panel()
+            .Background(Color.Transparent)
+            .Padding(8, 4)
+            .Children(
+                Label(text)
+            );
+
+        if (button is ViewComponent buttonComponent)
+        {
+            buttonComponent.OnClick(onClick);
+        }
+
+        return button;
+    }
+
+    private void LogMessage(string message)
+    {
+        System.Console.WriteLine($"[Editor] {message}");
+    }
+
+    private IView MainContent()
+    {
+        var leftPanel = HierarchyPanel();
+        var centerAndRight = CenterAndRightPanels();
 
         return new Splitter(leftPanel, centerAndRight, isVertical: false)
         {
@@ -168,10 +194,10 @@ public class EditorGame : IgnisGame
         };
     }
 
-    private IView BuildCenterAndRightPanels()
+    private IView CenterAndRightPanels()
     {
-        var center = BuildViewportPanel();
-        var right = BuildInspectorPanel();
+        var center = ViewportPanel();
+        var right = InspectorPanel();
 
         return new Splitter(center, right, isVertical: false)
         {
@@ -180,18 +206,13 @@ public class EditorGame : IgnisGame
         };
     }
 
-    private Panel BuildHierarchyPanel()
+    private Panel HierarchyPanel()
     {
-        var header = BuildPanelHeader("Hierarchy");
+        var header = PanelHeader("Hierarchy");
 
         var hierarchyWidget = new Hierarchy<Entity>(
             _hierarchyNodes,
-            entity =>
-            {
-                if (entity.TryGetComponent<EntityName>(out var name))
-                    return name.value;
-                return $"Entity {entity.Id}";
-            },
+            entity => entity.TryGetComponent<EntityName>(out var name) ? name.value : $"Entity {entity.Id}",
             _selectionSystem.SelectedEntity
         )
         {
@@ -202,14 +223,14 @@ public class EditorGame : IgnisGame
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
-            BorderColor = Color.FromNonPremultiplied(60, 60, 60, 255),
-            BackgroundColor = Color.FromNonPremultiplied(25, 25, 25, 255)
+            BorderColor = _uiContext!.Theme.Border,
+            BackgroundColor = _uiContext!.Theme.SurfaceActive
         };
     }
 
-    private Panel BuildViewportPanel()
+    private Panel ViewportPanel()
     {
-        var header = BuildPanelHeader("Viewport");
+        var header = PanelHeader("Viewport");
 
         var content = new Panel(
             Label("(3D scene will render here)")
@@ -221,20 +242,20 @@ public class EditorGame : IgnisGame
                 PaddingLeft = Units.Pixels(10),
                 PaddingTop = Units.Pixels(10)
             },
-            BackgroundColor = Color.FromNonPremultiplied(45, 45, 50, 255)
+            BackgroundColor = _uiContext!.Theme.Surface
         };
 
         return new Panel(header, content)
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
-            BorderColor = Color.FromNonPremultiplied(60, 60, 60, 255)
+            BorderColor = _uiContext!.Theme.Border
         };
     }
 
-    private Panel BuildInspectorPanel()
+    private Panel InspectorPanel()
     {
-        var header = BuildPanelHeader("Inspector");
+        var header = PanelHeader("Inspector");
 
         var scrollView = new ScrollView(_inspector.View)
         {
@@ -246,12 +267,12 @@ public class EditorGame : IgnisGame
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
-            BorderColor = Color.FromNonPremultiplied(60, 60, 60, 255),
-            BackgroundColor = Color.FromNonPremultiplied(25, 25, 25, 255)
+            BorderColor = _uiContext!.Theme.Border,
+            BackgroundColor = _uiContext!.Theme.Background
         };
     }
 
-    private static Panel BuildPanelHeader(string title)
+    private Panel PanelHeader(string title)
     {
         return new Panel(Label(title))
         {
@@ -261,7 +282,7 @@ public class EditorGame : IgnisGame
                 PaddingLeft = Units.Pixels(10),
                 PaddingTop = Units.Pixels(5)
             },
-            BackgroundColor = Color.FromNonPremultiplied(50, 50, 50, 255)
+            BackgroundColor = _uiContext!.Theme.SurfaceOverlay
         };
     }
 

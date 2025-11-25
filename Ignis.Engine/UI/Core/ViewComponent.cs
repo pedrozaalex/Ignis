@@ -117,7 +117,7 @@ public abstract class ViewComponent : IView
     /// <summary>
     ///     Helper to create an effect that will be automatically cleaned up on unmount.
     /// </summary>
-    protected ReactiveEffect CreateEffect(Action action)
+    public ReactiveEffect CreateEffect(Action action)
     {
         var effect = new ReactiveEffect(action);
         _effects.Add(effect);

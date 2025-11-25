@@ -278,7 +278,6 @@ public class ButtonBase : ViewComponent, IViewContainer
             .Rounded(4)
             .OnClick(onClick);
 
-        _panel.Layout.Focusable = false; // Buttons don't need focus, just hover/active
         _panel.Layout.Width = Units.Stretch(1);
         _panel.Layout.Height = Units.Stretch(1);
     }

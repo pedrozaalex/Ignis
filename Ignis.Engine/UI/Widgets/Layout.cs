@@ -182,7 +182,7 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
         };
 
         // Build tree using Bind.For into the root container
-        var listView = Bind.For(_rootNodes, node => CreateNodeView(node));
+        var listView = Bind.For(_rootNodes, CreateNodeView);
         _rootContainer.AddChild(listView);
 
         // TreeView itself is just a wrapper around the root container
@@ -209,22 +209,61 @@ public class TreeView<T> : ViewComponent, IViewContainer where T : notnull
         };
 
         // Node header (with expand/collapse arrow)
-        var header = new Panel(
-            new Text
-            {
-                Content = (node.IsExpanded.Value ? "▼ " : "► ") + _displayFunc(node.Data),
-                Color = Color.White
-            }
-        )
+        var arrowText = new ReactiveText(
+            Computed<string>.From(() => node.IsExpanded.Value ? "▼ " : "► "),
+            null
+        );
+
+        var labelText = new Text
+        {
+            Content = _displayFunc(node.Data)
+        };
+
+        var headerContent = new Panel(arrowText, labelText)
+        {
+            BackgroundColor = Color.Transparent,
+            Layout = { LayoutType = LayoutType.Row }
+        };
+
+        var isSelected = Computed<bool>.From(() =>
+        {
+            var selected = _selectedItem.Value;
+            return selected != null && EqualityComparer<T>.Default.Equals(selected, node.Data);
+        });
+
+        var header = new Panel(headerContent)
         {
             BackgroundColor = Color.Transparent,
             Layout =
             {
+                Width = Units.Stretch(1),
                 Height = Units.Pixels(24),
                 PaddingLeft = Units.Pixels(node.Depth * 16), // Indent based on depth
                 PaddingTop = Units.Pixels(4)
             }
         };
+
+        // Make header clickable
+        if (header is ViewComponent headerComponent)
+        {
+            headerComponent.OnClick(() =>
+            {
+                // Toggle expansion if has children
+                if (node.Children.Count > 0)
+                {
+                    node.IsExpanded.Value = !node.IsExpanded.Value;
+                }
+
+                // Update selection
+                _selectedItem.Value = node.Data;
+            });
+
+            // Set up reactive background color for selection highlighting
+            headerComponent.CreateEffect(() =>
+            {
+                header.BackgroundColor = isSelected.Value ? Context!.Theme.SurfaceActive : Context!.Theme.Surface;
+            });
+        }
 
         nodePanel.AddChild(header);
 
