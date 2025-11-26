@@ -12,7 +12,7 @@ namespace Ignis.Engine.Core;
 /// </summary>
 public class IgnisGame : Game
 {
-    private readonly GraphicsDeviceManager _graphics;
+    protected readonly GraphicsDeviceManager _graphics;
     private RenderSystem? _renderSystem;
     private SpriteBatch? _spriteBatch;
 

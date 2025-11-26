@@ -21,7 +21,7 @@ public class Editor : IgnisGame
     private UIContext? _uiContext;
     private readonly Engine.Reactive.Signal<string> _sceneTitle = new("Untitled Scene");
     private readonly SelectionSystem _selectionSystem = new();
-    private readonly ComponentInspector _inspector = new();
+    private readonly ComponentInspectorV2 _inspector = new();
     private ReactiveQuery? _entityQuery;
     private readonly SignalList<TreeNode<Entity>> _hierarchyNodes = new();
 
@@ -120,13 +120,13 @@ public class Editor : IgnisGame
     {
         var root =
                 Column(MenuBar(), MainContent())
-                    .Width(Window.ClientBounds.Width)
+                    .Width(Window.ClientBounds.Width-8)
                     .Height(Window.ClientBounds.Height)
             ;
 
         Window.ClientSizeChanged += (_, _) =>
         {
-            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width);
+            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width-8);
             root.Layout.Height = Units.Pixels(Window.ClientBounds.Height);
         };
 
@@ -235,7 +235,7 @@ public class Editor : IgnisGame
         return Column(header, content);
     }
 
-    private Panel InspectorPanel()
+    private IView InspectorPanel()
     {
         var header = PanelHeader("Inspector");
 
@@ -249,13 +249,17 @@ public class Editor : IgnisGame
             VerticalScrollEnabled = true
         };
 
-        return new Panel(header, scrollView)
-        {
-            Layout = { LayoutType = LayoutType.Column },
-            BorderThickness = 1f,
-            BorderColor = _uiContext!.Theme.Border,
-            BackgroundColor = _uiContext!.Theme.Background
-        };
+        // return new Panel(header, scrollView)
+        // {
+        //     Layout = { LayoutType = LayoutType.Column },
+        //     BorderThickness = 1f,
+        //     BorderColor = _uiContext!.Theme.Border,
+        //     BackgroundColor = _uiContext!.Theme.Background
+        // };
+        return Panel(header, scrollView)
+                .Height(Units.Stretch(1))
+                .Background(_uiContext!.Theme.Surface)
+            ;
     }
 
     private Panel PanelHeader(string title)
