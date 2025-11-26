@@ -581,4 +581,45 @@ public class LayoutTests
         Assert.Equal(100, r.Width); // Takes full cell width
         Assert.Equal(100, r.Height); // Takes full cell height
     }
+    
+    [Fact]
+    public void Row_WithAutoHeight_ShouldExpandToChildContent()
+    {
+        // Simulate the World/Node structure
+        var w = new World();
+        
+        // Root Container (e.g. MenuBar)
+        // Layout: Row, Width: 100px, Height: Auto
+        var root = w.Add(null);
+        w.Nodes[root].LayoutType = LayoutType.Row;
+        w.Nodes[root].Width = Units.Pixels(100);
+        w.Nodes[root].Height = Units.Auto;
+
+        // Child Container (e.g. MenuButton)
+        // Simulates Elements.Row/Container behavior: Child Height becomes Stretch if Auto
+        var child = w.Add(root);
+        w.Nodes[child].LayoutType = LayoutType.Column;
+        w.Nodes[child].Width = Units.Pixels(50);
+        w.Nodes[child].Height = Units.Stretch(1); // Container.AddChild logic applies this
+        
+        // Child Content (e.g. Label)
+        // Fixed size content
+        var label = w.Add(child);
+        w.Nodes[label].Width = Units.Pixels(50);
+        w.Nodes[label].Height = Units.Pixels(20);
+        w.Nodes[label].ContentMeasurer = (wd, ht) => (50, 20); // Content size
+
+        // Perform Layout
+        LayoutEngine.Layout(root, w, w);
+
+        var rootRect = w.GetRect(root)!.Value;
+        var childRect = w.GetRect(child)!.Value;
+
+        // Assert
+        // Root height should be determined by child content (20), not collapsed to 0
+        Assert.Equal(20, rootRect.Height);
+        
+        // Child should fill that height
+        Assert.Equal(20, childRect.Height);
+    }
 }

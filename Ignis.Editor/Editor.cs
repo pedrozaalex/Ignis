@@ -47,7 +47,7 @@ public class Editor : IgnisGame
             _uiContext!.SetDefaultFont(DefaultFont);
         }
 
-        _uiContext!.SetRoot(MainLayout());
+        _uiContext!.SetRoot(Root());
     }
 
     private void InitializeScene()
@@ -116,7 +116,7 @@ public class Editor : IgnisGame
         return node;
     }
 
-    private IView MainLayout()
+    private IView Root()
     {
         var root =
                 Column(MenuBar(), MainContent())
@@ -140,30 +140,29 @@ public class Editor : IgnisGame
         var viewMenu = MenuButton("View", () => LogMessage("View menu clicked"));
         var helpMenu = MenuButton("Help", () => LogMessage("Help menu clicked"));
 
-        return Row(
+        var panel = Panel(
                     fileMenu,
                     editMenu,
                     viewMenu,
                     helpMenu
                 )
-                .Height(Units.Auto)
+                // .Height(24)
+                .Background(_uiContext!.Theme.SurfaceActive)
             ;
+
+        panel.Layout.LayoutType = LayoutType.Row;
+
+        return panel;
     }
 
     private IView MenuButton(string text, Action onClick)
     {
-        var button = Panel()
-            .Background(Color.Transparent)
-            .AlignCenter()
-            .Padding(8, 0)
-            .Children(
-                Label(text)
-            );
-
-        if (button is ViewComponent buttonComponent)
-        {
-            buttonComponent.OnClick(onClick);
-        }
+        var button = Panel(Label(text))
+                .Background(Color.Transparent)
+                .AlignCenter()
+                .Padding(8, 4)
+                .OnClick(onClick)
+            ;
 
         return button;
     }
@@ -181,7 +180,7 @@ public class Editor : IgnisGame
         return new Splitter(leftPanel, centerAndRight, isVertical: false)
         {
             SplitRatio = 0.2f,
-            Layout = { Width = Units.Stretch(1), Height = Units.Stretch(1) }
+            Layout = { Width = Units.Stretch(1), Height = Units.Stretch(1) },
         };
     }
 

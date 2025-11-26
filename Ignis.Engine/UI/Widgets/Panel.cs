@@ -219,7 +219,13 @@ public class Splitter : Panel
     {
         base.Mount(context);
         
+        BackgroundColor = Color.Transparent;
+        
         Layout.LayoutType = _isVertical ? LayoutType.Column : LayoutType.Row;
+        
+        // TODO: Set up divider drag handling to adjust SplitRatio
+        Layout.ColumnGap = Units.Pixels(DividerThickness);
+        Layout.RowGap = Units.Pixels(DividerThickness);
 
         // Configure first panel
         _first.Layout.Width = _isVertical ? Units.Stretch(1) : Units.Percentage(SplitRatio * 100);

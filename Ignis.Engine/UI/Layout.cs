@@ -96,6 +96,55 @@ public struct Rect
     public float Height;
 }
 
+internal class LayoutChild
+{
+    public object Node { get; }
+    public float Main { get; set; }
+    public float Cross { get; set; }
+    public float GapAfter { get; set; }
+    public bool Frozen { get; set; }
+    public bool IsFlex { get; set; }
+
+    public LayoutChild(object node)
+    {
+        Node = node;
+    }
+}
+
+internal class NodeLayoutState
+{
+    public object Node { get; }
+    public LayoutType Type { get; }
+    public LayoutType ParentType { get; }
+    
+    public float ComputedMain { get; set; }
+    public float ComputedCross { get; set; }
+    
+    public float MinMain { get; set; }
+    public float MaxMain { get; set; }
+    public float MinCross { get; set; }
+    public float MaxCross { get; set; }
+
+    public float PadMainBefore { get; set; }
+    public float PadMainAfter { get; set; }
+    public float PadCrossBefore { get; set; }
+    public float PadCrossAfter { get; set; }
+    public float BorderMainBefore { get; set; }
+    public float BorderMainAfter { get; set; }
+    public float BorderCrossBefore { get; set; }
+    public float BorderCrossAfter { get; set; }
+
+    public float InnerContentMain { get; set; }
+    public float InnerContentCross { get; set; }
+
+    public NodeLayoutState(object node, LayoutType type, LayoutType parentType)
+    {
+        Node = node;
+        Type = type;
+        ParentType = parentType;
+    }
+}
+
 // --- Interfaces ---
 
 /// <summary>
@@ -160,6 +209,132 @@ public interface ILayoutCache
 
 // --- Algorithm ---
 
+internal static class LayoutUtils
+{
+    private const float DefaultMin = 0f;
+    private const float DefaultMax = float.MaxValue;
+
+    public static float ResolveUnit(Units unit, float parentSize)
+    {
+        return unit.Kind switch
+        {
+            UnitKind.Pixels => unit.Value,
+            UnitKind.Percentage => (float)Math.Round(parentSize * (unit.Value / 100.0f)),
+            UnitKind.Stretch => parentSize,
+            _ => 0.0f
+        };
+    }
+
+    public static float ResolveAutoMin(Units units, bool isWidthAxis, float referenceSize, object target, ILayoutNode store)
+    {
+        if (!units.IsAuto) return units.ToPx(referenceSize, DefaultMin);
+        
+        var content = store.MeasureContent(target, null, null);
+        if (content.HasValue) return isWidthAxis ? content.Value.width : content.Value.height;
+        return DefaultMin;
+    }
+
+    public static (float min, float max) GetChildMainConstraints(object child, ILayoutNode store, LayoutType layoutType, float referenceSize)
+    {
+        var minUnits = layoutType == LayoutType.Row ? store.GetMinWidth(child) : store.GetMinHeight(child);
+        var maxUnits = layoutType == LayoutType.Row ? store.GetMaxWidth(child) : store.GetMaxHeight(child);
+
+        var min = DefaultMin;
+        if (minUnits.IsAuto)
+        {
+            var content = store.MeasureContent(child, null, null);
+            if (content.HasValue)
+                min = layoutType == LayoutType.Row ? content.Value.width : content.Value.height;
+        }
+        else
+        {
+            min = minUnits.ToPx(referenceSize, DefaultMin);
+        }
+
+        var max = maxUnits.ToPx(referenceSize, DefaultMax);
+        return (min, max);
+    }
+
+    public static (float min, float max) GetChildCrossConstraints(object child, ILayoutNode store, LayoutType layoutType, float referenceSize)
+    {
+        var minUnits = layoutType == LayoutType.Row ? store.GetMinHeight(child) : store.GetMinWidth(child);
+        var maxUnits = layoutType == LayoutType.Row ? store.GetMaxHeight(child) : store.GetMaxWidth(child);
+
+        var min = DefaultMin;
+        if (minUnits.IsAuto)
+        {
+            var content = store.MeasureContent(child, null, null);
+            if (content.HasValue)
+                min = layoutType == LayoutType.Row ? content.Value.height : content.Value.width;
+        }
+        else
+        {
+            min = minUnits.ToPx(referenceSize, DefaultMin);
+        }
+
+        var max = maxUnits.ToPx(referenceSize, DefaultMax);
+        return (min, max);
+    }
+}
+
+internal static class FlexSolver
+{
+    public static void ResolveFlexibleChildren(
+        List<LayoutChild> children, 
+        NodeLayoutState state, 
+        ILayoutNode store, 
+        float totalFlexSum, 
+        float availableSpace)
+    {
+        if (totalFlexSum <= 0) return;
+
+        var activeFlex = totalFlexSum;
+        var freeSpace = Math.Max(0, availableSpace);
+        bool constraintHit;
+
+        do
+        {
+            constraintHit = false;
+
+            foreach (var child in children)
+            {
+                if (!child.IsFlex || child.Frozen) continue;
+
+                var childMainUnit = state.Type == LayoutType.Row 
+                    ? store.GetWidth(child.Node) 
+                    : store.GetHeight(child.Node);
+
+                var share = activeFlex > 0 
+                    ? (childMainUnit.Value / activeFlex) * freeSpace 
+                    : 0;
+
+                var (cMin, cMax) = LayoutUtils.GetChildMainConstraints(child.Node, store, state.Type, state.InnerContentMain);
+
+                if (share < cMin)
+                {
+                    child.Main = cMin;
+                    child.Frozen = true;
+                    activeFlex -= childMainUnit.Value;
+                    freeSpace -= cMin;
+                    constraintHit = true;
+                }
+                else if (share > cMax)
+                {
+                    child.Main = cMax;
+                    child.Frozen = true;
+                    activeFlex -= childMainUnit.Value;
+                    freeSpace -= cMax;
+                    constraintHit = true;
+                }
+                else
+                {
+                    child.Main = share;
+                }
+            }
+        } while (constraintHit && activeFlex > 0 && freeSpace > 0);
+    }
+}
+
 public static class LayoutEngine
 {
     private const float DefaultMin = -float.MaxValue;
@@ -202,12 +377,9 @@ public static class LayoutEngine
     }
 
     private static Size Compute(object node, LayoutType parentLayoutType, float parentMain, float parentCross,
-        ILayoutNode store, ILayoutCache cache)
+        ILayoutNode store, ILayoutCache cache, bool forceMainAuto = false, bool forceCrossAuto = false)
     {
         var layoutType = store.GetLayoutType(node);
-
-        // Helper to swap main/cross based on layout type
-        // float Main(Units u) => parentLayoutType == LayoutType.Column ? u.ToPx(parentMain, 0) : u.ToPx(parentMain, 0); 
 
         var width = store.GetWidth(node);
         var height = store.GetHeight(node);
@@ -229,7 +401,10 @@ public static class LayoutEngine
         var main = parentLayoutType is LayoutType.Row or LayoutType.Grid ? width : height;
         var cross = parentLayoutType is LayoutType.Row or LayoutType.Grid ? height : width;
 
-        var computedMain = main.Kind switch
+        var effectiveMainKind = (forceMainAuto && main.Kind == UnitKind.Stretch) ? UnitKind.Auto : main.Kind;
+        var effectiveCrossKind = (forceCrossAuto && cross.Kind == UnitKind.Stretch) ? UnitKind.Auto : cross.Kind;
+
+        var computedMain = effectiveMainKind switch
         {
             UnitKind.Pixels => main.Value,
             UnitKind.Percentage => (float)Math.Round(parentMain * (main.Value / 100.0f)),
@@ -237,7 +412,7 @@ public static class LayoutEngine
             _ => 0.0f
         };
 
-        var computedCross = cross.Kind switch
+        var computedCross = effectiveCrossKind switch
         {
             UnitKind.Pixels => cross.Value,
             UnitKind.Percentage => (float)Math.Round(parentCross * (cross.Value / 100.0f)),
@@ -261,8 +436,11 @@ public static class LayoutEngine
         var relativeChildren =
             visibleChildren.Where(c => store.GetPositionType(c) == PositionType.Relative).ToList();
 
+        var isMainAuto = effectiveMainKind == UnitKind.Auto;
+        var isCrossAuto = effectiveCrossKind == UnitKind.Auto;
+
         // Content Sizing
-        if ((main.IsAuto || cross.IsAuto) && relativeChildren.Count == 0)
+        if ((isMainAuto || isCrossAuto) && relativeChildren.Count == 0)
         {
             var pW = width.IsAuto
                 ? (float?)null
@@ -278,11 +456,11 @@ public static class LayoutEngine
             var content = store.MeasureContent(node, pW, pH);
             if (content.HasValue)
             {
-                if (main.IsAuto)
+                if (isMainAuto)
                     computedMain = parentLayoutType is LayoutType.Row or LayoutType.Grid
                         ? content.Value.width
                         : content.Value.height;
-                if (cross.IsAuto)
+                if (isCrossAuto)
                     computedCross = parentLayoutType is LayoutType.Row or LayoutType.Grid
                         ? content.Value.height
                         : content.Value.width;
@@ -326,7 +504,7 @@ public static class LayoutEngine
 
         // Layout Children
         float mainFlexSum = 0;
-        var childrenData = new List<(object node, float main, float cross, float mainAfter, bool frozen)>();
+        var childrenData = new List<LayoutChild>();
 
         // First Pass: Non-flexible Relative Children & collection of flex factors
         foreach (var child in relativeChildren)
@@ -337,35 +515,31 @@ public static class LayoutEngine
             var childMain = layoutType == LayoutType.Row ? childW : childH;
             var childCross = layoutType == LayoutType.Row ? childH : childW;
 
-            float childComputedMain = 0;
-            float childComputedCross = 0;
-            float childMainAfter = 0; // Gap
+            var childData = new LayoutChild(child);
 
-            // Gap logic
             if (child != relativeChildren.Last())
             {
                 var gap = layoutType == LayoutType.Row ? store.GetColumnGap(node) : store.GetRowGap(node);
                 if (gap.Kind == UnitKind.Stretch) mainFlexSum += gap.Value;
-                else childMainAfter = gap.ToPx(childParentMain, 0);
+                else childData.GapAfter = gap.ToPx(childParentMain, 0);
             }
 
             if (childMain.Kind == UnitKind.Stretch)
             {
                 mainFlexSum += childMain.Value;
+                childData.IsFlex = true;
             }
             else
             {
-                // Fixed size on main axis, layout immediately if cross is not stretch
                 if (!childCross.IsStretch)
                 {
                     var size = Compute(child, layoutType, childParentMain, childParentCross, store, cache);
-                    childComputedMain = size.Main;
-                    childComputedCross = size.Cross;
+                    childData.Main = size.Main;
+                    childData.Cross = size.Cross;
                 }
                 else
                 {
-                    // Cross stretch, main fixed. 
-                    childComputedMain = childMain.ToPx(childParentMain, 0);
+                    childData.Main = childMain.ToPx(childParentMain, 0);
 
                     // Get constraints - handle Auto properly
                     var minMainUnits = layoutType == LayoutType.Row
@@ -375,8 +549,8 @@ public static class LayoutEngine
                     if (minMainUnits.IsAuto)
                     {
                         // MinAuto means content size
-                        var childWidth = layoutType == LayoutType.Row ? (float?)null : childComputedMain;
-                        var childHeight = layoutType == LayoutType.Column ? (float?)null : childComputedMain;
+                        var childWidth = layoutType == LayoutType.Row ? (float?)null : childData.Main;
+                        var childHeight = layoutType == LayoutType.Column ? (float?)null : childData.Main;
                         var content = store.MeasureContent(child, childWidth, childHeight);
                         if (content.HasValue)
                             cMin = layoutType == LayoutType.Row ? content.Value.width : content.Value.height;
@@ -388,31 +562,29 @@ public static class LayoutEngine
 
                     var cMax = (layoutType == LayoutType.Row ? store.GetMaxWidth(child) : store.GetMaxHeight(child))
                         .ToPx(childParentMain, DefaultMax);
-                    childComputedMain = Math.Clamp(childComputedMain, cMin, cMax);
+                    childData.Main = Math.Clamp(childData.Main, cMin, cMax);
 
-                    // If parent's cross is Auto, we need to measure child's intrinsic cross size
-                    if (cross.IsAuto)
+                    // Check if THIS node's cross-axis is Auto (need to measure child's intrinsic size)
+                    // For Row layout: cross is height
+                    // For Column layout: cross is width
+                    var nodeCrossAxisIsAuto = layoutType == LayoutType.Row ? height.IsAuto : width.IsAuto;
+                    if (nodeCrossAxisIsAuto)
                     {
-                        // Measure content directly - child wants to stretch but we need its intrinsic size
-                        var childWidth = layoutType == LayoutType.Row ? childComputedMain : (float?)null;
-                        var childHeight = layoutType == LayoutType.Column ? childComputedMain : (float?)null;
-                        var content = store.MeasureContent(child, childWidth, childHeight);
-                        if (content.HasValue)
-                            childComputedCross = layoutType == LayoutType.Row
-                                ? content.Value.height
-                                : content.Value.width;
+                        var size = Compute(child, layoutType, childData.Main, childParentCross, store, cache, 
+                            forceMainAuto: false, forceCrossAuto: true);
+                        childData.Cross = size.Cross;
                     }
                 }
             }
 
-            childrenData.Add((child, childComputedMain, childComputedCross, childMainAfter, false));
+            childrenData.Add(childData);
         }
 
         // Calculate Auto Size (First Pass)
         if (relativeChildren.Count > 0)
         {
-            var mainSum = childrenData.Sum(c => c.main + c.mainAfter);
-            var crossMax = childrenData.Max(c => c.cross);
+            var mainSum = childrenData.Sum(c => c.Main + c.GapAfter);
+            var crossMax = childrenData.Max(c => c.Cross);
 
             // Auto-sizing: map children's dimensions based on THIS node's layout type
             // Children's main/cross are in the node's coordinate system (based on node's layoutType)
@@ -420,11 +592,11 @@ public static class LayoutEngine
             if (layoutType == parentLayoutType)
             {
                 // Same layout direction: main maps to main, cross maps to cross
-                if (main.IsAuto)
+                if (isMainAuto)
                     computedMain =
                         Math.Clamp(mainSum + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter,
                             minMain, maxMain);
-                if (cross.IsAuto)
+                if (isCrossAuto)
                     computedCross =
                         Math.Clamp(crossMax + padCrossBefore + padCrossAfter + borderCrossBefore + borderCrossAfter,
                             minCross, maxCross);
@@ -432,11 +604,11 @@ public static class LayoutEngine
             else
             {
                 // Perpendicular layout: main maps to cross, cross maps to main
-                if (main.IsAuto)
+                if (isMainAuto)
                     computedMain =
                         Math.Clamp(crossMax + padCrossBefore + padCrossAfter + borderCrossBefore + borderCrossAfter,
                             minMain, maxMain);
-                if (cross.IsAuto)
+                if (isCrossAuto)
                     computedCross =
                         Math.Clamp(mainSum + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter,
                             minCross, maxCross);
@@ -450,22 +622,19 @@ public static class LayoutEngine
         }
 
         // Second Pass: Resolve Cross Stretch
-        for (var i = 0; i < childrenData.Count; i++)
+        foreach (var d in childrenData)
         {
-            var d = childrenData[i];
-            var child = d.node;
+            var child = d.Node;
             var childCross = layoutType == LayoutType.Row ? store.GetHeight(child) : store.GetWidth(child);
 
             if (childCross.IsStretch)
             {
-                // Handle MinAuto properly for cross axis
                 var minCrossUnits = layoutType == LayoutType.Row
                     ? store.GetMinHeight(child)
                     : store.GetMinWidth(child);
                 var cMin = DefaultMin;
                 if (minCrossUnits.IsAuto)
                 {
-                    // MinAuto means content size
                     var content = store.MeasureContent(child, null, null);
                     if (content.HasValue)
                         cMin = layoutType == LayoutType.Row ? content.Value.height : content.Value.width;
@@ -477,131 +646,57 @@ public static class LayoutEngine
 
                 var cMax = (layoutType == LayoutType.Row ? store.GetMaxHeight(child) : store.GetMaxWidth(child))
                     .ToPx(childParentCross, DefaultMax);
-                d.cross = Math.Clamp(childParentCross, cMin, cMax);
 
-                // Layout child if Main is not Stretch (Main Stretch is handled in Third Pass)
+                var nodeCrossAxisIsAuto = layoutType == LayoutType.Row ? height.IsAuto : width.IsAuto;
+                if (nodeCrossAxisIsAuto)
+                {
+                    var size = Compute(child, layoutType, childParentMain, childParentCross, store, cache,
+                        forceMainAuto: false, forceCrossAuto: true);
+                    d.Cross = Math.Clamp(size.Cross, cMin, cMax);
+                }
+                else
+                {
+                    d.Cross = Math.Clamp(childParentCross, cMin, cMax);
+                }
+
                 var childMain = layoutType == LayoutType.Row ? store.GetWidth(child) : store.GetHeight(child);
                 if (!childMain.IsStretch)
                 {
-                    var size = Compute(child, layoutType, childParentMain, d.cross, store, cache);
-                    d.main = size.Main;
-                    d.cross = size.Cross;
+                    var size = Compute(child, layoutType, childParentMain, d.Cross, store, cache);
+                    d.Main = size.Main;
+                    d.Cross = size.Cross;
                 }
-
-                childrenData[i] = d; // struct update
             }
         }
 
         // Third Pass: Resolve Main Stretch (Flex)
         if (mainFlexSum > 0)
         {
-            // If parent is auto-sized, measure stretch children at their content size first
             var nodeMainAxis = layoutType == LayoutType.Row ? width : height;
             if (nodeMainAxis.IsAuto)
             {
-                for (var i = 0; i < childrenData.Count; i++)
+                foreach (var d in childrenData.Where(c => c.IsFlex))
                 {
-                    var d = childrenData[i];
-                    var childMain = layoutType == LayoutType.Row ? store.GetWidth(d.node) : store.GetHeight(d.node);
-
-                    if (childMain.Kind == UnitKind.Stretch)
-                    {
-                        // Measure at content size (use 0 as available space to get minimum size)
-                        var size = Compute(d.node, layoutType, 0, d.cross, store, cache);
-                        d.main = size.Main;
-                        d.cross = size.Cross;
-                        childrenData[i] = d;
-                    }
+                    var size = Compute(d.Node, layoutType, 0, d.Cross, store, cache);
+                    d.Main = size.Main;
+                    d.Cross = size.Cross;
                 }
             }
             else
             {
-                // Standard flex distribution with constraint freezing
-                var freeSpace = Math.Max(0, childParentMain - childrenData.Sum(c => c.main + c.mainAfter));
-                var activeFlex = mainFlexSum;
-                bool constraintHit;
-
-                // Loop until no more constraints are hit
-                do
+                var state = new NodeLayoutState(node, layoutType, parentLayoutType)
                 {
-                    constraintHit = false;
+                    InnerContentMain = childParentMain
+                };
+                
+                var mainUsed = childrenData.Sum(c => c.Main + c.GapAfter);
+                FlexSolver.ResolveFlexibleChildren(childrenData, state, store, mainFlexSum, childParentMain - mainUsed);
 
-                    for (var i = 0; i < childrenData.Count; i++)
-                    {
-                        var d = childrenData[i];
-                        if (d.frozen) continue;
-
-                        var childMain = layoutType == LayoutType.Row
-                            ? store.GetWidth(d.node)
-                            : store.GetHeight(d.node);
-
-                        if (childMain.Kind == UnitKind.Stretch)
-                        {
-                            var share = activeFlex > 0 ? childMain.Value / activeFlex * freeSpace : 0;
-
-                            // Get constraints - handle MinAuto properly
-                            var minMainUnits = layoutType == LayoutType.Row
-                                ? store.GetMinWidth(d.node)
-                                : store.GetMinHeight(d.node);
-                            var cMin = DefaultMin;
-                            if (minMainUnits.IsAuto)
-                            {
-                                // MinAuto means content size
-                                var content = store.MeasureContent(d.node, null, null);
-                                if (content.HasValue)
-                                    cMin = layoutType == LayoutType.Row
-                                        ? content.Value.width
-                                        : content.Value.height;
-                            }
-                            else
-                            {
-                                cMin = minMainUnits.ToPx(childParentMain, DefaultMin);
-                            }
-
-                            var cMax = (layoutType == LayoutType.Row
-                                ? store.GetMaxWidth(d.node)
-                                : store.GetMaxHeight(d.node)).ToPx(childParentMain, DefaultMax);
-
-                            // Check if share violates constraints
-                            if (share < cMin)
-                            {
-                                d.main = cMin;
-                                d.frozen = true;
-                                activeFlex -= childMain.Value;
-                                freeSpace -= cMin; // Can go negative for overflow
-                                constraintHit = true;
-                            }
-                            else if (share > cMax)
-                            {
-                                d.main = cMax;
-                                d.frozen = true;
-                                activeFlex -= childMain.Value;
-                                freeSpace -= cMax;
-                                constraintHit = true;
-                            }
-                            else
-                            {
-                                d.main = share;
-                            }
-
-                            childrenData[i] = d;
-                        }
-                    }
-                } while (constraintHit && activeFlex > 0 && freeSpace > 0); // Stop if no free space left
-
-                // Now compute the final layout for each stretched child
-                for (var i = 0; i < childrenData.Count; i++)
+                foreach (var d in childrenData.Where(c => c.IsFlex))
                 {
-                    var d = childrenData[i];
-                    var childMain = layoutType == LayoutType.Row ? store.GetWidth(d.node) : store.GetHeight(d.node);
-
-                    if (childMain.Kind == UnitKind.Stretch)
-                    {
-                        var size = Compute(d.node, layoutType, d.main, d.cross, store, cache);
-                        d.main = size.Main;
-                        d.cross = size.Cross;
-                        childrenData[i] = d;
-                    }
+                    var size = Compute(d.Node, layoutType, d.Main, d.Cross, store, cache);
+                    d.Main = size.Main;
+                    d.Cross = size.Cross;
                 }
             }
         }
@@ -609,27 +704,27 @@ public static class LayoutEngine
         // Auto Size Final Pass
         if (relativeChildren.Count > 0)
         {
-            var mainSum = childrenData.Sum(c => c.main + c.mainAfter);
-            var crossMax = childrenData.Max(c => c.cross);
+            var mainSum = childrenData.Sum(c => c.Main + c.GapAfter);
+            var crossMax = childrenData.Max(c => c.Cross);
 
             if (layoutType == parentLayoutType)
             {
-                if (main.IsAuto)
+                if (isMainAuto)
                     computedMain =
                         Math.Clamp(mainSum + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter,
                             minMain, maxMain);
-                if (cross.IsAuto)
+                if (isCrossAuto)
                     computedCross =
                         Math.Clamp(crossMax + padCrossBefore + padCrossAfter + borderCrossBefore + borderCrossAfter,
                             minCross, maxCross);
             }
             else
             {
-                if (main.IsAuto)
+                if (isMainAuto)
                     computedMain =
                         Math.Clamp(crossMax + padCrossBefore + padCrossAfter + borderCrossBefore + borderCrossAfter,
                             minMain, maxMain);
-                if (cross.IsAuto)
+                if (isCrossAuto)
                     computedCross =
                         Math.Clamp(mainSum + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter,
                             minCross, maxCross);
@@ -643,8 +738,7 @@ public static class LayoutEngine
         var currentMainPos = padMainBefore + borderMainBefore;
         var alignment = store.GetAlignment(node);
 
-        // Alignment Offset
-        var mainSumFinal = childrenData.Sum(c => c.main + c.mainAfter);
+        var mainSumFinal = childrenData.Sum(c => c.Main + c.GapAfter);
         var freeMain = childParentMain - mainSumFinal;
 
         if (freeMain > 0)
@@ -655,13 +749,11 @@ public static class LayoutEngine
                 currentMainPos += freeMain;
         }
 
-        for (var i = 0; i < childrenData.Count; i++)
+        foreach (var d in childrenData)
         {
-            var d = childrenData[i];
             var crossPos = padCrossBefore + borderCrossBefore;
 
-            // Cross alignment
-            var freeCross = childParentCross - d.cross;
+            var freeCross = childParentCross - d.Cross;
             if (freeCross > 0)
             {
                 if (alignment == Alignment.Center || alignment == Alignment.Left || alignment == Alignment.Right)
@@ -675,28 +767,24 @@ public static class LayoutEngine
             {
                 x = currentMainPos;
                 y = crossPos;
-                w = d.main;
-                h = d.cross;
+                w = d.Main;
+                h = d.Cross;
             }
             else
             {
                 x = crossPos;
                 y = currentMainPos;
-                w = d.cross;
-                h = d.main;
+                w = d.Cross;
+                h = d.Main;
             }
 
-            // Apply relative positioning offsets (Left/Top/Right/Bottom) - these shift the node visually without affecting layout flow
-            var leftOffset = store.GetLeft(d.node)
+            var leftOffset = store.GetLeft(d.Node)
                 .ToPx(layoutType == LayoutType.Row ? computedMain : computedCross, 0);
-            var topOffset = store.GetTop(d.node)
+            var topOffset = store.GetTop(d.Node)
                 .ToPx(layoutType == LayoutType.Column ? computedMain : computedCross, 0);
 
-            // FIX: Store RELATIVE position! 
-            // DO NOT add cache.GetPosX(node) here. It causes issues in recursion order.
-            // We will resolve absolute positions in a 2nd pass in UIContext.
-            cache.SetBounds(d.node, x + leftOffset, y + topOffset, w, h);
-            currentMainPos += d.main + d.mainAfter;
+            cache.SetBounds(d.Node, x + leftOffset, y + topOffset, w, h);
+            currentMainPos += d.Main + d.GapAfter;
         }
 
         // Absolute Children
