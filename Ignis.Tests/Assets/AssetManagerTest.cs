@@ -234,7 +234,7 @@ public class AssetManagerTests
     // Helper class for JSON tests
     private class TestConfig
     {
-        public string Name { get; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public int Value { get; set; }
     }
 }
