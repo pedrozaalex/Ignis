@@ -28,7 +28,7 @@ public class PropertyGrid : ViewComponent, IViewContainer
                 PaddingTop = Units.Pixels(8),
                 PaddingBottom = Units.Pixels(8),
                 Width = Units.Stretch(1),
-                RowGap = Units.Pixels(4) // Fix: Space between fields
+                RowGap = Units.Pixels(16)
             }
         };
     }

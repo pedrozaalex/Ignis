@@ -21,26 +21,32 @@ public class ComponentInspectorV2
 {
     private readonly PropertyGrid _propertyGrid = new();
     private Entity _currentEntity;
-    
+
     private readonly List<IAccessor> _activeAccessors = new();
+    private readonly Theme _theme;
 
     public IView View => _propertyGrid;
 
-    public ComponentInspectorV2()
+    public ComponentInspectorV2(Theme theme)
     {
+        _theme = theme;
         InitializeRegistry();
     }
 
     private void InitializeRegistry()
     {
-        InspectorRegistry.Fallback = new ReadOnlyInspector();
-        InspectorRegistry.Composite = new CompositeInspector();
-        
-        InspectorRegistry.Register<float>(new FloatInspector());
-        InspectorRegistry.Register<int>(new FloatInspector());
+        InspectorRegistry.Fallback = new ReadOnlyInspector(_theme);
+        InspectorRegistry.Composite = new CompositeInspector(_theme);
+
+        InspectorRegistry.Register<float>(new NumericInspector(_theme));
+        InspectorRegistry.Register<int>(new NumericInspector(_theme));
         InspectorRegistry.Register<bool>(new BoolInspector());
         InspectorRegistry.Register<string>(new StringInspector());
         InspectorRegistry.Register<string?>(new StringInspector());
+
+        InspectorRegistry.Register<Position>(new Vector3ComponentInspector(_theme));
+        InspectorRegistry.Register<Rotation>(new QuaternionComponentInspector(_theme));
+        InspectorRegistry.Register<Scale3>(new Vector3ComponentInspector(_theme));
     }
 
     /// <summary>
@@ -74,33 +80,73 @@ public class ComponentInspectorV2
 
     private void AddHeader(Entity entity)
     {
-        _propertyGrid.AddProperty("Entity ID", Label(entity.Id.ToString(), null, Color.Gray));
+        _propertyGrid.AddProperty("Entity ID", Label(entity.Id.ToString(), null, _theme.TextMuted));
     }
 
     private void InspectComponent(Entity entity, ComponentType componentType)
     {
-        var header = Panel(Label(componentType.Name).Padding(4))
-            .Background(Color.FromNonPremultiplied(45, 45, 48, 255))
-            .Border(Color.FromNonPremultiplied(30, 30, 30, 255))
-            .Height(32)
-            .Width(Units.Stretch(1));
+        var header = Panel(Title(componentType.Name))
+            .Background(_theme.SurfaceOverlay)
+            .Border(_theme.Border)
+            .Padding(8)
+            .AlignCenter()
+            ;
 
-        _propertyGrid.AddProperty("", header);
+        // _propertyGrid.AddProperty("", header);
+        var section = Panel()
+                .Padding(8)
+                .Gap(4)
+            ;
+        
+        // Check if there's a registered inspector for the component type itself
+        var componentInspector = InspectorRegistry.GetInspector(componentType.Type);
 
-        var fields = componentType.Type.GetFields(BindingFlags.Public | BindingFlags.Instance);
-        foreach (var field in fields)
+        // If there's a specific inspector (not Composite or Fallback), use it for the whole component
+        if (componentInspector != InspectorRegistry.Composite &&
+            componentInspector != InspectorRegistry.Fallback)
         {
-            var accessorType = typeof(ComponentAccessor<>).MakeGenericType(field.FieldType);
-            var accessor = (IAccessor)Activator.CreateInstance(accessorType, entity, componentType, field)!;
+            // Create a single accessor for the entire component
+            var accessorType = typeof(ComponentAccessor<>).MakeGenericType(componentType.Type);
 
+            // For component-level access, we need a special accessor that reads the whole component
+            // For now, we'll create a wrapper that can be used with the inspector
+            var accessor = CreateComponentAccessor(entity, componentType);
             _activeAccessors.Add(accessor);
 
-            var inspector = InspectorRegistry.GetInspector(field.FieldType);
-            var editor = inspector.CreateView(accessor);
-
-            string label = field.Name == "value" ? "" : field.Name;
-            _propertyGrid.AddProperty(label, editor);
+            var editor = componentInspector.CreateView(accessor);
+            // _propertyGrid.AddProperty("", editor);
+            section.AddChild(editor);
         }
+        else
+        {
+            // No specific inspector - iterate over fields as before
+            var fields = componentType.Type.GetFields(BindingFlags.Public | BindingFlags.Instance);
+
+            if (fields.Length == 0) return; // Skip empty components
+
+            foreach (var field in fields)
+            {
+                var accessorType = typeof(ComponentAccessor<>).MakeGenericType(field.FieldType);
+                var accessor = (IAccessor)Activator.CreateInstance(accessorType, entity, componentType, field)!;
+
+                _activeAccessors.Add(accessor);
+
+                var inspector = InspectorRegistry.GetInspector(field.FieldType);
+                var editor = inspector.CreateView(accessor);
+
+                string label = field.Name == "value" ? "" : field.Name;
+                // _propertyGrid.AddProperty(label, editor);
+                section.AddChild(editor);
+            }
+        }
+        
+        _propertyGrid.AddProperty("", Column(header, section));
+    }
+
+    private IAccessor CreateComponentAccessor(Entity entity, ComponentType componentType)
+    {
+        // Create an accessor that accesses the component as a whole
+        var accessorType = typeof(WholeComponentAccessor<>).MakeGenericType(componentType.Type);
+        return (IAccessor)Activator.CreateInstance(accessorType, entity, componentType)!;
     }
 }
-

@@ -10,13 +10,20 @@ namespace Ignis.Editor.UI.Inspection.Defaults;
 
 public class CompositeInspector : IInspector
 {
+    private readonly Theme? _theme;
+
+    public CompositeInspector(Theme? theme = null)
+    {
+        _theme = theme;
+    }
+
     public IView CreateView(IAccessor accessor)
     {
         var type = accessor.Type;
         
         var container = new Panel 
         { 
-            Layout = { LayoutType = Engine.UI.LayoutType.Column, RowGap = Engine.UI.Units.Pixels(2) } 
+            Layout = { LayoutType = LayoutType.Column, RowGap = Units.Pixels(2) } 
         };
 
         var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
@@ -27,7 +34,8 @@ public class CompositeInspector : IInspector
             
             var childInspector = InspectorRegistry.GetInspector(field.FieldType);
             
-            var label = Label(field.Name, null, Color.LightGray).Width(100);
+            var labelColor = _theme?.TextMuted ?? Color.LightGray;
+            var label = Label(field.Name, null, labelColor).Width(100);
             var editor = childInspector.CreateView(childAccessor);
             
             container.AddChild(Row(label, editor));

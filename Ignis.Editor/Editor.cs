@@ -7,11 +7,11 @@ using Ignis.Engine.ECS.Bridge;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
-using Ignis.Engine.UI.Elements;
 using Ignis.Engine.UI.Widgets;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static Ignis.Engine.UI.Elements.Elements;
+using Console = System.Console;
 using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 
 namespace Ignis.Editor;
@@ -21,7 +21,7 @@ public class Editor : IgnisGame
     private UIContext? _uiContext;
     private readonly Engine.Reactive.Signal<string> _sceneTitle = new("Untitled Scene");
     private readonly SelectionSystem _selectionSystem = new();
-    private readonly ComponentInspectorV2 _inspector = new();
+    private ComponentInspectorV2? _inspector;
     private ReactiveQuery? _entityQuery;
     private readonly SignalList<TreeNode<Entity>> _hierarchyNodes = new();
 
@@ -46,6 +46,16 @@ public class Editor : IgnisGame
         {
             _uiContext!.SetDefaultFont(DefaultFont);
         }
+
+        // Create inspector after UIContext so we have access to theme
+        _inspector = new ComponentInspectorV2(_uiContext.Theme);
+
+        // Setup inspector reactive effect after it's created
+        _ = new ReactiveEffect(() =>
+        {
+            var selected = _selectionSystem.SelectedEntity.Value;
+            _inspector.Inspect(selected);
+        });
 
         _uiContext!.SetRoot(Root());
     }
@@ -77,11 +87,6 @@ public class Editor : IgnisGame
         _entityQuery = new ReactiveQuery(App.World.Query());
         RebuildHierarchy();
 
-        _ = new ReactiveEffect(() =>
-        {
-            var selected = _selectionSystem.SelectedEntity.Value;
-            _inspector.Inspect(selected);
-        });
 
         _ = new ReactiveEffect(() => { Window.Title = $"Ignis Editor - {_sceneTitle.Value}"; });
     }
@@ -169,7 +174,7 @@ public class Editor : IgnisGame
 
     private void LogMessage(string message)
     {
-        System.Console.WriteLine($"[Editor] {message}");
+        Console.WriteLine($"[Editor] {message}");
     }
 
     private IView MainContent()
@@ -239,7 +244,7 @@ public class Editor : IgnisGame
     {
         var header = PanelHeader("Inspector");
 
-        var scrollView = new ScrollView(_inspector.View)
+        var scrollView = new ScrollView(_inspector!.View)
         {
             Layout =
             {
@@ -278,6 +283,7 @@ public class Editor : IgnisGame
     {
         base.Update(gameTime);
         _entityQuery?.Update();
+        _inspector?.Update();
         _uiContext?.Update(gameTime);
     }
 

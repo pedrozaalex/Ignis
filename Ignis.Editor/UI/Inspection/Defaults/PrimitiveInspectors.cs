@@ -6,8 +6,15 @@ using Ignis.Engine.UI.Widgets;
 
 namespace Ignis.Editor.UI.Inspection.Defaults;
 
-public class FloatInspector : IInspector
+public class NumericInspector : IInspector
 {
+    private readonly Theme? _theme;
+
+    public NumericInspector(Theme? theme = null)
+    {
+        _theme = theme;
+    }
+
     public IView CreateView(IAccessor accessor)
     {
         if (accessor is IAccessor<float> typed)
@@ -17,7 +24,8 @@ public class FloatInspector : IInspector
         if (accessor is IAccessor<int> intTyped)
         {
             // For int, show as readonly since FloatField expects Signal<float>
-            return new Text { Content = intTyped.Signal.Value.ToString(), Color = Microsoft.Xna.Framework.Color.LightGray };
+            var color = _theme?.TextMuted ?? Microsoft.Xna.Framework.Color.LightGray;
+            return new Text { Content = intTyped.Signal.Value.ToString(), Color = color };
         }
         return new Text { Content = "Type Mismatch" };
     }
@@ -56,10 +64,17 @@ public class BoolInspector : IInspector
 
 public class ReadOnlyInspector : IInspector
 {
+    private readonly Theme? _theme;
+
+    public ReadOnlyInspector(Theme? theme = null)
+    {
+        _theme = theme;
+    }
+
     public IView CreateView(IAccessor accessor)
     {
         var val = accessor.GetValue();
-        return new Text { Content = val?.ToString() ?? "null", Color = Microsoft.Xna.Framework.Color.Gray };
+        var color = _theme?.TextMuted ?? Microsoft.Xna.Framework.Color.Gray;
+        return new Text { Content = val?.ToString() ?? "null", Color = color };
     }
 }
-
