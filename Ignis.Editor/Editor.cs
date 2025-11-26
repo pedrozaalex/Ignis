@@ -16,7 +16,7 @@ using ReactiveEffect = Ignis.Engine.Reactive.Effect;
 
 namespace Ignis.Editor;
 
-public class EditorGame : IgnisGame
+public class Editor : IgnisGame
 {
     private UIContext? _uiContext;
     private readonly Engine.Reactive.Signal<string> _sceneTitle = new("Untitled Scene");
@@ -25,7 +25,7 @@ public class EditorGame : IgnisGame
     private ReactiveQuery? _entityQuery;
     private readonly SignalList<TreeNode<Entity>> _hierarchyNodes = new();
 
-    public EditorGame() : base(new EngineSettings
+    public Editor() : base(new EngineSettings
     {
         WindowTitle = "Ignis Editor",
         WindowWidth = 1920,
@@ -118,23 +118,15 @@ public class EditorGame : IgnisGame
 
     private IView MainLayout()
     {
-        var menuBar = MenuBar();
-        var mainContent = MainContent();
-
-        var root = new Panel(menuBar, mainContent)
-        {
-            Layout =
-            {
-                LayoutType = LayoutType.Column,
-                Width = Units.Pixels(Window.ClientBounds.Width - 25),
-                Height = Units.Pixels(Window.ClientBounds.Height)
-            },
-            BackgroundColor = _uiContext!.Theme.Background
-        };
+        var root =
+                Column(MenuBar(), MainContent())
+                    .Width(Window.ClientBounds.Width)
+                    .Height(Window.ClientBounds.Height)
+            ;
 
         Window.ClientSizeChanged += (_, _) =>
         {
-            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width - 25);
+            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width);
             root.Layout.Height = Units.Pixels(Window.ClientBounds.Height);
         };
 
@@ -143,30 +135,27 @@ public class EditorGame : IgnisGame
 
     private IView MenuBar()
     {
-        var fileMenu = CreateMenuButton("File", () => LogMessage("File menu clicked"));
-        var editMenu = CreateMenuButton("Edit", () => LogMessage("Edit menu clicked"));
-        var viewMenu = CreateMenuButton("View", () => LogMessage("View menu clicked"));
-        var helpMenu = CreateMenuButton("Help", () => LogMessage("Help menu clicked"));
+        var fileMenu = MenuButton("File", () => LogMessage("File menu clicked"));
+        var editMenu = MenuButton("Edit", () => LogMessage("Edit menu clicked"));
+        var viewMenu = MenuButton("View", () => LogMessage("View menu clicked"));
+        var helpMenu = MenuButton("Help", () => LogMessage("Help menu clicked"));
 
-        return new Panel(fileMenu, editMenu, viewMenu, helpMenu)
-        {
-            Layout =
-            {
-                LayoutType = LayoutType.Row,
-                Height = Units.Pixels(30),
-                ColumnGap = Units.Pixels(0),
-            },
-            BackgroundColor = _uiContext!.Theme.SurfaceActive,
-            BorderThickness = 0f
-        };
+        return Row(
+                    fileMenu,
+                    editMenu,
+                    viewMenu,
+                    helpMenu
+                )
+                .Height(Units.Auto)
+            ;
     }
 
-    private IView CreateMenuButton(string text, Action onClick)
+    private IView MenuButton(string text, Action onClick)
     {
         var button = Panel()
             .Background(Color.Transparent)
-            .Padding(8, 2)
             .AlignCenter()
+            .Padding(8, 0)
             .Children(
                 Label(text)
             );
@@ -212,7 +201,6 @@ public class EditorGame : IgnisGame
     {
         var header = PanelHeader("Hierarchy");
 
-        // Ensure the Hierarchy widget stretches to fill the panel width
         var hierarchyWidget = new Hierarchy<Entity>(
             _hierarchyNodes,
             entity => entity.TryGetComponent<EntityName>(out var name) ? name.value : $"Entity {entity.Id}",
@@ -226,9 +214,7 @@ public class EditorGame : IgnisGame
             }
         };
 
-        return new Panel(
-            // header,
-            hierarchyWidget)
+        return new Panel(header, hierarchyWidget)
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
@@ -237,31 +223,17 @@ public class EditorGame : IgnisGame
         };
     }
 
-    private Panel ViewportPanel()
+    private IView ViewportPanel()
     {
         var header = PanelHeader("Viewport");
 
-        var content = new Panel(
-            Label("(3D scene will render here)")
-        )
-        {
-            Layout =
-            {
-                Height = Units.Stretch(1),
-                PaddingLeft = Units.Pixels(10),
-                PaddingTop = Units.Pixels(10)
-            },
-            BackgroundColor = _uiContext!.Theme.Surface
-        };
+        var content = Panel(Label("(3D scene will render here)"))
+                .Height(Units.Stretch(1))
+                .Border(_uiContext!.Theme.Border)
+                .Padding(8)
+            ;
 
-        return new Panel(
-            // header,
-            content)
-        {
-            Layout = { LayoutType = LayoutType.Column },
-            BorderThickness = 1f,
-            BorderColor = _uiContext!.Theme.Border
-        };
+        return Column(header, content);
     }
 
     private Panel InspectorPanel()
@@ -273,7 +245,7 @@ public class EditorGame : IgnisGame
             Layout =
             {
                 Height = Units.Stretch(1),
-                Width = Units.Stretch(1) // Explicitly stretch scrollview width
+                Width = Units.Stretch(1)
             },
             VerticalScrollEnabled = true
         };
@@ -287,17 +259,16 @@ public class EditorGame : IgnisGame
         };
     }
 
-
     private Panel PanelHeader(string title)
     {
         return Panel()
-                .Height(30)
-                .Padding(10, 5)
-                .Background(_uiContext!.Theme.SurfaceOverlay)
-                .Children(
-                    Label(title)
-                )
-            ;
+            .Height(30)
+            .Padding(8, 4)
+            .Background(_uiContext!.Theme.SurfaceOverlay)
+            .AlignCenter()
+            .Children(
+                Label(title)
+            );
     }
 
     protected override void Update(GameTime gameTime)

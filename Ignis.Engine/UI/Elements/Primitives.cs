@@ -78,6 +78,7 @@ public class Text(SpriteFontBase? font = null) : ViewComponent
         // Otherwise: custom font > context default font
         return font ?? Context?.DefaultFont;
     }
+    
 }
 
 /// <summary>

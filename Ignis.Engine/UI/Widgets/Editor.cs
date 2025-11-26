@@ -23,10 +23,12 @@ public class PropertyGrid : ViewComponent, IViewContainer
             Layout =
             {
                 LayoutType = LayoutType.Column,
-                PaddingLeft = Units.Pixels(4), // Reduce padding for density
-                PaddingRight = Units.Pixels(4),
-                PaddingTop = Units.Pixels(4),
-                Width = Units.Stretch(1) // Overflow Fix: Ensure grid respects parent width
+                PaddingLeft = Units.Pixels(8),
+                PaddingRight = Units.Pixels(8),
+                PaddingTop = Units.Pixels(8),
+                PaddingBottom = Units.Pixels(8),
+                Width = Units.Stretch(1),
+                RowGap = Units.Pixels(4) // Fix: Space between fields
             }
         };
     }
@@ -44,9 +46,9 @@ public class PropertyGrid : ViewComponent, IViewContainer
             Layout =
             {
                 LayoutType = LayoutType.Row,
-                Height = Units.Auto, // Auto height to fit content
-                PaddingBottom = Units.Pixels(2),
-                Width = Units.Stretch(1) // Overflow Fix: Row stretches to grid width
+                Height = Units.Auto,
+                PaddingBottom = Units.Pixels(0),
+                Width = Units.Stretch(1)
             }
         };
 
@@ -56,11 +58,11 @@ public class PropertyGrid : ViewComponent, IViewContainer
             var labelView = new Text
             {
                 Content = label, 
-                Color = Color.FromNonPremultiplied(180, 180, 180, 255),
+                Color = Color.FromNonPremultiplied(200, 200, 200, 255),
                 Layout =
                 {
-                    Width = Units.Pixels(90), // Fixed label width
-                    PaddingTop = Units.Pixels(2)
+                    Width = Units.Pixels(100), // Fixed width for label column
+                    PaddingTop = Units.Pixels(3) // Align with text field
                 }
             };
             row.AddChild(labelView);
@@ -68,9 +70,7 @@ public class PropertyGrid : ViewComponent, IViewContainer
 
         // Editor takes remaining space
         editor.Layout.Width = Units.Stretch(1);
-        // Slight vertical alignment fix
-        editor.Layout.PaddingTop = Units.Pixels(0); 
-
+        
         row.AddChild(editor);
 
         _properties.Add(row);
@@ -101,6 +101,7 @@ public class PropertyGrid : ViewComponent, IViewContainer
     }
 }
 
+// ... (Hierarchy class same as before) ...
 /// <summary>
 ///     Hierarchy - Scene hierarchy tree view.
 /// </summary>
@@ -121,7 +122,7 @@ public class Hierarchy<T> : ViewComponent, IViewContainer where T : notnull
             Layout =
             {
                 PaddingTop = Units.Pixels(4),
-                Width = Units.Stretch(1), // Ensure full width for hit testing
+                Width = Units.Stretch(1),
                 Height = Units.Stretch(1)
             }
         };
@@ -146,7 +147,6 @@ public class Hierarchy<T> : ViewComponent, IViewContainer where T : notnull
     {
     }
 }
-
 /// <summary>
 ///     ColorPicker - RGB/HSV color selection widget.
 /// </summary>

@@ -95,8 +95,8 @@ public class ViewLayout : IViewLayout
     public Units PaddingTop { get; set; } = Units.Pixels(0);
     public Units PaddingBottom { get; set; } = Units.Pixels(0);
 
-    public Units RowGap { get; set; } = Units.Pixels(8);
-    public Units ColumnGap { get; set; } = Units.Pixels(8);
+    public Units RowGap { get; set; } = Units.Pixels(0);
+    public Units ColumnGap { get; set; } = Units.Pixels(0);
 
     public LayoutType LayoutType { get; set; } = LayoutType.Column;
     public PositionType PositionType { get; set; } = PositionType.Relative;

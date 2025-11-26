@@ -1,4 +1,4 @@
 ﻿using Ignis.Editor;
 
-using var game = new EditorGame();
-game.Run();
+using var editor = new Editor();
+editor.Run();
