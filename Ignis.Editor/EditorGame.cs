@@ -125,7 +125,8 @@ public class EditorGame : IgnisGame
         {
             Layout =
             {
-                LayoutType = LayoutType.Column, Width = Units.Pixels(Window.ClientBounds.Width),
+                LayoutType = LayoutType.Column,
+                Width = Units.Pixels(Window.ClientBounds.Width - 25),
                 Height = Units.Pixels(Window.ClientBounds.Height)
             },
             BackgroundColor = _uiContext!.Theme.Background
@@ -133,7 +134,7 @@ public class EditorGame : IgnisGame
 
         Window.ClientSizeChanged += (_, _) =>
         {
-            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width);
+            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width - 25);
             root.Layout.Height = Units.Pixels(Window.ClientBounds.Height);
         };
 
@@ -164,7 +165,8 @@ public class EditorGame : IgnisGame
     {
         var button = Panel()
             .Background(Color.Transparent)
-            .Padding(8, 4)
+            .Padding(8, 2)
+            .AlignCenter()
             .Children(
                 Label(text)
             );
@@ -268,13 +270,15 @@ public class EditorGame : IgnisGame
 
         var scrollView = new ScrollView(_inspector.View)
         {
-            Layout = { Height = Units.Stretch(1) },
+            Layout =
+            {
+                Height = Units.Stretch(1),
+                Width = Units.Stretch(1) // Explicitly stretch scrollview width
+            },
             VerticalScrollEnabled = true
         };
 
-        return new Panel(
-            // header,
-            scrollView)
+        return new Panel(header, scrollView)
         {
             Layout = { LayoutType = LayoutType.Column },
             BorderThickness = 1f,
@@ -282,6 +286,7 @@ public class EditorGame : IgnisGame
             BackgroundColor = _uiContext!.Theme.Background
         };
     }
+
 
     private Panel PanelHeader(string title)
     {

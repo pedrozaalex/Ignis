@@ -188,6 +188,7 @@ public static class LayoutEngine
             _ => viewportHeight // Auto uses viewport as constraint
         };
 
+        // Layout root. 0,0 is relative to context (absolute).
         cache.SetBounds(root, 0, 0, w, h);
         var result = Compute(root, LayoutType.Column, h, w, store, cache);
 
@@ -644,12 +645,7 @@ public static class LayoutEngine
 
         // Alignment Offset
         var mainSumFinal = childrenData.Sum(c => c.main + c.mainAfter);
-        var extraMain = childParentMain + padMainBefore + padMainAfter + borderMainBefore + borderMainAfter -
-                        (mainSumFinal + padMainBefore + padMainAfter + borderMainBefore +
-                         borderMainAfter); // Roughly
-        // Simpler:
-        var contentMain = mainSumFinal;
-        var freeMain = childParentMain - contentMain;
+        var freeMain = childParentMain - mainSumFinal;
 
         if (freeMain > 0)
         {
@@ -657,8 +653,6 @@ public static class LayoutEngine
                 currentMainPos += freeMain * 0.5f;
             else if (alignment is Alignment.Right or Alignment.TopRight or Alignment.BottomRight)
                 currentMainPos += freeMain;
-            // Note: This assumes Row layout logic for main axis alignment mapping. 
-            // A full mapping of Alignment enum to Flex-Start/End/Center per axis is needed for exact parity.
         }
 
         for (var i = 0; i < childrenData.Count; i++)
@@ -670,7 +664,6 @@ public static class LayoutEngine
             var freeCross = childParentCross - d.cross;
             if (freeCross > 0)
             {
-                // Simple mapping for demo
                 if (alignment == Alignment.Center || alignment == Alignment.Left || alignment == Alignment.Right)
                     crossPos += freeCross * 0.5f;
                 if (alignment == Alignment.BottomCenter || alignment == Alignment.BottomLeft ||
@@ -699,8 +692,10 @@ public static class LayoutEngine
             var topOffset = store.GetTop(d.node)
                 .ToPx(layoutType == LayoutType.Column ? computedMain : computedCross, 0);
 
-            cache.SetBounds(d.node, x + cache.GetPosX(node) + leftOffset, y + cache.GetPosY(node) + topOffset, w,
-                h);
+            // FIX: Store RELATIVE position! 
+            // DO NOT add cache.GetPosX(node) here. It causes issues in recursion order.
+            // We will resolve absolute positions in a 2nd pass in UIContext.
+            cache.SetBounds(d.node, x + leftOffset, y + topOffset, w, h);
             currentMainPos += d.main + d.mainAfter;
         }
 
@@ -729,8 +724,8 @@ public static class LayoutEngine
             var left = store.GetLeft(child).ToPx(computedMain, 0);
             var top = store.GetTop(child).ToPx(computedCross, 0);
 
-            // Handle Stretch/Auto positioning logic simplified
-            cache.SetBounds(child, cache.GetPosX(node) + left, cache.GetPosY(node) + top, cw, ch);
+            // FIX: Store RELATIVE position
+            cache.SetBounds(child, left, top, cw, ch);
         }
 
         return new Size { Main = computedMain, Cross = computedCross };
@@ -738,10 +733,7 @@ public static class LayoutEngine
 
     private static Size LayoutGrid(object node, float width, float height, ILayoutNode store, ILayoutCache cache)
     {
-        // Minimal Grid Implementation for test compatibility
-        // In a full port, this duplicates the track sizing logic from layout.rs
-
-        // Account for padding and borders
+        // Minimal Grid Implementation
         var padLeft = store.GetPaddingLeft(node).ToPx(width, 0);
         var padRight = store.GetPaddingRight(node).ToPx(width, 0);
         var padTop = store.GetPaddingTop(node).ToPx(height, 0);
@@ -830,7 +822,8 @@ public static class LayoutEngine
             var ch = rowPos[Math.Min(rStart + rSpan, rowPos.Length - 1)] - cy;
 
             Compute(child, LayoutType.Row, cw, ch, store, cache);
-            cache.SetBounds(child, cache.GetPosX(node) + cx + offsetX, cache.GetPosY(node) + cy + offsetY, cw, ch);
+            // FIX: Relative position
+            cache.SetBounds(child, cx + offsetX, cy + offsetY, cw, ch);
         }
 
         return new Size { Main = width, Cross = height };

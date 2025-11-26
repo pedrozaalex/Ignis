@@ -23,9 +23,10 @@ public class PropertyGrid : ViewComponent, IViewContainer
             Layout =
             {
                 LayoutType = LayoutType.Column,
-                PaddingLeft = Units.Pixels(8),
-                PaddingRight = Units.Pixels(8),
-                PaddingTop = Units.Pixels(8)
+                PaddingLeft = Units.Pixels(4), // Reduce padding for density
+                PaddingRight = Units.Pixels(4),
+                PaddingTop = Units.Pixels(4),
+                Width = Units.Stretch(1) // Overflow Fix: Ensure grid respects parent width
             }
         };
     }
@@ -43,24 +44,33 @@ public class PropertyGrid : ViewComponent, IViewContainer
             Layout =
             {
                 LayoutType = LayoutType.Row,
-                Height = Units.Pixels(32),
-                PaddingBottom = Units.Pixels(4)
+                Height = Units.Auto, // Auto height to fit content
+                PaddingBottom = Units.Pixels(2),
+                Width = Units.Stretch(1) // Overflow Fix: Row stretches to grid width
             }
         };
 
-        var labelView = new Text
+        // Only add label if it's not empty
+        if (!string.IsNullOrEmpty(label))
         {
-            Content = label, Color = Color.LightGray,
-            Layout =
+            var labelView = new Text
             {
-                Width = Units.Pixels(100),
-                PaddingTop = Units.Pixels(6)
-            }
-        };
+                Content = label, 
+                Color = Color.FromNonPremultiplied(180, 180, 180, 255),
+                Layout =
+                {
+                    Width = Units.Pixels(90), // Fixed label width
+                    PaddingTop = Units.Pixels(2)
+                }
+            };
+            row.AddChild(labelView);
+        }
 
+        // Editor takes remaining space
         editor.Layout.Width = Units.Stretch(1);
+        // Slight vertical alignment fix
+        editor.Layout.PaddingTop = Units.Pixels(0); 
 
-        row.AddChild(labelView);
         row.AddChild(editor);
 
         _properties.Add(row);
@@ -69,23 +79,15 @@ public class PropertyGrid : ViewComponent, IViewContainer
 
     public void Clear()
     {
-        foreach (var prop in _properties) _container.RemoveChild(prop);
+        foreach (var prop in _properties)
+        {
+            _container.RemoveChild(prop);
+        }
         _properties.Clear();
-        // Clear container children
     }
 
     protected override void OnMount()
     {
-        // Apply auto-stretch constraints to container
-        if (Layout.LayoutType == LayoutType.Column && _container.Layout.Width.IsAuto)
-        {
-            _container.Layout.Width = Units.Stretch(1);
-        }
-        else if (Layout.LayoutType == LayoutType.Row && _container.Layout.Height.IsAuto)
-        {
-            _container.Layout.Height = Units.Stretch(1);
-        }
-        
         _container.Mount(Context!);
     }
 
@@ -101,7 +103,6 @@ public class PropertyGrid : ViewComponent, IViewContainer
 
 /// <summary>
 ///     Hierarchy - Scene hierarchy tree view.
-///     Shows parent-child relationships of game objects.
 /// </summary>
 public class Hierarchy<T> : ViewComponent, IViewContainer where T : notnull
 {
@@ -120,8 +121,7 @@ public class Hierarchy<T> : ViewComponent, IViewContainer where T : notnull
             Layout =
             {
                 PaddingTop = Units.Pixels(4),
-                // Ensure the container fills the Hierarchy component's space
-                Width = Units.Stretch(1),
+                Width = Units.Stretch(1), // Ensure full width for hit testing
                 Height = Units.Stretch(1)
             }
         };

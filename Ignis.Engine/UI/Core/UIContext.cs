@@ -58,10 +58,14 @@ public class UIContext : ILayoutNode, ILayoutCache, IDisposable
     // ILayoutCache implementation
     public void SetBounds(object node, float posX, float posY, float width, float height)
     {
+        // During Layout phase, these are RELATIVE coordinates (x,y relative to parent)
+        // We store them temporarily in _bounds.
+        // The subsequent ResolveAbsolutePositions pass will convert them to absolute.
         var rect = new Rectangle((int)posX, (int)posY, (int)width, (int)height);
         _bounds[node] = rect;
-
-        // Also store by element ID for InputManager
+        
+        // We don't need to update _boundsById here yet if we only rely on Input after ResolveAbsolutePositions.
+        // However, updating it does no harm as long as we fix it before Input reads it.
         if (node is IView view) _boundsById[view.Layout.ElementId] = rect;
     }
 
@@ -296,12 +300,46 @@ public class UIContext : ILayoutNode, ILayoutCache, IDisposable
         if (_root == null || _graphicsDevice == null)
             return;
 
-        // Calculate layout BEFORE processing input so bounds are available
+        // 1. Input: Process input based on LAST frame's layout.
+        //    Events here may modify the structure (add/remove elements).
+        Input.Update();
+
+        // 2. Clear old bounds to avoid stale data leaking.
+        _bounds.Clear();
+        _boundsById.Clear();
+
+        // 3. Layout: Calculate RELATIVE layout for the new structure.
         var viewport = _graphicsDevice.Viewport;
         LayoutEngine.Layout(_root, this, this, viewport.Width, viewport.Height);
 
-        // Process input events (now bounds are available)
-        Input.Update();
+        // 4. Resolve Absolute Positions: Convert relative layout to absolute screen coordinates
+        //    so Draw() has the correct final positions.
+        if (_bounds.TryGetValue(_root, out var rootRect))
+        {
+            // Root position is already absolute (0,0 or whatever LayoutEngine decided)
+            // We pass 0,0 as the parent offset for the root.
+            ResolveAbsolutePositions(_root, Vector2.Zero);
+        }
+    }
+
+    private void ResolveAbsolutePositions(object node, Vector2 parentPos)
+    {
+        if (!_bounds.TryGetValue(node, out var relRect)) return;
+
+        // Calculate Absolute Position
+        var absX = parentPos.X + relRect.X;
+        var absY = parentPos.Y + relRect.Y;
+        var absRect = new Rectangle((int)absX, (int)absY, relRect.Width, relRect.Height);
+
+        // Update bounds with Absolute Position
+        _bounds[node] = absRect;
+        if (node is IView view) _boundsById[view.Layout.ElementId] = absRect;
+
+        // Recurse for children
+        foreach (var child in GetChildren(node))
+        {
+            ResolveAbsolutePositions(child, new Vector2(absX, absY));
+        }
     }
 
     /// <summary>
@@ -340,45 +378,10 @@ public class UIContext : ILayoutNode, ILayoutCache, IDisposable
         var bounds = GetBounds(view);
         view.Draw(spriteBatch, bounds);
 
-        // Debug visualization if enabled
-        if (Game?.App.Settings.DebugUI == true && PrimitiveBatch != null)
-        {
-            DrawDebugBounds(view, bounds);
-        }
-
         // Recursively draw children
         if (view is IViewContainer container)
             foreach (var child in container.GetChildren())
                 DrawView(spriteBatch, child);
-    }
-
-    private void DrawDebugBounds(IView view, Rectangle bounds)
-    {
-        // Check if element has interaction but zero size (logic error)
-        var hasInteraction = view is ViewComponent vc && 
-                            (vc.EventHandlers.OnPointerDown != null || 
-                             vc.EventHandlers.OnPointerUp != null ||
-                             vc.EventHandlers.OnPointerEnter != null ||
-                             vc.EventHandlers.OnPointerLeave != null);
-
-        if (bounds.Width <= 0 || bounds.Height <= 0)
-        {
-            // Zero-size element - draw error marker
-            var color = hasInteraction ? Color.Red : Color.Orange;
-            PrimitiveBatch!.DrawCircle(new Vector2(bounds.X, bounds.Y), 5, color);
-            
-            if (hasInteraction)
-            {
-                // Log warning for interactive zero-size elements
-                Console.WriteLine($"[UI WARNING] Interactive element {view.GetType().Name} has zero size at ({bounds.X}, {bounds.Y}). It will be unclickable.");
-            }
-        }
-        else
-        {
-            // Normal element - draw debug border
-            var color = hasInteraction ? Color.Cyan : Color.Magenta;
-            PrimitiveBatch!.DrawBorder(bounds, 1, color);
-        }
     }
 
     public Rectangle GetBounds(object node)
