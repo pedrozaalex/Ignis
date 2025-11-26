@@ -506,6 +506,20 @@ public static class LayoutEngine
         float mainFlexSum = 0;
         var childrenData = new List<LayoutChild>();
 
+        // Calculate total gap space first (needed for correct percentage calculations)
+        var totalGapSpace = 0f;
+        if (relativeChildren.Count > 1)
+        {
+            var gap = layoutType == LayoutType.Row ? store.GetColumnGap(node) : store.GetRowGap(node);
+            if (gap.Kind != UnitKind.Stretch)
+            {
+                totalGapSpace = gap.ToPx(childParentMain, 0) * (relativeChildren.Count - 1);
+            }
+        }
+        
+        // Available space for children after accounting for gaps
+        var availableForChildren = childParentMain - totalGapSpace;
+
         // First Pass: Non-flexible Relative Children & collection of flex factors
         foreach (var child in relativeChildren)
         {
@@ -533,13 +547,14 @@ public static class LayoutEngine
             {
                 if (!childCross.IsStretch)
                 {
-                    var size = Compute(child, layoutType, childParentMain, childParentCross, store, cache);
+                    var size = Compute(child, layoutType, availableForChildren, childParentCross, store, cache);
                     childData.Main = size.Main;
                     childData.Cross = size.Cross;
                 }
                 else
                 {
-                    childData.Main = childMain.ToPx(childParentMain, 0);
+                    // Use availableForChildren for percentage/pixel calculations to account for gaps
+                    childData.Main = childMain.ToPx(availableForChildren, 0);
 
                     // Get constraints - handle Auto properly
                     var minMainUnits = layoutType == LayoutType.Row
@@ -557,11 +572,11 @@ public static class LayoutEngine
                     }
                     else
                     {
-                        cMin = minMainUnits.ToPx(childParentMain, DefaultMin);
+                        cMin = minMainUnits.ToPx(availableForChildren, DefaultMin);
                     }
 
                     var cMax = (layoutType == LayoutType.Row ? store.GetMaxWidth(child) : store.GetMaxHeight(child))
-                        .ToPx(childParentMain, DefaultMax);
+                        .ToPx(availableForChildren, DefaultMax);
                     childData.Main = Math.Clamp(childData.Main, cMin, cMax);
 
                     // Check if THIS node's cross-axis is Auto (need to measure child's intrinsic size)
@@ -662,7 +677,8 @@ public static class LayoutEngine
                 var childMain = layoutType == LayoutType.Row ? store.GetWidth(child) : store.GetHeight(child);
                 if (!childMain.IsStretch)
                 {
-                    var size = Compute(child, layoutType, childParentMain, d.Cross, store, cache);
+                    // Use availableForChildren to maintain gap-corrected sizing
+                    var size = Compute(child, layoutType, availableForChildren, d.Cross, store, cache);
                     d.Main = size.Main;
                     d.Cross = size.Cross;
                 }

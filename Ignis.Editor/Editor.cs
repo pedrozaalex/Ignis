@@ -120,13 +120,13 @@ public class Editor : IgnisGame
     {
         var root =
                 Column(MenuBar(), MainContent())
-                    .Width(Window.ClientBounds.Width-8)
+                    .Width(Window.ClientBounds.Width)
                     .Height(Window.ClientBounds.Height)
             ;
 
         Window.ClientSizeChanged += (_, _) =>
         {
-            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width-8);
+            root.Layout.Width = Units.Pixels(Window.ClientBounds.Width);
             root.Layout.Height = Units.Pixels(Window.ClientBounds.Height);
         };
 

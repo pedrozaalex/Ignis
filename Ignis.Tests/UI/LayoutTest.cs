@@ -622,4 +622,92 @@ public class LayoutTests
         // Child should fill that height
         Assert.Equal(20, childRect.Height);
     }
+
+    [Fact]
+    public void Row_WithPercentageChildrenAndGap_ShouldNotExceedContainerBounds()
+    {
+        // Simulates the Splitter component: Row with 2 percentage-based children and a gap between them
+        // Bug: The percentages are based on full container width, but gap adds extra pixels,
+        // causing total width to exceed container bounds
+        
+        var w = new World();
+        
+        var container = w.Add(null);
+        w.Nodes[container].LayoutType = LayoutType.Row;
+        w.Nodes[container].Width = Units.Pixels(1000);
+        w.Nodes[container].Height = Units.Pixels(600);
+        w.Nodes[container].ColGap = Units.Pixels(4); // Gap between children
+        
+        // First child: 20% width
+        var firstPanel = w.Add(container);
+        w.Nodes[firstPanel].Width = Units.Percentage(20);
+        w.Nodes[firstPanel].Height = Units.Stretch(1);
+        
+        // Second child: 80% width
+        var secondPanel = w.Add(container);
+        w.Nodes[secondPanel].Width = Units.Percentage(80);
+        w.Nodes[secondPanel].Height = Units.Stretch(1);
+        
+        LayoutEngine.Layout(container, w, w);
+        
+        var containerRect = w.GetRect(container)!.Value;
+        var firstRect = w.GetRect(firstPanel)!.Value;
+        var secondRect = w.GetRect(secondPanel)!.Value;
+        
+        var totalWidth = firstRect.Width + secondRect.Width + 4; // children + gap
+        
+        // This assertion will FAIL with current implementation, exposing the bug
+        Assert.True(totalWidth <= containerRect.Width, 
+            $"Total width ({totalWidth}) exceeds container width ({containerRect.Width}). " +
+            $"First: {firstRect.Width}, Gap: 4, Second: {secondRect.Width}");
+        
+        // Verify children don't extend beyond container bounds
+        Assert.True(firstRect.PosX + firstRect.Width <= containerRect.Width,
+            "First panel extends beyond container right edge");
+        Assert.True(secondRect.PosX + secondRect.Width <= containerRect.Width,
+            "Second panel extends beyond container right edge");
+    }
+
+    [Fact]
+    public void Column_WithPercentageChildrenAndGap_ShouldNotExceedContainerBounds()
+    {
+        // Same issue but in Column direction (vertical splitter)
+        
+        var w = new World();
+        
+        var container = w.Add(null);
+        w.Nodes[container].LayoutType = LayoutType.Column;
+        w.Nodes[container].Width = Units.Pixels(800);
+        w.Nodes[container].Height = Units.Pixels(1000);
+        w.Nodes[container].RowGap = Units.Pixels(4); // Gap between children
+        
+        // First child: 30% height
+        var firstPanel = w.Add(container);
+        w.Nodes[firstPanel].Width = Units.Stretch(1);
+        w.Nodes[firstPanel].Height = Units.Percentage(30);
+        
+        // Second child: 70% height
+        var secondPanel = w.Add(container);
+        w.Nodes[secondPanel].Width = Units.Stretch(1);
+        w.Nodes[secondPanel].Height = Units.Percentage(70);
+        
+        LayoutEngine.Layout(container, w, w);
+        
+        var containerRect = w.GetRect(container)!.Value;
+        var firstRect = w.GetRect(firstPanel)!.Value;
+        var secondRect = w.GetRect(secondPanel)!.Value;
+        
+        var totalHeight = firstRect.Height + secondRect.Height + 4; // children + gap
+        
+        // This assertion will FAIL with current implementation
+        Assert.True(totalHeight <= containerRect.Height,
+            $"Total height ({totalHeight}) exceeds container height ({containerRect.Height}). " +
+            $"First: {firstRect.Height}, Gap: 4, Second: {secondRect.Height}");
+        
+        // Verify children don't extend beyond container bounds
+        Assert.True(firstRect.PosY + firstRect.Height <= containerRect.Height,
+            "First panel extends beyond container bottom edge");
+        Assert.True(secondRect.PosY + secondRect.Height <= containerRect.Height,
+            "Second panel extends beyond container bottom edge");
+    }
 }
