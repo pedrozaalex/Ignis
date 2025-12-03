@@ -221,4 +221,68 @@ public class PaddingTests
 
         Assert.Equal(new Rect(0.0f, 0.0f, 100.0f, 150.0f), world.Cache.Bounds(node));
     }
+
+    [Fact]
+    public void PixelsPaddingPixelsSize()
+    {
+        using var world = new TestWorld();
+
+        var root = world.Add();
+        root.SetWidth(Units.Pixels(600.0f))
+            .SetHeight(Units.Pixels(600.0f))
+            .SetPaddingLeft(Units.Pixels(20.0f))
+            .SetPaddingTop(Units.Pixels(20.0f))
+            .SetPaddingRight(Units.Pixels(20.0f))
+            .SetPaddingBottom(Units.Pixels(20.0f));
+
+        var node = world.Add(root);
+        node.SetWidth(Units.Pixels(100.0f))
+            .SetHeight(Units.Pixels(150.0f))
+            .SetLeft(Units.Auto)
+            .SetTop(Units.Auto)
+            .SetRight(Units.Auto)
+            .SetBottom(Units.Auto);
+
+        world.Layout(root);
+
+        Assert.Equal(new Rect(20.0f, 20.0f, 100.0f, 150.0f), world.Cache.Bounds(node));
+
+        root.SetLayoutType(LayoutType.Row);
+
+        world.Layout(root);
+
+        Assert.Equal(new Rect(20.0f, 20.0f, 100.0f, 150.0f), world.Cache.Bounds(node));
+    }
+
+    [Fact]
+    public void PercentagePaddingPixelsSize()
+    {
+        using var world = new TestWorld();
+
+        var root = world.Add();
+        root.SetWidth(Units.Pixels(600.0f))
+            .SetHeight(Units.Pixels(600.0f))
+            .SetPaddingLeft(Units.Percentage(50.0f))
+            .SetPaddingTop(Units.Percentage(50.0f))
+            .SetPaddingRight(Units.Percentage(50.0f))
+            .SetPaddingBottom(Units.Percentage(50.0f));
+
+        var node = world.Add(root);
+        node.SetWidth(Units.Pixels(100.0f))
+            .SetHeight(Units.Pixels(150.0f))
+            .SetLeft(Units.Auto)
+            .SetTop(Units.Auto)
+            .SetRight(Units.Auto)
+            .SetBottom(Units.Auto);
+
+        world.Layout(root);
+
+        Assert.Equal(new Rect(300.0f, 300.0f, 100.0f, 150.0f), world.Cache.Bounds(node));
+
+        root.SetLayoutType(LayoutType.Row);
+
+        world.Layout(root);
+
+        Assert.Equal(new Rect(300.0f, 300.0f, 100.0f, 150.0f), world.Cache.Bounds(node));
+    }
 }

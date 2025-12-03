@@ -186,10 +186,12 @@ public static class LayoutEngine
 
             // Extract Child Constraints
             var (cMain, cCross) = (child.Main(layoutType), child.Cross(layoutType));
+            var minMainUnit = child.MinMain(layoutType);
+            var minCrossUnit = child.MinCross(layoutType);
 
-            var minMain = child.MinMain(layoutType).ToPx(knownMain ?? 0, 0);
+            var minMain = minMainUnit.ToPx(knownMain ?? 0, 0);
             var maxMain = child.MaxMain(layoutType).ToPx(knownMain ?? 0, float.MaxValue);
-            var minCross = child.MinCross(layoutType).ToPx(knownCross ?? 0, 0);
+            var minCross = minCrossUnit.ToPx(knownCross ?? 0, 0);
             var maxCross = child.MaxCross(layoutType).ToPx(knownCross ?? 0, float.MaxValue);
 
             // Calculate Initial Sizes (if not auto)
@@ -203,19 +205,26 @@ public static class LayoutEngine
             var needMain = cMain.Kind is not UnitsKind.Stretch && !mainSize.HasValue;
             var needCross = cCross.Kind is UnitsKind.Auto && !crossSize.HasValue;
 
+            // If MinMain or MinCross is Auto, we need to compute content size to get the minimum
+            var needContentForMinMain = minMainUnit.Kind is UnitsKind.Auto && cMain.Kind is UnitsKind.Stretch;
+            var needContentForMinCross = minCrossUnit.Kind is UnitsKind.Auto && cCross.Kind is UnitsKind.Stretch;
+
             // If Main is Stretch, we can't reliably resolve Auto Cross derived from it yet 
             // because the Stretch distribution hasn't happened.
-            if (cMain.Kind is UnitsKind.Stretch)
+            if (cMain.Kind is UnitsKind.Stretch && !needContentForMinMain && !needContentForMinCross)
             {
                 needMain = false;
                 needCross = false;
             }
 
-            if (needMain || needCross)
+            if (needMain || needCross || needContentForMinMain || needContentForMinCross)
             {
                 var contentSize = ComputeChildContentSize(child, ctx, layoutType, knownMain ?? 0, knownCross ?? 0);
                 if (needMain) mainSize = Math.Clamp(contentSize.Main, minMain, maxMain);
                 if (needCross) crossSize = Math.Clamp(contentSize.Cross, minCross, maxCross);
+                // Use content size as minimum when MinMain/MinCross is Auto
+                if (needContentForMinMain) minMain = contentSize.Main;
+                if (needContentForMinCross) minCross = contentSize.Cross;
             }
 
             // Register Stretch or Accumulate Size
@@ -268,7 +277,16 @@ public static class LayoutEngine
         // -------------------------------------------------------------
 
         var (startMain, startCross) = ToAxis(border.Left + padding.Left, border.Top + padding.Top);
-        var currentMainPos = startMain;
+        
+        // Calculate total main size of all flex children (for main-axis alignment)
+        var totalChildMain = flexChildren.Select((_, i) => childMainSizes[i] ?? 0).Sum();
+        var totalGapsMain = Math.Max(0, flexChildren.Count - 1) * finalGap;
+        var mainSum = totalChildMain + totalGapsMain;
+        
+        // Main-axis alignment offset
+        var mainAlignOff = GetMainAlignmentOffset(node.Alignment ?? Alignment.TopLeft, 
+            finalMain - edgeMain, mainSum, isRow);
+        var currentMainPos = startMain + mainAlignOff;
 
         // Flex Children
         for (var i = 0; i < flexChildren.Count; i++)
@@ -277,7 +295,8 @@ public static class LayoutEngine
             var sizeM = childMainSizes[i] ?? 0;
             var sizeC = childCrossSizes[i] ?? 0;
 
-            var alignOff = GetAlignmentOffset(node.Alignment ?? Alignment.TopLeft, finalCross - edgeCross, sizeC);
+            var alignOff = GetCrossAlignmentOffset(node.Alignment ?? Alignment.TopLeft, 
+                finalCross - edgeCross, sizeC, isRow);
             var posCross = startCross + alignOff;
 
             var (x, y) = FromAxis(currentMainPos, posCross);
@@ -294,7 +313,7 @@ public static class LayoutEngine
         var (nodeW, nodeH) = FromAxis(finalMain, finalCross);
         foreach (var abs in absoluteChildren)
         {
-            LayoutAbsoluteChild(abs, ctx, nodeW, nodeH);
+            LayoutAbsoluteChild(abs, node, ctx, nodeW, nodeH);
         }
 
         // Final Bounds (unless overridden by parent recursion)
@@ -328,10 +347,29 @@ public static class LayoutEngine
             var knownC = crossSizes[i];
             var availableCross = containerCross - edgeCross;
 
-            // Case 1: Stretch Cross
+            // Check if MinCross is explicitly Auto (content-based minimum)
+            var minCrossIsAuto = child.MinCross(type).Kind == UnitsKind.Auto;
+
+            // Case 1: Stretch Cross - need content size if MinCross is Auto
             if (!knownC.HasValue && child.Cross(type).Kind is UnitsKind.Stretch)
             {
-                var min = child.MinCross(type).ToPx(containerCross, 0);
+                float min;
+                if (minCrossIsAuto)
+                {
+                    // Compute content size for Auto minimum
+                    var content = child.ContentSizing(ref ctx.SubLayout, type, knownM, null);
+                    if (!content.HasValue)
+                    {
+                        var computed = ComputeChildContentSize(child, ctx, type, containerMain, containerCross);
+                        content = (computed.Main, computed.Cross);
+                    }
+                    min = content?.Cross ?? 0;
+                }
+                else
+                {
+                    min = child.MinCross(type).ToPx(containerCross, 0);
+                }
+                
                 var max = child.MaxCross(type).ToPx(containerCross, float.MaxValue);
                 crossSizes[i] = Math.Clamp(availableCross, min, max);
                 knownC = crossSizes[i]; // Update local for use in Case 2
@@ -341,6 +379,12 @@ public static class LayoutEngine
             if (!knownC.HasValue || !knownM.HasValue)
             {
                 var content = child.ContentSizing(ref ctx.SubLayout, type, knownM, knownC);
+
+                if (!content.HasValue)
+                {
+                    var computed = ComputeChildContentSize(child, ctx, type, containerMain, containerCross);
+                    content = (computed.Main, computed.Cross);
+                }
 
                 if (content.HasValue)
                 {
@@ -388,61 +432,133 @@ public static class LayoutEngine
         };
         return factor * (availableSpace - childSize);
     }
+    
+    private static float GetMainAlignmentOffset(Alignment align, float availableSpace, float totalChildrenSize, bool isRow)
+    {
+        // For Row: main axis is horizontal, alignment horizontal component matters
+        // For Column: main axis is vertical, alignment vertical component matters
+        var (mainFactor, _) = GetAlignmentFactors(align);
+        if (isRow)
+        {
+            // For Row, swap because our factors are (vertical, horizontal)
+            (_, mainFactor) = GetAlignmentFactors(align);
+        }
+        return mainFactor * (availableSpace - totalChildrenSize);
+    }
+    
+    private static float GetCrossAlignmentOffset(Alignment align, float availableSpace, float childSize, bool isRow)
+    {
+        // For Row: cross axis is vertical
+        // For Column: cross axis is horizontal
+        var (crossFactor, _) = GetAlignmentFactors(align);
+        if (!isRow)
+        {
+            // For Column, cross is horizontal, so use horizontal factor
+            (_, crossFactor) = GetAlignmentFactors(align);
+        }
+        return crossFactor * (availableSpace - childSize);
+    }
+    
+    private static (float Vertical, float Horizontal) GetAlignmentFactors(Alignment align)
+    {
+        return align switch
+        {
+            Alignment.TopLeft => (0.0f, 0.0f),
+            Alignment.TopCenter => (0.0f, 0.5f),
+            Alignment.TopRight => (0.0f, 1.0f),
+            Alignment.Left => (0.5f, 0.0f),
+            Alignment.Center => (0.5f, 0.5f),
+            Alignment.Right => (0.5f, 1.0f),
+            Alignment.BottomLeft => (1.0f, 0.0f),
+            Alignment.BottomCenter => (1.0f, 0.5f),
+            Alignment.BottomRight => (1.0f, 1.0f),
+            _ => (0.0f, 0.0f)
+        };
+    }
 
     private static void LayoutAbsoluteChild<TTree, TSubLayout, TCacheKey, TCache>(
         INode<TTree, TSubLayout, TCacheKey> child,
+        INode<TTree, TSubLayout, TCacheKey> parent,
         LayoutContext<TTree, TSubLayout, TCacheKey, TCache> ctx,
         float parentW, float parentH)
         where TCache : ICache<TCacheKey>
         where TCacheKey : notnull
     {
-        // 1. Resolve Edges
+        // Compute parent's inner dimensions (for stretch sizing)
+        var parentPadding = ResolveEdges(parent, parentW, parentH, isBorder: false);
+        var parentBorder = ResolveEdges(parent, parentW, parentH, isBorder: true);
+        var innerW = parentW - parentPadding.Horizontal - parentBorder.Horizontal;
+        var innerH = parentH - parentPadding.Vertical - parentBorder.Vertical;
+        
+        // Content area for positioning (inside border, includes padding)
+        var contentW = parentW - parentBorder.Horizontal;
+        var contentH = parentH - parentBorder.Vertical;
+
+        // 1. Resolve Edges (relative to content area for positioning)
         var leftU = child.Left ?? Units.Auto;
         var rightU = child.Right ?? Units.Auto;
         var topU = child.Top ?? Units.Auto;
         var bottomU = child.Bottom ?? Units.Auto;
 
-        var left = leftU.ToPx(parentW, 0);
-        var right = rightU.ToPx(parentW, 0);
-        var top = topU.ToPx(parentH, 0);
-        var bottom = bottomU.ToPx(parentH, 0);
+        var left = leftU.ToPx(contentW, 0);
+        var right = rightU.ToPx(contentW, 0);
+        var top = topU.ToPx(contentH, 0);
+        var bottom = bottomU.ToPx(contentH, 0);
 
-        // 2. Resolve Size
-        var w = ResolveAbsoluteSize(child.Width, child.MinWidth, child.MaxWidth, parentW, left, right, leftU.IsAuto,
-            rightU.IsAuto);
-        var h = ResolveAbsoluteSize(child.Height, child.MinHeight, child.MaxHeight, parentH, top, bottom, topU.IsAuto,
-            bottomU.IsAuto);
+        // Check if we need content sizing for Auto min constraints
+        // Note: null MinWidth/MinHeight means "not set" (defaults to 0), not Auto
+        var minWidthIsAuto = child.MinWidth?.Kind == UnitsKind.Auto;
+        var minHeightIsAuto = child.MinHeight?.Kind == UnitsKind.Auto;
+        var widthIsStretch = (child.Width ?? Units.Auto).Kind is UnitsKind.Stretch;
+        var heightIsStretch = (child.Height ?? Units.Auto).Kind is UnitsKind.Stretch;
 
-        // 3. Fallback to Content Sizing if still unknown
-        if (w == null || h == null)
+        // Pre-compute content size if needed for Auto min constraints
+        float? childContentW = null;
+        float? childContentH = null;
+        if ((minWidthIsAuto && widthIsStretch) || (minHeightIsAuto && heightIsStretch) || 
+            (child.Width ?? Units.Auto).Kind is UnitsKind.Auto || 
+            (child.Height ?? Units.Auto).Kind is UnitsKind.Auto)
         {
             var lType = child.LayoutType ?? LayoutType.Column;
-            var content = ComputeChildContentSize(child, ctx, lType, parentW, parentH);
+            var content = ComputeChildContentSize(child, ctx, lType, innerW, innerH);
 
-            var (measW, measH) = lType is LayoutType.Row
+            (childContentW, childContentH) = lType is LayoutType.Row
                 ? (content.Main, content.Cross)
                 : (content.Cross, content.Main);
-
-            w ??= measW;
-            h ??= measH;
         }
 
-        // 4. Clamp & Position
-        var finalW = DetermineFinalSize(w.Value, child.MinWidth, child.MaxWidth, parentW);
-        var finalH = DetermineFinalSize(h.Value, child.MinHeight, child.MaxHeight, parentH);
+        // 2. Resolve Size using INNER dimensions for stretch, with content-based minimums for Auto
+        var w = ResolveAbsoluteSizeWithContentMin(child.Width, child.MinWidth, child.MaxWidth, innerW, left, right, leftU.IsAuto,
+            rightU.IsAuto, childContentW);
+        var h = ResolveAbsoluteSizeWithContentMin(child.Height, child.MinHeight, child.MaxHeight, innerH, top, bottom, topU.IsAuto,
+            bottomU.IsAuto, childContentH);
 
+        // 3. Fallback to Content Sizing if still unknown
+        w ??= childContentW ?? 0;
+        h ??= childContentH ?? 0;
+
+        // 4. Clamp & Position (use content-based min for Auto)
+        var finalMinW = minWidthIsAuto ? (childContentW ?? 0) : (child.MinWidth?.ToPx(innerW, 0) ?? 0);
+        var finalMinH = minHeightIsAuto ? (childContentH ?? 0) : (child.MinHeight?.ToPx(innerH, 0) ?? 0);
+        var finalMaxW = child.MaxWidth?.ToPx(innerW, float.MaxValue) ?? float.MaxValue;
+        var finalMaxH = child.MaxHeight?.ToPx(innerH, float.MaxValue) ?? float.MaxValue;
+
+        var finalW = Math.Clamp(w.Value, finalMinW, finalMaxW);
+        var finalH = Math.Clamp(h.Value, finalMinH, finalMaxH);
+
+        // Position within content area (use contentW/contentH which includes padding)
         var x = (leftU.IsAuto, rightU.IsAuto) switch
         {
-            (false, _) => left,
-            (true, false) => parentW - right - finalW,
-            _ => 0f
+            (false, _) => left + parentBorder.Left,
+            (true, false) => contentW - right - finalW + parentBorder.Left,
+            _ => parentBorder.Left
         };
 
         var y = (topU.IsAuto, bottomU.IsAuto) switch
         {
-            (false, _) => top,
-            (true, false) => parentH - bottom - finalH,
-            _ => 0f
+            (false, _) => top + parentBorder.Top,
+            (true, false) => contentH - bottom - finalH + parentBorder.Top,
+            _ => parentBorder.Top
         };
 
         ctx.Cache.SetBounds(child.Key, x, y, finalW, finalH);
@@ -468,9 +584,12 @@ public static class LayoutEngine
         var h = ResolveSize(child.Height, child.MinHeight, child.MaxHeight, pH);
 
         // For content sizing, Stretch should resolve to parent size (clamped by min/max)
-        if (!w.HasValue && (child.Width ?? Units.Auto).Kind is UnitsKind.Stretch)
+        // But only if min is not Auto (Auto min needs content measurement first)
+        var minWIsAuto = child.MinWidth?.Kind == UnitsKind.Auto;
+        var minHIsAuto = child.MinHeight?.Kind == UnitsKind.Auto;
+        if (!w.HasValue && (child.Width ?? Units.Auto).Kind is UnitsKind.Stretch && !minWIsAuto)
             w = DetermineFinalSize(pW, child.MinWidth, child.MaxWidth, pW);
-        if (!h.HasValue && (child.Height ?? Units.Auto).Kind is UnitsKind.Stretch)
+        if (!h.HasValue && (child.Height ?? Units.Auto).Kind is UnitsKind.Stretch && !minHIsAuto)
             h = DetermineFinalSize(pH, child.MinHeight, child.MaxHeight, pH);
 
         if (w is not null && h is not null)
@@ -480,7 +599,27 @@ public static class LayoutEngine
         var childIsRow = childLayout is LayoutType.Row;
         var (childMainHint, childCrossHint) = childIsRow ? (w, h) : (h, w);
 
-        var content = child.ContentSizing(ref ctx.SubLayout, childLayout, childMainHint, childCrossHint);
+        var isStretchW = (child.Width ?? Units.Auto).Kind is UnitsKind.Stretch;
+        var isStretchH = (child.Height ?? Units.Auto).Kind is UnitsKind.Stretch;
+        
+        // For stretch hints, apply max constraints even if min is Auto
+        float? hintW = w;
+        if (!hintW.HasValue && isStretchW)
+        {
+            var maxW = child.MaxWidth?.ToPx(pW, float.MaxValue) ?? float.MaxValue;
+            hintW = Math.Min(pW, maxW);
+        }
+        
+        float? hintH = h;
+        if (!hintH.HasValue && isStretchH)
+        {
+            var maxH = child.MaxHeight?.ToPx(pH, float.MaxValue) ?? float.MaxValue;
+            hintH = Math.Min(pH, maxH);
+        }
+        
+        var (contentMainHint, contentCrossHint) = childIsRow ? (hintW, hintH) : (hintH, hintW);
+
+        var content = child.ContentSizing(ref ctx.SubLayout, childLayout, contentMainHint, contentCrossHint);
         if (content.HasValue)
         {
             var cm = content.Value.Main;
@@ -500,7 +639,8 @@ public static class LayoutEngine
 
         float totalMain = 0;
         float maxCross = 0;
-        var (gcRefW, gcRefH) = (w ?? pW, h ?? pH);
+        
+        var (gcRefW, gcRefH) = (w ?? (isStretchW ? pW : 0), h ?? (isStretchH ? pH : 0));
 
         foreach (var gc in grandchildren)
         {
@@ -570,6 +710,34 @@ public static class LayoutEngine
         return val.HasValue
             ? DetermineFinalSize(val.Value, min, max, parentSize)
             : null;
+    }
+
+    // Same as ResolveAbsoluteSize but applies content-based minimum when min is Auto
+    private static float? ResolveAbsoluteSizeWithContentMin(
+        Units? size, Units? min, Units? max,
+        float parentSize, float start, float end,
+        bool startIsAuto, bool endIsAuto,
+        float? contentSize)
+    {
+        var u = size ?? Units.Auto;
+        float? val = u.Kind switch
+        {
+            UnitsKind.Pixels => u.Value,
+            UnitsKind.Percentage => parentSize * u.Value / 100f,
+            UnitsKind.Stretch => parentSize - start - end,
+            _ => null
+        };
+
+        if (!val.HasValue && !startIsAuto && !endIsAuto) val = parentSize - start - end;
+        
+        if (!val.HasValue) return null;
+
+        // Apply content-based minimum when min is Auto
+        var effectiveMin = min;
+        if (min?.Kind == UnitsKind.Auto && contentSize.HasValue)
+            effectiveMin = Units.Pixels(contentSize.Value);
+        
+        return DetermineFinalSize(val.Value, effectiveMin, max, parentSize);
     }
 
     private static void DistributeStretchSpace(
