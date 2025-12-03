@@ -197,7 +197,8 @@ public static class EntityExtensions
         {
             entity.AddComponent(new GridDefinition());
         }
-        entity.GetComponent<GridDefinition>().Columns = columns;
+        ref var grid = ref entity.GetComponent<GridDefinition>();
+        grid.Columns = columns;
         return entity;
     }
 
@@ -207,7 +208,8 @@ public static class EntityExtensions
         {
             entity.AddComponent(new GridDefinition());
         }
-        entity.GetComponent<GridDefinition>().Rows = rows;
+        ref var grid = ref entity.GetComponent<GridDefinition>();
+        grid.Rows = rows;
         return entity;
     }
 

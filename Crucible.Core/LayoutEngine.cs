@@ -95,13 +95,10 @@ public static class LayoutEngine
         var layoutType = node.LayoutType ?? LayoutType.Column;
         var key = node.Key;
 
-        // 2. Fast Path: Grid (Pass-through sizing)
+        // 2. Grid Layout
         if (layoutType is LayoutType.Grid)
         {
-            var gridW = overrideWidth ?? parentWidth ?? 0;
-            var gridH = overrideHeight ?? parentHeight ?? 0;
-            var cur = ctx.Cache.Bounds(key);
-            ctx.Cache.SetBounds(key, cur?.PosX ?? 0, cur?.PosY ?? 0, gridW, gridH);
+            LayoutGridNode(node, ctx, parentWidth, parentHeight, overrideWidth, overrideHeight);
             return;
         }
 
@@ -808,6 +805,183 @@ public static class LayoutEngine
         {
             if (item.Type == StretchType.Size)
                 setSize(item.Index, v);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Grid Layout
+    // -------------------------------------------------------------------------
+
+    private static void LayoutGridNode<TTree, TSubLayout, TCacheKey, TCache>(
+        INode<TTree, TSubLayout, TCacheKey> node,
+        LayoutContext<TTree, TSubLayout, TCacheKey, TCache> ctx,
+        float? parentWidth,
+        float? parentHeight,
+        float? overrideWidth,
+        float? overrideHeight)
+        where TCache : ICache<TCacheKey>
+        where TCacheKey : notnull
+    {
+        var key = node.Key;
+
+        // Resolve grid outer size
+        var explicitW = overrideWidth ?? ResolveSize(node.Width, node.MinWidth, node.MaxWidth, parentWidth);
+        var explicitH = overrideHeight ?? ResolveSize(node.Height, node.MinHeight, node.MaxHeight, parentHeight);
+
+        var baseW = explicitW ?? parentWidth ?? 0;
+        var baseH = explicitH ?? parentHeight ?? 0;
+
+        var padding = ResolveEdges(node, baseW, baseH, isBorder: false);
+        var border = ResolveEdges(node, baseW, baseH, isBorder: true);
+
+        var totalEdgeH = padding.Horizontal + border.Horizontal;
+        var totalEdgeV = padding.Vertical + border.Vertical;
+
+        var gridW = explicitW ?? baseW;
+        var gridH = explicitH ?? baseH;
+
+        // Set grid bounds
+        var curBounds = ctx.Cache.Bounds(key);
+        ctx.Cache.SetBounds(key, curBounds?.PosX ?? 0, curBounds?.PosY ?? 0, gridW, gridH);
+
+        // Inner dimensions for children
+        var innerW = Math.Max(0, gridW - totalEdgeH);
+        var innerH = Math.Max(0, gridH - totalEdgeV);
+
+        // Get grid definitions
+        var gridCols = node.GridColumns ?? [];
+        var gridRows = node.GridRows ?? [];
+
+        if (gridCols.Count == 0 || gridRows.Count == 0)
+            return; // No grid to layout
+
+        // Get gaps
+        var colGap = (node.HorizontalGap ?? default).ToPx(innerW, 0);
+        var rowGap = (node.VerticalGap ?? default).ToPx(innerH, 0);
+
+        // Compute column sizes with interleaved gutters
+        // Array structure: [gap0, col0, gap1, col1, gap2, col2, gap3]
+        // For n columns: 2*n + 1 elements (but first and last gap are 0)
+        var computedCols = ComputeGridTrackSizes(gridCols, innerW, colGap);
+        var computedRows = ComputeGridTrackSizes(gridRows, innerH, rowGap);
+
+        // Convert to cumulative positions
+        ConvertToCumulativePositions(computedCols);
+        ConvertToCumulativePositions(computedRows);
+
+        // Layout children
+        var allChildren = node.Children(ctx.Tree);
+        var offsetX = padding.Left + border.Left;
+        var offsetY = padding.Top + border.Top;
+
+        foreach (var child in allChildren)
+        {
+            if (!child.Visible)
+            {
+                SetInvisibleRecursive(child, ctx);
+                continue;
+            }
+
+            // Get child's grid placement (0-indexed in our API)
+            var colStart = Math.Max(0, child.ColumnStart ?? 0);
+            var rowStart = Math.Max(0, child.RowStart ?? 0);
+            var colSpan = Math.Max(1, child.ColumnSpan ?? 1);
+            var rowSpan = Math.Max(1, child.RowSpan ?? 1);
+
+            // Clamp to valid range
+            colStart = Math.Min(colStart, gridCols.Count - 1);
+            rowStart = Math.Min(rowStart, gridRows.Count - 1);
+            var colEnd = Math.Min(colStart + colSpan, gridCols.Count);
+            var rowEnd = Math.Min(rowStart + rowSpan, gridRows.Count);
+
+            // Get position and size from computed tracks
+            // Array structure after cumulative: [pos_before_gutter, pos_at_track1_start, pos_at_track2_start, ...]
+            // Position uses col_start * 2 + 1 (track start position)
+            // Width uses col_end * 2 (track end position, which is next gutter start)
+            var cellX = computedCols[colStart * 2 + 1];
+            var cellW = computedCols[colEnd * 2] - cellX;
+
+            var cellY = computedRows[rowStart * 2 + 1];
+            var cellH = computedRows[rowEnd * 2] - cellY;
+
+            // Layout child with cell as available space (but don't set overrides, let child compute its own size)
+            LayoutNodeRecursive(child, ctx, cellW, cellH);
+
+            // Set child position and size to fill the cell
+            ctx.Cache.SetBounds(child.Key, offsetX + cellX, offsetY + cellY, cellW, cellH);
+        }
+    }
+
+    private static float[] ComputeGridTrackSizes(IReadOnlyList<Units> tracks, float availableSpace, float gap)
+    {
+        // Structure: [gutter, track, gutter, track, ..., gutter]
+        // 2 * n + 1 elements for n tracks
+        var count = tracks.Count * 2 + 1;
+        var computed = new float[count];
+
+        // Collect stretch items and compute fixed sizes
+        var stretchItems = new List<(int Index, float Factor)>();
+        float totalFixed = 0;
+        float totalStretch = 0;
+
+        for (var i = 0; i < tracks.Count; i++)
+        {
+            var track = tracks[i];
+            var arrayIdx = i * 2 + 1; // Track positions in array
+
+            // Set gutters
+            if (i > 0)
+            {
+                computed[i * 2] = gap; // Gutter before this track
+                totalFixed += gap;
+            }
+
+            switch (track.Kind)
+            {
+                case UnitsKind.Pixels:
+                    computed[arrayIdx] = track.Value;
+                    totalFixed += track.Value;
+                    break;
+                case UnitsKind.Percentage:
+                    var pxValue = track.Value / 100f * availableSpace;
+                    computed[arrayIdx] = pxValue;
+                    totalFixed += pxValue;
+                    break;
+                case UnitsKind.Stretch:
+                    stretchItems.Add((arrayIdx, track.Value));
+                    totalStretch += track.Value;
+                    break;
+                case UnitsKind.Auto:
+                    // Auto in grid context defaults to stretch(1)
+                    stretchItems.Add((arrayIdx, 1f));
+                    totalStretch += 1f;
+                    break;
+            }
+        }
+
+        // Distribute remaining space to stretch items
+        var remainingSpace = Math.Max(0, availableSpace - totalFixed);
+
+        if (stretchItems.Count > 0 && totalStretch > 0)
+        {
+            var perFactor = remainingSpace / totalStretch;
+            foreach (var (idx, factor) in stretchItems)
+            {
+                computed[idx] = factor * perFactor;
+            }
+        }
+
+        return computed;
+    }
+
+    private static void ConvertToCumulativePositions(float[] sizes)
+    {
+        float cumulative = 0;
+        for (var i = 0; i < sizes.Length; i++)
+        {
+            var size = sizes[i];
+            sizes[i] = cumulative;
+            cumulative += size;
         }
     }
 
