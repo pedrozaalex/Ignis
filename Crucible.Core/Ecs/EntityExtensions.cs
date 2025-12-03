@@ -120,6 +120,30 @@ public static class EntityExtensions
         return entity;
     }
 
+    public static Entity SetMinVerticalGap(this Entity entity, Units value)
+    {
+        entity.GetOrAddLayoutProps().MinVerticalGap = value;
+        return entity;
+    }
+
+    public static Entity SetMinHorizontalGap(this Entity entity, Units value)
+    {
+        entity.GetOrAddLayoutProps().MinHorizontalGap = value;
+        return entity;
+    }
+
+    public static Entity SetMaxVerticalGap(this Entity entity, Units value)
+    {
+        entity.GetOrAddLayoutProps().MaxVerticalGap = value;
+        return entity;
+    }
+
+    public static Entity SetMaxHorizontalGap(this Entity entity, Units value)
+    {
+        entity.GetOrAddLayoutProps().MaxHorizontalGap = value;
+        return entity;
+    }
+
     public static Entity SetMinWidth(this Entity entity, Units value)
     {
         entity.GetOrAddLayoutProps().MinWidth = value;
