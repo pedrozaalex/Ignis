@@ -128,7 +128,7 @@ public class InteractiveWidgetsTest
         // Act
         textField.Mount(mockContext);
 
-        // Assert - EventHandlers should have OnTextInput registered
+        // Assert - TextField now inherits from Input/Panel directly, so it has the handlers
         Assert.NotNull(textField.EventHandlers.OnTextInput);
     }
 }

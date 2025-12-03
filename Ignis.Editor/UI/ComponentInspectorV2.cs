@@ -44,9 +44,9 @@ public class ComponentInspectorV2
         InspectorRegistry.Register<string>(new StringInspector());
         InspectorRegistry.Register<string?>(new StringInspector());
 
-        InspectorRegistry.Register<Position>(new Vector3ComponentInspector(_theme));
+        InspectorRegistry.Register<Position>(new Vector3ComponentInspector());
         InspectorRegistry.Register<Rotation>(new QuaternionComponentInspector(_theme));
-        InspectorRegistry.Register<Scale3>(new Vector3ComponentInspector(_theme));
+        InspectorRegistry.Register<Scale3>(new Vector3ComponentInspector());
     }
 
     /// <summary>
@@ -92,7 +92,6 @@ public class ComponentInspectorV2
             .AlignCenter()
             ;
 
-        // _propertyGrid.AddProperty("", header);
         var section = Panel()
                 .Padding(8)
                 .Gap(4)
@@ -114,12 +113,11 @@ public class ComponentInspectorV2
             _activeAccessors.Add(accessor);
 
             var editor = componentInspector.CreateView(accessor);
-            // _propertyGrid.AddProperty("", editor);
             section.AddChild(editor);
         }
         else
         {
-            // No specific inspector - iterate over fields as before
+            // No specific inspector - iterate over fields
             var fields = componentType.Type.GetFields(BindingFlags.Public | BindingFlags.Instance);
 
             if (fields.Length == 0) return; // Skip empty components

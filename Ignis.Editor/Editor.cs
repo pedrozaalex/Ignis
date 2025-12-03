@@ -254,13 +254,6 @@ public class Editor : IgnisGame
             VerticalScrollEnabled = true
         };
 
-        // return new Panel(header, scrollView)
-        // {
-        //     Layout = { LayoutType = LayoutType.Column },
-        //     BorderThickness = 1f,
-        //     BorderColor = _uiContext!.Theme.Border,
-        //     BackgroundColor = _uiContext!.Theme.Background
-        // };
         return Panel(header, scrollView)
                 .Height(Units.Stretch(1))
                 .Background(_uiContext!.Theme.Surface)
@@ -271,6 +264,7 @@ public class Editor : IgnisGame
     {
         return Panel()
             .Height(30)
+            .Width(Units.Auto)
             .Padding(8, 4)
             .Background(_uiContext!.Theme.SurfaceOverlay)
             .AlignCenter()

@@ -1,7 +1,9 @@
+using System.Globalization;
 using Ignis.Editor.UI.Inspection.Core;
 using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
+using Ignis.Engine.UI.Elements;
 using Ignis.Engine.UI.Widgets;
 using Microsoft.Xna.Framework;
 using static Ignis.Engine.UI.Elements.Elements;
@@ -16,20 +18,13 @@ namespace Ignis.Editor.UI.Inspection.Defaults;
 /// </summary>
 public class Vector3ComponentInspector : IInspector
 {
-    private readonly Theme? _theme;
-
-    public Vector3ComponentInspector(Theme? theme = null)
-    {
-        _theme = theme;
-    }
-
     public IView CreateView(IAccessor accessor)
     {
         var type = accessor.Type;
         var xField = type.GetField("x");
         var yField = type.GetField("y");
         var zField = type.GetField("z");
-        
+
         if (xField == null || yField == null || zField == null)
         {
             // Fallback to composite if fields not found
@@ -61,45 +56,49 @@ public class Vector3ComponentInspector : IInspector
 
     private IView CreateAxisField(string label, IAccessor accessor, Color axisColor)
     {
-        var backgroundColor = _theme?.InputBackground ?? Color.FromNonPremultiplied(40, 40, 40, 255);
-        
-        var axisContainer = new Panel
+        // Create Input with number validation for the float value
+        if (accessor is not IAccessor<float> floatAccessor)
+            return Label("Invalid accessor type");
+
+        // Convert float signal to string signal for Input
+        var stringSignal = new Signal<string?>(floatAccessor.Signal.Value.ToString("F2"));
+
+        // Sync string to float (user typing -> ECS)
+        var input = new NumberInput(stringSignal);
+
+        // Sync float to string (ECS -> UI display)
+        // This is handled by the accessor Update() call in ComponentInspectorV2.Update()
+        // But we need to update the string when the float changes
+        _ = new Effect(() =>
         {
-            Layout = { LayoutType = LayoutType.Row, Width = Units.Stretch(1) },
-            BackgroundColor = backgroundColor,
-            CornerRadius = 2f
-        };
+            var floatValue = floatAccessor.Signal.Value;
+            var currentString = stringSignal.Value;
+            var expectedString = floatValue.ToString("F2");
 
-        // Colored bar indicator
-        var axisIndicator = new Panel
+            // Only update if different to avoid cursor jumping during typing
+            if (currentString == expectedString || string.IsNullOrEmpty(currentString)) return;
+
+            // User finished typing, try to parse and update
+            if (float.TryParse(currentString, out var parsed)) floatAccessor.SetValue(parsed);
+        });
+
+        return Row(
+                Label(label).Height(14),
+                AxisIndicator(),
+                input
+            )
+            .AlignCenter()
+            .Height(24)
+            .FillWidth();
+
+        IView AxisIndicator()
         {
-            BackgroundColor = axisColor,
-            Layout =
-            {
-                Width = Units.Pixels(4),
-                Height = Units.Stretch(1),
-                Alignment = Alignment.Center
-            }
-        };
-
-        // Get the float inspector to handle the actual float editing
-        var floatInspector = InspectorRegistry.GetInspector(typeof(float));
-        var editor = floatInspector.CreateView(accessor);
-
-        // Create a container for the field value with transparent background
-        var fieldContainer = new Panel
-        {
-            Layout = { LayoutType = LayoutType.Row, Width = Units.Stretch(1) },
-            BackgroundColor = Color.Transparent
-        };
-        
-        fieldContainer.AddChild(editor);
-
-        axisContainer.AddChild(axisIndicator);
-        axisContainer.AddChild(Label(label));
-        axisContainer.AddChild(fieldContainer);
-
-        return axisContainer;
+            return Panel()
+                .Background(axisColor)
+                .PaddingLeft(2)
+                .Width(4)
+                .FillHeight();
+        }
     }
 }
 
@@ -107,15 +106,8 @@ public class Vector3ComponentInspector : IInspector
 /// Inspector for Quaternion-like rotation components with FieldOffset unions.
 /// Shows x, y, z, w fields (ignoring the 'value' field).
 /// </summary>
-public class QuaternionComponentInspector : IInspector
+public class QuaternionComponentInspector(Theme? theme = null) : IInspector
 {
-    private readonly Theme? _theme;
-
-    public QuaternionComponentInspector(Theme? theme = null)
-    {
-        _theme = theme;
-    }
-
     public IView CreateView(IAccessor accessor)
     {
         var type = accessor.Type;
@@ -123,7 +115,7 @@ public class QuaternionComponentInspector : IInspector
         var yField = type.GetField("y");
         var zField = type.GetField("z");
         var wField = type.GetField("w");
-        
+
         if (xField == null || yField == null || zField == null || wField == null)
         {
             return InspectorRegistry.Composite.CreateView(accessor);
@@ -158,10 +150,10 @@ public class QuaternionComponentInspector : IInspector
             Layout = { LayoutType = LayoutType.Row, ColumnGap = Units.Pixels(4) }
         };
 
-        var labelColor = _theme?.TextMuted ?? Color.LightGray;
+        var labelColor = theme?.TextMuted ?? Color.LightGray;
         var label = Label(labelText, null, labelColor).Width(20);
         var editor = inspector.CreateView(accessor);
-        
+
         if (editor is IView view)
         {
             view.Layout.Width = Units.Stretch(1);
@@ -173,4 +165,3 @@ public class QuaternionComponentInspector : IInspector
         return row;
     }
 }
-

@@ -58,7 +58,7 @@ public class ComponentInspector
         var header = new Panel(new Text
         {
             Content = componentName,
-            Color = Color.White, 
+            Color = Color.White,
             Layout = { PaddingTop = Units.Pixels(6), PaddingLeft = Units.Pixels(4) }
         })
         {
@@ -68,7 +68,7 @@ public class ComponentInspector
                 Width = Units.Stretch(1),
                 PaddingBottom = Units.Pixels(0),
                 // Margin top for separation between components
-                PaddingTop = Units.Pixels(8) 
+                PaddingTop = Units.Pixels(8)
             },
             BackgroundColor = Color.FromNonPremultiplied(45, 45, 48, 255),
             BorderColor = Color.FromNonPremultiplied(30, 30, 30, 255),
@@ -107,7 +107,8 @@ public class ComponentInspector
         return genericMethod.Invoke(entity, null)!;
     }
 
-    private IView? CreateFieldEditor(Entity entity, ComponentType componentType, FieldInfo field, Type fieldType, object? value)
+    private IView? CreateFieldEditor(Entity entity, ComponentType componentType, FieldInfo field, Type fieldType,
+        object? value)
     {
         if (fieldType == typeof(Vector3))
         {
@@ -158,23 +159,27 @@ public class ComponentInspector
         var colY = new Color(60, 180, 60);
         var colZ = new Color(60, 100, 220);
 
-        container.AddChild(CreateFloatAxisField(entity, componentType, field, "", value.X, (v, newVal) => new Vector3(newVal, v.Y, v.Z), colX));
-        container.AddChild(CreateFloatAxisField(entity, componentType, field, "", value.Y, (v, newVal) => new Vector3(v.X, newVal, v.Z), colY));
-        container.AddChild(CreateFloatAxisField(entity, componentType, field, "", value.Z, (v, newVal) => new Vector3(v.X, v.Y, newVal), colZ));
+        container.AddChild(CreateFloatAxisField(entity, componentType, field, "", value.X,
+            (v, newVal) => new Vector3(newVal, v.Y, v.Z), colX));
+        container.AddChild(CreateFloatAxisField(entity, componentType, field, "", value.Y,
+            (v, newVal) => new Vector3(v.X, newVal, v.Z), colY));
+        container.AddChild(CreateFloatAxisField(entity, componentType, field, "", value.Z,
+            (v, newVal) => new Vector3(v.X, v.Y, newVal), colZ));
 
         return container;
     }
 
-    private IView CreateFloatAxisField(Entity entity, ComponentType componentType, FieldInfo field, string axis, float initialValue, Func<Vector3, float, Vector3> updater, Color axisColor)
+    private IView CreateFloatAxisField(Entity entity, ComponentType componentType, FieldInfo field, string axis,
+        float initialValue, Func<Vector3, float, Vector3> updater, Color axisColor)
     {
-        var axisContainer = new Panel
+        // Use generic Input component for consistent styling
+        var input = new Input
         {
-            Layout = { LayoutType = LayoutType.Row, Width = Units.Stretch(1) },
-            BackgroundColor = Color.FromNonPremultiplied(40, 40, 40, 255), // Darker input bg
-            CornerRadius = 2f // Slight rounding
+            Layout = { Width = Units.Stretch(1) },
+            CornerRadius = 2f
         };
 
-        // Colored bar indicator (thin strip)
+        // Colored bar indicator
         var axisIndicator = new Panel
         {
             BackgroundColor = axisColor,
@@ -189,13 +194,13 @@ public class ComponentInspector
         var textField = new TextField(textSignal)
         {
             Layout = { Width = Units.Stretch(1), Height = Units.Pixels(22) },
-            BackgroundColor = Color.Transparent // Transparent so it sits on axisContainer color
+            BackgroundColor = Color.Transparent
         };
 
-        axisContainer.AddChild(axisIndicator);
-        axisContainer.AddChild(textField);
+        input.AddChild(axisIndicator);
+        input.AddChild(textField);
 
-        return axisContainer;
+        return input;
     }
 
     private IView CreateQuaternionEditor(Entity entity, ComponentType componentType, FieldInfo field, Quaternion value)
@@ -210,27 +215,19 @@ public class ComponentInspector
     private IView CreateFloatEditor(Entity entity, ComponentType componentType, FieldInfo field, float value)
     {
         var signal = new Engine.Reactive.Signal<string?>(value.ToString("0.###"));
-
-        // Use wrapper panel for background styling
-        var panel = new Panel(new TextField(signal) { BackgroundColor = Color.Transparent })
+        return new TextField(signal)
         {
-            BackgroundColor = Color.FromNonPremultiplied(40, 40, 40, 255),
-            CornerRadius = 2f,
             Layout = { Width = Units.Stretch(1), Height = Units.Pixels(22) }
         };
-        return panel;
     }
 
     private IView CreateIntEditor(Entity entity, ComponentType componentType, FieldInfo field, int value)
     {
         var signal = new Engine.Reactive.Signal<string?>(value.ToString());
-        var panel = new Panel(new TextField(signal) { BackgroundColor = Color.Transparent })
+        return new TextField(signal)
         {
-            BackgroundColor = Color.FromNonPremultiplied(40, 40, 40, 255),
-            CornerRadius = 2f,
             Layout = { Width = Units.Stretch(1), Height = Units.Pixels(22) }
         };
-        return panel;
     }
 
     private IView CreateBoolEditor(Entity entity, ComponentType componentType, FieldInfo field, bool value)
@@ -242,12 +239,9 @@ public class ComponentInspector
     private IView CreateStringEditor(Entity entity, ComponentType componentType, FieldInfo field, string value)
     {
         var signal = new Engine.Reactive.Signal<string?>(value);
-        var panel = new Panel(new TextField(signal) { BackgroundColor = Color.Transparent })
+        return new TextField(signal)
         {
-            BackgroundColor = Color.FromNonPremultiplied(40, 40, 40, 255),
-            CornerRadius = 2f,
             Layout = { Width = Units.Stretch(1), Height = Units.Pixels(22) }
         };
-        return panel;
     }
 }

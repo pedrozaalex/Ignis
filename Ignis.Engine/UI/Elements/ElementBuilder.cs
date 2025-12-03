@@ -115,7 +115,7 @@ public static class Elements
     {
         return new FloatFieldView(label, value, font);
     }
-
+    
     /// <summary>
     ///     Creates a horizontal separator line.
     /// </summary>

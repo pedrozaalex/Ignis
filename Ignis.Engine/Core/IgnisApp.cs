@@ -24,9 +24,6 @@ public class IgnisApp
         // Create Input Service
         Input = new InputService();
 
-        // TODO: Event-driven reactivity will be implemented when we understand Friflo's event system better
-        // For now, TransformSystem will check all entities with WorldTransform component
-
         // Create System Root
         SimulationRoot = new SystemRoot(World);
 

@@ -9,50 +9,64 @@ using static Ignis.Engine.UI.Elements.Elements;
 
 namespace Ignis.Engine.UI.Widgets;
 
-/// <summary>
-///     TextField - Single-line text input.
-/// </summary>
-public class TextField : ViewComponent, IViewContainer
-{
-    private readonly Panel _root;
-    private readonly Signal<string?> _text;
-    private readonly Text _textView;
-    private string? _placeholder;
 
-    public TextField(Signal<string?> text, SpriteFontBase? font = null)
+
+/// <summary>
+/// Generic input component - handles text input with keyboard interaction and validation.
+/// Similar to HTML &lt;input/&gt; element - provides visual styling, focus behavior, and input handling.
+/// </summary>
+public class Input : Panel
+{
+    private readonly Signal<string?>? _value;
+    private readonly Text? _textView;
+    private Func<char, bool>? _characterValidator;
+    private string? _placeholder;
+    private readonly bool _managesInput;
+
+    /// <summary>
+    /// Create an Input that handles keyboard input and displays text.
+    /// </summary>
+    public Input(Signal<string?> value, SpriteFontBase? font = null)
     {
-        _text = text;
+        _value = value;
+        _managesInput = true;
+        
+        // Create text display with placeholder support
         _textView = new ReactiveText(Computed<string>.From(() =>
         {
-            if (string.IsNullOrEmpty(_text.Value) && !string.IsNullOrEmpty(Placeholder))
+            if (string.IsNullOrEmpty(_value.Value) && !string.IsNullOrEmpty(Placeholder))
                 return Placeholder;
-
-            return _text.Value ?? "";
+            return _value.Value ?? "";
         }), font);
 
-        // Internal panel for visuals (Background, Border, Padding)
-        _root = new Panel(_textView)
-        {
-            BorderThickness = 1f,
-            Layout =
-            {
-                // Fill the wrapper component
-                Width = Units.Stretch(1),
-                Height = Units.Auto,
-
-                // Padding for the text inside
-                PaddingLeft = Units.Pixels(8),
-                PaddingRight = Units.Pixels(8),
-                PaddingTop = Units.Pixels(6),
-                PaddingBottom = Units.Pixels(6),
-
-                // Make the panel focusable so clicks on it trigger focus
-                Focusable = true
-            }
-        };
-
-        // Default Height and make focusable
+        // Configure as styled input
+        BorderThickness = 1f;
+        Layout.Width = Units.Stretch(1);
         Layout.Height = Units.Auto;
+        Layout.PaddingLeft = Units.Pixels(8);
+        Layout.PaddingRight = Units.Pixels(8);
+        Layout.PaddingTop = Units.Pixels(6);
+        Layout.PaddingBottom = Units.Pixels(6);
+        Layout.Focusable = true;
+        
+        AddChild(_textView);
+    }
+
+    /// <summary>
+    /// Create an Input as a visual wrapper only (for complex components that manage their own content).
+    /// </summary>
+    public Input()
+    {
+        _managesInput = false;
+        
+        // Configure as styled input container
+        BorderThickness = 1f;
+        Layout.Width = Units.Stretch(1);
+        Layout.Height = Units.Auto;
+        Layout.PaddingLeft = Units.Pixels(8);
+        Layout.PaddingRight = Units.Pixels(8);
+        Layout.PaddingTop = Units.Pixels(6);
+        Layout.PaddingBottom = Units.Pixels(6);
         Layout.Focusable = true;
     }
 
@@ -62,72 +76,123 @@ public class TextField : ViewComponent, IViewContainer
         set => _placeholder = value;
     }
 
-    public Color? BackgroundColor
+    /// <summary>
+    /// Optional character validator - return true to accept the character, false to reject.
+    /// Use this to create specialized inputs (e.g., numbers only).
+    /// </summary>
+    public Func<char, bool>? CharacterValidator
     {
-        set => _root.BackgroundColor = value;
-    }
-
-    public IEnumerable<IView> GetChildren()
-    {
-        yield return _root;
+        get => _characterValidator;
+        set => _characterValidator = value;
     }
 
     protected override void OnMount()
     {
-        _root.Mount(Context!);
+        base.OnMount();
 
-        // Set default background to InputBackground from theme if not explicitly set
-        if (_root.BackgroundColor == null) _root.BackgroundColor = Context!.Theme.InputBackground;
+        // Set default styling from theme
+        if (BackgroundColor == null)
+            BackgroundColor = Context!.Theme.InputBackground;
 
-        // Update text view when signal changes
-        CreateEffect(() => { _textView.Content = _text.Value ?? ""; });
-
-        // Handle text input
-        this.OnTextInput(character =>
+        // Only handle keyboard input if this Input manages its own value
+        if (_managesInput && _value != null && _textView != null)
         {
-            if (char.IsControl(character))
-                return;
+            // Update text view when signal changes
+            CreateEffect(() => { _textView.Content = _value.Value ?? ""; });
 
-            _text.Value = (_text.Value ?? "") + character;
-        });
+            // Handle text input with optional character validation
+            this.OnTextInput(character =>
+            {
+                if (char.IsControl(character))
+                    return;
 
-        // Handle backspace
-        this.OnKeyDown(evt =>
-        {
-            if (evt.Key == Keys.Back && !string.IsNullOrEmpty(_text.Value)) _text.Value = _text.Value[..^1];
-        });
+                // Apply character validator if provided
+                if (_characterValidator != null && !_characterValidator(character))
+                    return;
 
-        // Update visual state (Border & Background)
+                _value.Value = (_value.Value ?? "") + character;
+            });
+
+            // Handle backspace
+            this.OnKeyDown(evt =>
+            {
+                if (evt.Key == Keys.Back && !string.IsNullOrEmpty(_value.Value))
+                    _value.Value = _value.Value[..^1];
+            });
+        }
+
+        // Update visual state on focus/hover
         CreateEffect(() =>
         {
             var state = CurrentState;
 
             if (state.HasFlag(WidgetState.Focused))
             {
-                _root.BorderColor = Context!.Theme.BorderFocus;
-                _root.BackgroundColor = Context!.Theme.InputBackground;
+                BorderColor = Context!.Theme.BorderFocus;
+                BackgroundColor = Context!.Theme.InputBackground;
             }
             else if (state.HasFlag(WidgetState.Hovered))
             {
-                _root.BorderColor = Color.Lerp(Context!.Theme.Border, Context!.Theme.Primary, 0.5f);
-                _root.BackgroundColor = Color.Lerp(Context!.Theme.InputBackground, Color.White, 0.05f);
+                BorderColor = Color.Lerp(Context!.Theme.Border, Context!.Theme.Primary, 0.5f);
+                BackgroundColor = Color.Lerp(Context!.Theme.InputBackground, Color.White, 0.05f);
             }
             else
             {
-                _root.BorderColor = Context!.Theme.Border;
-                _root.BackgroundColor = Context!.Theme.InputBackground;
+                BorderColor = Context!.Theme.Border;
+                BackgroundColor = Context!.Theme.InputBackground;
             }
         });
     }
+}
 
-    protected override void OnUnmount()
+/// <summary>
+/// Specialized input validators for common input types.
+/// </summary>
+public static class InputValidators
+{
+    /// <summary>
+    /// Allows only numeric characters (digits, minus sign, decimal point).
+    /// </summary>
+    public static bool Number(char c) => char.IsDigit(c) || c == '-' || c == '.';
+
+    /// <summary>
+    /// Allows only integer characters (digits and minus sign).
+    /// </summary>
+    public static bool Integer(char c) => char.IsDigit(c) || c == '-';
+
+    /// <summary>
+    /// Allows only alphanumeric characters.
+    /// </summary>
+    public static bool Alphanumeric(char c) => char.IsLetterOrDigit(c);
+
+    /// <summary>
+    /// Allows all characters (no filtering).
+    /// </summary>
+    public static bool All(char c) => true;
+}
+
+
+
+/// <summary>
+///     TextField - Single-line text input.
+///     Simple alias for Input component.
+/// </summary>
+public class TextField : Input
+{
+    public TextField(Signal<string?> text, SpriteFontBase? font = null) : base(text, font)
     {
-        _root.Unmount();
     }
+}
 
-    public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
+/// <summary>
+///     NumberInput - Numeric text input with validation (no buttons).
+///     Accepts only numeric characters (digits, minus sign, decimal point).
+/// </summary>
+public class NumberInput : Input
+{
+    public NumberInput(Signal<string?> value, SpriteFontBase? font = null) : base(value, font)
     {
-        // Drawing delegated to _background via UIContext
+        CharacterValidator = InputValidators.Number;
     }
 }
 
@@ -136,7 +201,7 @@ public class TextField : ViewComponent, IViewContainer
 /// </summary>
 public class NumberField<T> : ViewComponent, IViewContainer where T : struct
 {
-    private readonly Panel _container;
+    private readonly Input _input;
     private readonly Func<T, T> _decrement;
     private readonly Signal<string> _editText;
     private readonly Func<T, T> _increment;
@@ -161,28 +226,30 @@ public class NumberField<T> : ViewComponent, IViewContainer where T : struct
             }
         };
 
-        _container = new Panel(
+        // Use generic Input component
+        _input = new Input();
+        
+        var contentRow = new Container(
             Button("-", () => _value.Value = decrement(_value.Value)),
             _valueText,
             Button("+", () => _value.Value = increment(_value.Value))
         )
         {
-            BorderThickness = 1f,
             Layout =
             {
                 LayoutType = LayoutType.Row,
-                Alignment = Alignment.Center,
-                Height = Units.Auto,
-                Focusable = true
+                Alignment = Alignment.Center
             }
         };
+        
+        _input.AddChild(contentRow);
 
         Layout.Focusable = true;
     }
 
     public IEnumerable<IView> GetChildren()
     {
-        yield return _container;
+        yield return _input;
     }
 
     private static IView Button(string label, Action onClick)
@@ -198,7 +265,7 @@ public class NumberField<T> : ViewComponent, IViewContainer where T : struct
 
     protected override void OnMount()
     {
-        _container.Mount(Context!);
+        _input.Mount(Context!);
 
         // Sync edit text with value
         CreateEffect(() => { _editText.Value = _value.Value.ToString() ?? "0"; });
@@ -215,37 +282,10 @@ public class NumberField<T> : ViewComponent, IViewContainer where T : struct
             if (evt.Key == Keys.Back && _editText.Value.Length > 0)
                 _editText.Value = _editText.Value[..^1];
             else if (evt.Key == Keys.Enter)
-                // Try to parse and update value on Enter
                 TryUpdateValue();
             else if (evt.Key == Keys.Up)
                 _value.Value = _increment(_value.Value);
             else if (evt.Key == Keys.Down) _value.Value = _decrement(_value.Value);
-        });
-
-        // Set background color
-        if (_container.BackgroundColor == null) _container.BackgroundColor = Context!.Theme.InputBackground;
-
-        // Update visual state (Border & Background)
-        CreateEffect(() =>
-        {
-            var state = CurrentState;
-
-            if (state.HasFlag(WidgetState.Focused))
-            {
-                _container.BorderColor = Context!.Theme.BorderFocus;
-                _container.BackgroundColor = Context!.Theme.InputBackground;
-            }
-            else if (state.HasFlag(WidgetState.Hovered))
-            {
-                _container.BorderColor = Color.Lerp(Context!.Theme.Border, Context!.Theme.Primary, 0.5f);
-                // Lighten background slightly on hover for better visibility
-                _container.BackgroundColor = Color.Lerp(Context!.Theme.InputBackground, Color.White, 0.05f);
-            }
-            else
-            {
-                _container.BorderColor = Context!.Theme.Border;
-                _container.BackgroundColor = Context!.Theme.InputBackground;
-            }
         });
     }
 
@@ -267,11 +307,12 @@ public class NumberField<T> : ViewComponent, IViewContainer where T : struct
 
     protected override void OnUnmount()
     {
-        _container.Unmount();
+        _input.Unmount();
     }
 
     public override void Draw(SpriteBatch spriteBatch, Rectangle bounds)
     {
+        // Drawing delegated to Input component
     }
 }
 
