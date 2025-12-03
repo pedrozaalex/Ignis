@@ -305,7 +305,7 @@ internal static class FlexSolver
                     : store.GetHeight(child.Node);
 
                 var share = activeFlex > 0 
-                    ? (childMainUnit.Value / activeFlex) * freeSpace 
+                    ? childMainUnit.Value / activeFlex * freeSpace 
                     : 0;
 
                 var (cMin, cMax) = LayoutUtils.GetChildMainConstraints(child.Node, store, state.Type, state.InnerContentMain);
@@ -401,8 +401,8 @@ public static class LayoutEngine
         var main = parentLayoutType is LayoutType.Row or LayoutType.Grid ? width : height;
         var cross = parentLayoutType is LayoutType.Row or LayoutType.Grid ? height : width;
 
-        var effectiveMainKind = (forceMainAuto && main.Kind == UnitKind.Stretch) ? UnitKind.Auto : main.Kind;
-        var effectiveCrossKind = (forceCrossAuto && cross.Kind == UnitKind.Stretch) ? UnitKind.Auto : cross.Kind;
+        var effectiveMainKind = forceMainAuto && main.Kind == UnitKind.Stretch ? UnitKind.Auto : main.Kind;
+        var effectiveCrossKind = forceCrossAuto && cross.Kind == UnitKind.Stretch ? UnitKind.Auto : cross.Kind;
 
         var computedMain = effectiveMainKind switch
         {

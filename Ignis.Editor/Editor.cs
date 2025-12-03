@@ -64,7 +64,7 @@ public class Editor : IgnisGame
     {
         var sceneRoot = App.World.CreateGameObject();
         sceneRoot.Add(new EntityName("Scene Root"));
-
+        
         var camera = App.World.CreateGameObject();
         camera.Add(new EntityName("Main Camera"));
         sceneRoot.AddChild(camera);
