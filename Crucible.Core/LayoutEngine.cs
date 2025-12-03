@@ -12,7 +12,8 @@ public static class LayoutEngine
 
     private enum StretchType
     {
-        Size
+        Size,
+        Gap
     }
 
     private record struct StretchItem(
@@ -149,6 +150,8 @@ public static class LayoutEngine
 
         // Determine Gap
         var gapDef = isRow ? node.HorizontalGap ?? default : node.VerticalGap ?? default;
+        var minGapDef = isRow ? node.MinHorizontalGap ?? default : node.MinVerticalGap ?? default;
+        var maxGapDef = isRow ? node.MaxHorizontalGap ?? default : node.MaxVerticalGap ?? default;
         var isStretchGap = gapDef.Kind is UnitsKind.Stretch;
         var fixedGap = isStretchGap ? 0f : gapDef.ToPx(innerMain, 0);
         var totalFixedGap = Math.Max(0, flexChildren.Count - 1) * fixedGap;
@@ -252,22 +255,44 @@ public static class LayoutEngine
             isRow ? node.MaxHeight : node.MaxWidth,
             parentHeight ?? parentWidth ?? 0);
 
-        // Solve Stretch
+        // Add stretch gap items if gap is stretch
+        // Gap items use negative indices (-1 for gap after child 0, -2 for gap after child 1, etc.)
+        var numGaps = Math.Max(0, flexChildren.Count - 1);
+        var gapSizes = new float[numGaps];
+        
+        if (isStretchGap && numGaps > 0)
+        {
+            var gapFactor = Math.Max(gapDef.Value, 1f);
+            var minGap = minGapDef.ToPx(finalMain - edgeMain, 0);
+            var maxGap = maxGapDef.ToPx(finalMain - edgeMain, float.MaxValue);
+            
+            // Add one stretch item per gap (index encoded as -(gapIndex + 1))
+            for (var g = 0; g < numGaps; g++)
+            {
+                stretchItems.Add(new StretchItem(-(g + 1), StretchType.Gap, gapFactor, minGap, maxGap));
+            }
+        }
+        else
+        {
+            // Fixed gaps - fill the gapSizes array
+            for (var g = 0; g < numGaps; g++)
+                gapSizes[g] = fixedGap;
+        }
+
+        // Solve Stretch (both sizes and gaps together)
         var availableForStretch = finalMain - edgeMain - totalDefinedMain - totalFixedGap;
         DistributeStretchSpace(stretchItems, availableForStretch,
-            (idx, v) => childMainSizes[idx] = v);
+            (idx, v) =>
+            {
+                if (idx >= 0)
+                    childMainSizes[idx] = v;
+                else
+                    gapSizes[-(idx + 1)] = v;
+            });
 
         // Resolve derived cross sizes
         ResolveDerivedCrossSizes(flexChildren, ctx, layoutType, childMainSizes, childCrossSizes, finalMain, finalCross,
             edgeCross);
-
-        // Calculate Stretch Gap
-        var finalGap = fixedGap;
-        if (isStretchGap && flexChildren.Count > 1)
-        {
-            var usedSpace = flexChildren.Select((_, i) => childMainSizes[i] ?? 0).Sum();
-            finalGap = Math.Max(0, (finalMain - edgeMain - usedSpace) / (flexChildren.Count - 1));
-        }
 
         // -------------------------------------------------------------
         // PHASE 3: Positioning (Set Bounds)
@@ -277,7 +302,7 @@ public static class LayoutEngine
         
         // Calculate total main size of all flex children (for main-axis alignment)
         var totalChildMain = flexChildren.Select((_, i) => childMainSizes[i] ?? 0).Sum();
-        var totalGapsMain = Math.Max(0, flexChildren.Count - 1) * finalGap;
+        var totalGapsMain = gapSizes.Sum();
         var mainSum = totalChildMain + totalGapsMain;
         
         // Main-axis alignment offset
@@ -303,7 +328,7 @@ public static class LayoutEngine
             LayoutNodeRecursive(child, ctx, null, null, w, h);
 
             currentMainPos += sizeM;
-            if (i < flexChildren.Count - 1) currentMainPos += finalGap;
+            if (i < flexChildren.Count - 1) currentMainPos += gapSizes[i];
         }
 
         // Absolute Children
@@ -803,8 +828,9 @@ public static class LayoutEngine
 
         void Apply(StretchItem item, float v)
         {
-            if (item.Type == StretchType.Size)
-                setSize(item.Index, v);
+            // Both Size and Gap items are applied via setSize callback
+            // (Size uses positive indices, Gap uses negative indices)
+            setSize(item.Index, v);
         }
     }
 

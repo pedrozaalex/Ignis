@@ -1,8 +1,5 @@
-using Crucible.Core;
 using Crucible.Core.Ecs;
 using Crucible.Core.Types;
-using Friflo.Engine.ECS;
-using Xunit;
 
 namespace Crucible.Core.Tests;
 

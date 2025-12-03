@@ -1,13 +1,10 @@
-using System.Numerics;
 using System.Reflection;
 using Friflo.Engine.ECS;
-using Ignis.Engine.Reactive;
 using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
 using Ignis.Engine.UI.Elements;
 using Ignis.Engine.UI.Widgets;
 using Microsoft.Xna.Framework;
-using static Ignis.Engine.UI.Elements.Elements;
 using Vector3 = System.Numerics.Vector3;
 using Quaternion = System.Numerics.Quaternion;
 

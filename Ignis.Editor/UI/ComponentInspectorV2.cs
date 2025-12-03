@@ -3,12 +3,8 @@ using Friflo.Engine.ECS;
 using Ignis.Editor.UI.Inspection.Accessors;
 using Ignis.Editor.UI.Inspection.Core;
 using Ignis.Editor.UI.Inspection.Defaults;
-using Ignis.Engine.Reactive;
-using Ignis.Engine.UI;
 using Ignis.Engine.UI.Core;
-using Ignis.Engine.UI.Elements;
 using Ignis.Engine.UI.Widgets;
-using Microsoft.Xna.Framework;
 using static Ignis.Engine.UI.Elements.Elements;
 
 namespace Ignis.Editor.UI;
