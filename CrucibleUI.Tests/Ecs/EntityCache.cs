@@ -2,12 +2,12 @@ using CrucibleUI.Interfaces;
 using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 
-namespace Ignis.Samples.Layout;
+namespace CrucibleUI.Tests.Ecs;
 
 /// <summary>
-/// Cache implementation that stores computed bounds in ECS components.
+/// Cache implementation using Friflo ECS components.
 /// </summary>
-public class LayoutCache : ICache<Entity>
+public class EntityCache : ICache<Entity>
 {
     public void SetBounds(Entity node, float posX, float posY, float width, float height)
     {
@@ -36,4 +36,3 @@ public class LayoutCache : ICache<Entity>
         return null;
     }
 }
-

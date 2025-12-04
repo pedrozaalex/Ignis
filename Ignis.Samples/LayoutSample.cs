@@ -1,6 +1,6 @@
 using System.Numerics;
-using CrucibleUI.Core;
-using CrucibleUI.Core.Types;
+using CrucibleUI;
+using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 using Ignis.Gfx;
 using Ignis.Samples.Layout;
@@ -8,7 +8,7 @@ using Ignis.Samples.Layout;
 namespace Ignis.Samples;
 
 /// <summary>
-/// Sample demonstrating CrucibleUI.Core layout engine with rendered shapes.
+/// Sample demonstrating CrucibleUI layout engine with rendered shapes.
 /// </summary>
 public class LayoutSample : GraphicsSample
 {

@@ -1,5 +1,5 @@
-using CrucibleUI.Core.Interfaces;
-using CrucibleUI.Core.Types;
+using CrucibleUI.Interfaces;
+using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 
 namespace Ignis.Samples.Layout;

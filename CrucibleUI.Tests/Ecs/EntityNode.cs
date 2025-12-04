@@ -2,16 +2,16 @@ using CrucibleUI.Interfaces;
 using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 
-namespace Ignis.Samples.Layout;
+namespace CrucibleUI.Tests.Ecs;
 
 /// <summary>
 /// Wrapper around Entity that implements INode interface for layout calculations.
 /// </summary>
-public readonly struct LayoutNode : INode<EntityStore, SubLayoutContext, Entity>
+public readonly struct EntityNode : INode<EntityStore, SubLayoutContext, Entity>
 {
     private readonly Entity _entity;
 
-    public LayoutNode(Entity entity)
+    public EntityNode(Entity entity)
     {
         _entity = entity;
     }
@@ -22,7 +22,7 @@ public readonly struct LayoutNode : INode<EntityStore, SubLayoutContext, Entity>
     {
         foreach (var child in _entity.ChildEntities)
         {
-            yield return new LayoutNode(child);
+            yield return new EntityNode(child);
         }
     }
 
@@ -32,7 +32,7 @@ public readonly struct LayoutNode : INode<EntityStore, SubLayoutContext, Entity>
     {
         get
         {
-            if (_entity.TryGetComponent<LayoutProperties>(out _))
+            if (_entity.TryGetComponent<LayoutProperties>(out var props))
                 return ref _entity.GetComponent<LayoutProperties>();
             return ref DefaultProps;
         }
@@ -59,43 +59,56 @@ public readonly struct LayoutNode : INode<EntityStore, SubLayoutContext, Entity>
     
     public Units? VerticalGap => Props.VerticalGap;
     public Units? HorizontalGap => Props.HorizontalGap;
-    public Units? MinVerticalGap => null;
-    public Units? MinHorizontalGap => null;
-    public Units? MaxVerticalGap => null;
-    public Units? MaxHorizontalGap => null;
+    public Units? MinVerticalGap => Props.MinVerticalGap;
+    public Units? MinHorizontalGap => Props.MinHorizontalGap;
+    public Units? MaxVerticalGap => Props.MaxVerticalGap;
+    public Units? MaxHorizontalGap => Props.MaxHorizontalGap;
     
     public Units? MinWidth => Props.MinWidth;
     public Units? MinHeight => Props.MinHeight;
     public Units? MaxWidth => Props.MaxWidth;
     public Units? MaxHeight => Props.MaxHeight;
     
-    public Units? BorderLeft => null;
-    public Units? BorderRight => null;
-    public Units? BorderTop => null;
-    public Units? BorderBottom => null;
+    public Units? BorderLeft => Props.BorderLeft;
+    public Units? BorderRight => Props.BorderRight;
+    public Units? BorderTop => Props.BorderTop;
+    public Units? BorderBottom => Props.BorderBottom;
     
-    public float? VerticalScroll => null;
-    public float? HorizontalScroll => null;
+    public float? VerticalScroll => Props.VerticalScroll;
+    public float? HorizontalScroll => Props.HorizontalScroll;
 
-    public IReadOnlyList<Units>? GridColumns => null;
-    public IReadOnlyList<Units>? GridRows => null;
+    public IReadOnlyList<Units>? GridColumns
+    {
+        get
+        {
+            if (_entity.TryGetComponent<GridDefinition>(out var grid))
+                return grid.Columns;
+            return null;
+        }
+    }
 
-    public int? ColumnStart => null;
-    public int? RowStart => null;
-    public int? ColumnSpan => null;
-    public int? RowSpan => null;
+    public IReadOnlyList<Units>? GridRows
+    {
+        get
+        {
+            if (_entity.TryGetComponent<GridDefinition>(out var grid))
+                return grid.Rows;
+            return null;
+        }
+    }
+
+    public int? ColumnStart => Props.ColumnStart;
+    public int? RowStart => Props.RowStart;
+    public int? ColumnSpan => Props.ColumnSpan;
+    public int? RowSpan => Props.RowSpan;
 
     public (float Width, float Height)? ContentSize(ref SubLayoutContext subLayout, float? parentWidth, float? parentHeight)
     {
-        return null;
+        var func = subLayout.GetContentSize(_entity);
+        return func?.Invoke(parentWidth, parentHeight);
     }
 
-    public static implicit operator LayoutNode(Entity entity) => new(entity);
+    public static implicit operator EntityNode(Entity entity) => new(entity);
     public Entity Entity => _entity;
 }
-
-/// <summary>
-/// Context for content size calculations (unused in this sample).
-/// </summary>
-public struct SubLayoutContext { }
 

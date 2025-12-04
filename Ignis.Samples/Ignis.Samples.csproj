@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\CrucibleUI.Core\CrucibleUI.Core.csproj" />
+        <ProjectReference Include="..\CrucibleUI\CrucibleUI.csproj" />
         <ProjectReference Include="..\Ignis.Core\Ignis.Core.csproj" />
         <ProjectReference Include="..\Ignis.Gfx\Ignis.Gfx.csproj" />
         <ProjectReference Include="..\Ignis.Gfx.Backends.OpenGL\Ignis.Gfx.Backends.OpenGL.csproj" />

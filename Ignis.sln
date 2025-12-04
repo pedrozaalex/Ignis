@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrucibleUI.Core", "CrucibleUI.Core\CrucibleUI.Core.csproj", "{4BFD32F9-CCE0-4ABD-A318-31ACB074F2DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrucibleUI", "CrucibleUI\CrucibleUI.csproj", "{4BFD32F9-CCE0-4ABD-A318-31ACB074F2DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrucibleUI.Core.Tests", "CrucibleUI.Core.Tests\CrucibleUI.Core.Tests.csproj", "{A8C3C614-0372-4343-8B12-C12AD03B38A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrucibleUI.Tests", "CrucibleUI.Tests\CrucibleUI.Tests.csproj", "{A8C3C614-0372-4343-8B12-C12AD03B38A0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Gfx", "Ignis.Gfx\Ignis.Gfx.csproj", "{5E76FE1C-9656-424A-A232-413CC57F4677}"
 EndProject
