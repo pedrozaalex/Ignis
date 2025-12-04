@@ -68,6 +68,31 @@ public struct ShapeColor : IComponent
     public static ShapeColor Magenta => new(1f, 0.3f, 1f);
     public static ShapeColor White => new(1f, 1f, 1f);
     public static ShapeColor Gray => new(0.5f, 0.5f, 0.5f);
+    public static ShapeColor DarkGray => new(0.3f, 0.3f, 0.3f);
+}
+
+/// <summary>
+/// Component storing text label for an entity.
+/// </summary>
+public struct TextLabel : IComponent
+{
+    public string Text;
+    public float FontSize;
+    public float R, G, B, A;
+    
+    public TextLabel(string text, float fontSize = 16f)
+    {
+        Text = text;
+        FontSize = fontSize;
+        R = 1f; G = 1f; B = 1f; A = 1f;
+    }
+    
+    public TextLabel(string text, float fontSize, float r, float g, float b, float a = 1f)
+    {
+        Text = text;
+        FontSize = fontSize;
+        R = r; G = g; B = b; A = a;
+    }
 }
 
 /// <summary>

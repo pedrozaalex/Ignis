@@ -3,12 +3,13 @@ using CrucibleUI;
 using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 using Ignis.Gfx;
+using Ignis.Gfx.Backends.OpenGL;
 using Ignis.Samples.Layout;
 
 namespace Ignis.Samples;
 
 /// <summary>
-/// Sample demonstrating CrucibleUI layout engine with rendered shapes.
+/// Sample demonstrating CrucibleUI layout engine with rendered shapes and text.
 /// </summary>
 public class LayoutSample : GraphicsSample
 {
@@ -19,20 +20,47 @@ public class LayoutSample : GraphicsSample
     private Entity _root;
     private SubLayoutContext _subLayout;
     private bool _needsLayout = true;
+    private FontHandle _font;
     
-    protected override void Load()
+protected override void Load()
     {
         _store = new EntityStore();
         _cache = new LayoutCache();
         _subLayout = new SubLayoutContext();
         
-        Console.WriteLine($"[LayoutSample] Load called. Width={Width}, Height={Height}");
+        // Load a default font
+        _font = LoadFont();
+        
         BuildLayoutTree();
+    }
+    
+    private FontHandle LoadFont()
+    {
+        // Try common system font paths
+        string[] fontPaths = 
+        {
+            @"C:\Windows\Fonts\segoeui.ttf",
+            @"C:\Windows\Fonts\arial.ttf",
+            @"C:\Windows\Fonts\tahoma.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/System/Library/Fonts/Helvetica.ttc"
+        };
+        
+        foreach (var path in fontPaths)
+        {
+            if (File.Exists(path))
+            {
+                var handle = RenderingServer.CreateFontFromFile(path);
+                if (handle.Id != 0) return handle;
+            }
+        }
+        
+        return FontHandle.Invalid;
     }
     
     private void BuildLayoutTree()
     {
-        // Root container - fills the screen with a column layout
+        // Root container
         _root = _store.CreateEntity();
         _root.AddComponent(new LayoutProperties
         {
@@ -45,76 +73,69 @@ public class LayoutSample : GraphicsSample
             PaddingBottom = Units.Pixels(20),
             VerticalGap = Units.Pixels(10)
         });
-        _root.AddComponent(new ShapeColor(0.15f, 0.15f, 0.2f));
+        _root.AddComponent(new ShapeColor(0.12f, 0.12f, 0.15f));
         
-        // Header row
+        // Header
         var header = CreateChild(_root, new LayoutProperties
         {
             LayoutType = LayoutType.Row,
             Width = Units.Stretch(1),
-            Height = Units.Pixels(60),
-            HorizontalGap = Units.Pixels(10)
-        }, ShapeColor.Gray);
+            Height = Units.Pixels(50),
+            HorizontalGap = Units.Pixels(10),
+            PaddingLeft = Units.Pixels(15),
+            PaddingRight = Units.Pixels(15)
+        }, new ShapeColor(0.2f, 0.2f, 0.25f));
         
-        // Header items
-        CreateChild(header, new LayoutProperties
+        // Logo placeholder
+        var logo = CreateChild(header, new LayoutProperties
         {
-            Width = Units.Pixels(60),
-            Height = Units.Stretch(1)
-        }, ShapeColor.Red);
+            Width = Units.Pixels(40),
+            Height = Units.Pixels(40),
+            Top = Units.Pixels(5)
+        }, ShapeColor.Blue);
+        logo.AddComponent(new TextLabel("◆", 24f));
         
-        CreateChild(header, new LayoutProperties
+        // Title
+        var title = CreateChild(header, new LayoutProperties
         {
             Width = Units.Stretch(1),
             Height = Units.Stretch(1)
-        }, ShapeColor.Blue);
+        }, new ShapeColor(0, 0, 0, 0)); // Transparent
+        title.AddComponent(new TextLabel("Layout Sample", 20f));
         
-        CreateChild(header, new LayoutProperties
-        {
-            Width = Units.Pixels(100),
-            Height = Units.Stretch(1)
-        }, ShapeColor.Green);
+        // Menu buttons
+        CreateMenuButton(header, "File");
+        CreateMenuButton(header, "Edit");
+        CreateMenuButton(header, "View");
         
-        // Main content area - horizontal split
+        // Main content area
         var main = CreateChild(_root, new LayoutProperties
         {
             LayoutType = LayoutType.Row,
             Width = Units.Stretch(1),
             Height = Units.Stretch(1),
             HorizontalGap = Units.Pixels(10)
-        }, new ShapeColor(0.2f, 0.2f, 0.25f));
+        }, new ShapeColor(0, 0, 0, 0));
         
         // Sidebar
         var sidebar = CreateChild(main, new LayoutProperties
         {
             LayoutType = LayoutType.Column,
-            Width = Units.Pixels(200),
+            Width = Units.Pixels(180),
             Height = Units.Stretch(1),
-            PaddingLeft = Units.Pixels(10),
-            PaddingRight = Units.Pixels(10),
-            PaddingTop = Units.Pixels(10),
-            PaddingBottom = Units.Pixels(10),
-            VerticalGap = Units.Pixels(8)
-        }, new ShapeColor(0.25f, 0.25f, 0.3f));
+            PaddingLeft = Units.Pixels(8),
+            PaddingRight = Units.Pixels(8),
+            PaddingTop = Units.Pixels(8),
+            PaddingBottom = Units.Pixels(8),
+            VerticalGap = Units.Pixels(4)
+        }, new ShapeColor(0.18f, 0.18f, 0.22f));
         
         // Sidebar items
-        for (int i = 0; i < 5; i++)
-        {
-            var color = i switch
-            {
-                0 => ShapeColor.Red,
-                1 => ShapeColor.Green,
-                2 => ShapeColor.Blue,
-                3 => ShapeColor.Yellow,
-                _ => ShapeColor.Cyan
-            };
-            
-            CreateChild(sidebar, new LayoutProperties
-            {
-                Width = Units.Stretch(1),
-                Height = Units.Pixels(40)
-            }, color);
-        }
+        CreateSidebarItem(sidebar, "Dashboard", ShapeColor.Blue);
+        CreateSidebarItem(sidebar, "Projects", ShapeColor.Green);
+        CreateSidebarItem(sidebar, "Tasks", ShapeColor.Yellow);
+        CreateSidebarItem(sidebar, "Calendar", ShapeColor.Cyan);
+        CreateSidebarItem(sidebar, "Settings", ShapeColor.Gray);
         
         // Content area
         var content = CreateChild(main, new LayoutProperties
@@ -126,46 +147,197 @@ public class LayoutSample : GraphicsSample
             PaddingRight = Units.Pixels(15),
             PaddingTop = Units.Pixels(15),
             PaddingBottom = Units.Pixels(15),
-            VerticalGap = Units.Pixels(10)
-        }, new ShapeColor(0.18f, 0.18f, 0.22f));
+            VerticalGap = Units.Pixels(15)
+        }, new ShapeColor(0.15f, 0.15f, 0.18f));
         
-        // Content rows with cards
-        for (int i = 0; i < 3; i++)
+        // Content header
+        var contentHeader = CreateChild(content, new LayoutProperties
         {
-            var row = CreateChild(content, new LayoutProperties
-            {
-                LayoutType = LayoutType.Row,
-                Width = Units.Stretch(1),
-                Height = Units.Stretch(1),
-                HorizontalGap = Units.Pixels(10)
-            }, new ShapeColor(0.22f, 0.22f, 0.28f));
-            
-            for (int j = 0; j < 3; j++)
-            {
-                var cardColor = new ShapeColor(
-                    0.3f + (i * 0.1f),
-                    0.4f + (j * 0.1f),
-                    0.5f + ((i + j) * 0.05f)
-                );
-                
-                CreateChild(row, new LayoutProperties
-                {
-                    Width = Units.Stretch(1),
-                    Height = Units.Stretch(1)
-                }, cardColor);
-            }
-        }
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(40)
+        }, new ShapeColor(0, 0, 0, 0));
+        contentHeader.AddComponent(new TextLabel("Dashboard Overview", 24f));
         
-        // Footer
-        CreateChild(_root, new LayoutProperties
+        // Card grid
+        var cardGrid = CreateChild(content, new LayoutProperties
         {
             LayoutType = LayoutType.Row,
             Width = Units.Stretch(1),
-            Height = Units.Pixels(40),
-            HorizontalGap = Units.Pixels(10)
-        }, ShapeColor.Gray);
+            Height = Units.Pixels(120),
+            HorizontalGap = Units.Pixels(15)
+        }, new ShapeColor(0, 0, 0, 0));
+        
+        CreateStatCard(cardGrid, "Total Users", "1,234", ShapeColor.Blue);
+        CreateStatCard(cardGrid, "Revenue", "$45.2K", ShapeColor.Green);
+        CreateStatCard(cardGrid, "Orders", "892", ShapeColor.Yellow);
+        CreateStatCard(cardGrid, "Growth", "+12.5%", ShapeColor.Cyan);
+        
+        // Main content grid
+        var mainGrid = CreateChild(content, new LayoutProperties
+        {
+            LayoutType = LayoutType.Row,
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1),
+            HorizontalGap = Units.Pixels(15)
+        }, new ShapeColor(0, 0, 0, 0));
+        
+        // Chart placeholder
+        var chart = CreateChild(mainGrid, new LayoutProperties
+        {
+            LayoutType = LayoutType.Column,
+            Width = Units.Stretch(2),
+            Height = Units.Stretch(1),
+            PaddingLeft = Units.Pixels(15),
+            PaddingRight = Units.Pixels(15),
+            PaddingTop = Units.Pixels(15),
+            PaddingBottom = Units.Pixels(15)
+        }, new ShapeColor(0.2f, 0.2f, 0.25f));
+        
+        var chartTitle = CreateChild(chart, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(30)
+        }, new ShapeColor(0, 0, 0, 0));
+        chartTitle.AddComponent(new TextLabel("Analytics Chart", 16f));
+        
+        var chartArea = CreateChild(chart, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1)
+        }, new ShapeColor(0.25f, 0.25f, 0.3f));
+        chartArea.AddComponent(new TextLabel("Chart Placeholder", 14f, 0.5f, 0.5f, 0.5f));
+        
+        // Activity list
+        var activity = CreateChild(mainGrid, new LayoutProperties
+        {
+            LayoutType = LayoutType.Column,
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1),
+            PaddingLeft = Units.Pixels(15),
+            PaddingRight = Units.Pixels(15),
+            PaddingTop = Units.Pixels(15),
+            PaddingBottom = Units.Pixels(15),
+            VerticalGap = Units.Pixels(8)
+        }, new ShapeColor(0.2f, 0.2f, 0.25f));
+        
+        var actTitle = CreateChild(activity, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(30)
+        }, new ShapeColor(0, 0, 0, 0));
+        actTitle.AddComponent(new TextLabel("Recent Activity", 16f));
+        
+        CreateActivityItem(activity, "New user registered");
+        CreateActivityItem(activity, "Order #1234 completed");
+        CreateActivityItem(activity, "Payment received");
+        CreateActivityItem(activity, "Report generated");
+        
+        // Footer
+        var footer = CreateChild(_root, new LayoutProperties
+        {
+            LayoutType = LayoutType.Row,
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(30),
+            PaddingLeft = Units.Pixels(15),
+            PaddingRight = Units.Pixels(15)
+        }, new ShapeColor(0.18f, 0.18f, 0.22f));
+        
+        var footerText = CreateChild(footer, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1)
+        }, new ShapeColor(0, 0, 0, 0));
+        footerText.AddComponent(new TextLabel("© 2024 Ignis Engine - Layout Demo", 12f, 0.5f, 0.5f, 0.5f));
         
         _needsLayout = true;
+    }
+    
+    private void CreateMenuButton(Entity parent, string label)
+    {
+        var btn = CreateChild(parent, new LayoutProperties
+        {
+            Width = Units.Pixels(60),
+            Height = Units.Pixels(30),
+            Top = Units.Pixels(10)
+        }, new ShapeColor(0.25f, 0.25f, 0.3f));
+        btn.AddComponent(new TextLabel(label, 14f));
+    }
+    
+    private void CreateSidebarItem(Entity parent, string label, ShapeColor accentColor)
+    {
+        var item = CreateChild(parent, new LayoutProperties
+        {
+            LayoutType = LayoutType.Row,
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(36),
+            PaddingLeft = Units.Pixels(10),
+            HorizontalGap = Units.Pixels(10)
+        }, new ShapeColor(0.22f, 0.22f, 0.28f));
+        
+        // Accent dot
+        CreateChild(item, new LayoutProperties
+        {
+            Width = Units.Pixels(8),
+            Height = Units.Pixels(8),
+            Top = Units.Pixels(14)
+        }, accentColor);
+        
+        // Label
+        var labelEntity = CreateChild(item, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1)
+        }, new ShapeColor(0, 0, 0, 0));
+        labelEntity.AddComponent(new TextLabel(label, 14f));
+    }
+    
+    private void CreateStatCard(Entity parent, string title, string value, ShapeColor accentColor)
+    {
+        var card = CreateChild(parent, new LayoutProperties
+        {
+            LayoutType = LayoutType.Column,
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1),
+            PaddingLeft = Units.Pixels(15),
+            PaddingRight = Units.Pixels(15),
+            PaddingTop = Units.Pixels(12),
+            PaddingBottom = Units.Pixels(12)
+        }, new ShapeColor(0.2f, 0.2f, 0.25f));
+        
+        // Accent bar at top
+        CreateChild(card, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(4)
+        }, accentColor);
+        
+        // Title
+        var titleEntity = CreateChild(card, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(20),
+            Top = Units.Pixels(8)
+        }, new ShapeColor(0, 0, 0, 0));
+        titleEntity.AddComponent(new TextLabel(title, 12f, 0.6f, 0.6f, 0.6f));
+        
+        // Value
+        var valueEntity = CreateChild(card, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Stretch(1)
+        }, new ShapeColor(0, 0, 0, 0));
+        valueEntity.AddComponent(new TextLabel(value, 28f));
+    }
+    
+    private void CreateActivityItem(Entity parent, string text)
+    {
+        var item = CreateChild(parent, new LayoutProperties
+        {
+            Width = Units.Stretch(1),
+            Height = Units.Pixels(28),
+            PaddingLeft = Units.Pixels(8)
+        }, new ShapeColor(0.25f, 0.25f, 0.3f));
+        item.AddComponent(new TextLabel("• " + text, 12f, 0.8f, 0.8f, 0.8f));
     }
     
     private Entity CreateChild(Entity parent, LayoutProperties props, ShapeColor color)
@@ -200,32 +372,9 @@ public class LayoutSample : GraphicsSample
     
     private void PerformLayout()
     {
-        Console.WriteLine($"[LayoutSample] PerformLayout. Width={Width}, Height={Height}");
         var node = new LayoutNode(_root);
         LayoutEngine.Compute<LayoutNode, EntityStore, SubLayoutContext, Entity, LayoutCache>(
             node, _cache, _store, ref _subLayout);
-        
-        // Debug: print all bounds
-        PrintEntityBounds(_root, 0);
-    }
-    
-    private void PrintEntityBounds(Entity entity, int depth)
-    {
-        if (entity.IsNull) return;
-        
-        var indent = new string(' ', depth * 2);
-        if (entity.TryGetComponent<LayoutBounds>(out var bounds))
-        {
-            var name = entity.TryGetComponent<LayoutProperties>(out var props) 
-                ? $"{props.LayoutType}" 
-                : "?";
-            Console.WriteLine($"{indent}[{name}] pos=({bounds.PosX:F0},{bounds.PosY:F0}) size=({bounds.Width:F0}x{bounds.Height:F0})");
-        }
-        
-        foreach (var child in entity.ChildEntities)
-        {
-            PrintEntityBounds(child, depth + 1);
-        }
     }
     
     public override void Render(float alpha)
@@ -233,7 +382,7 @@ public class LayoutSample : GraphicsSample
         var pass = new RenderPass
         {
             Target = RenderTargetHandle.Screen,
-            ClearColor = new Color4(0.1f, 0.1f, 0.15f),
+            ClearColor = new Color4(0.08f, 0.08f, 0.1f),
             ClearDepth = true,
             Viewport = new Gfx.Rect(0, 0, Width, Height)
         };
@@ -246,46 +395,89 @@ public class LayoutSample : GraphicsSample
         commands.SetProjectionMatrix(projection);
         commands.SetViewMatrix(Matrix4x4.Identity);
         
-        var quadCount = 0;
-        RenderEntity(_root, commands, ref quadCount, 0, 0);
-        
-        if (quadCount > 0 && _frameCount++ % 60 == 0)
-            Console.WriteLine($"[LayoutSample] Drawing {quadCount} quads");
+        // Render all quads first
+        RenderQuads(_root, commands, 0, 0);
         
         RenderingServer.Submit(commands);
+        
+        // End pass flushes the 2D batch (draws shapes)
         RenderingServer.EndPass();
+        
+        // Render text AFTER shapes so it appears on top
+        RenderText(_root, projection, 0, 0);
     }
     
-    private int _frameCount = 0;
-    
-    private void RenderEntity(Entity entity, IRenderCommandList commands, ref int quadCount, float parentX, float parentY)
+    private void RenderQuads(Entity entity, IRenderCommandList commands, float parentX, float parentY)
     {
         if (entity.IsNull) return;
         if (!entity.TryGetComponent<LayoutBounds>(out var bounds)) return;
         
-        // Calculate absolute position
         float absX = parentX + bounds.PosX;
         float absY = parentY + bounds.PosY;
         
-        if (entity.TryGetComponent<ShapeColor>(out var color) && bounds.Width > 0 && bounds.Height > 0)
+        if (entity.TryGetComponent<ShapeColor>(out var color) && bounds.Width > 0 && bounds.Height > 0 && color.A > 0)
         {
             commands.DrawQuad(
                 new Vector2(absX, absY),
                 new Vector2(bounds.Width, bounds.Height),
                 new Color4(color.R, color.G, color.B, color.A)
             );
-            quadCount++;
         }
         
-        // Render children with accumulated offset
         foreach (var child in entity.ChildEntities)
         {
-            RenderEntity(child, commands, ref quadCount, absX, absY);
+            RenderQuads(child, commands, absX, absY);
+        }
+    }
+    
+    private void RenderText(Entity entity, Matrix4x4 projection, float parentX, float parentY)
+    {
+        if (entity.IsNull) return;
+        if (!entity.TryGetComponent<LayoutBounds>(out var bounds)) return;
+        
+        float absX = parentX + bounds.PosX;
+        float absY = parentY + bounds.PosY;
+        
+        // Render text if entity has a TextLabel
+        if (entity.TryGetComponent<TextLabel>(out var label) && !string.IsNullOrEmpty(label.Text))
+        {
+            if (RenderingServer is OpenGLRenderingServer { FontRenderer: not null } glServer)
+            {
+                var fontSystem = glServer.GetFontSystem(_font);
+                if (fontSystem != null)
+                {
+                    var font = fontSystem.GetFont(label.FontSize);
+                    var textColor = new FontStashSharp.FSColor(
+                        (byte)(label.R * 255),
+                        (byte)(label.G * 255),
+                        (byte)(label.B * 255),
+                        (byte)(label.A * 255)
+                    );
+                    
+                    // Center text vertically in the bounds
+                    var textSize = font.MeasureString(label.Text);
+                    float textY = absY + (bounds.Height - textSize.Y) / 2;
+                    float textX = absX + 5; // Small left padding
+                    
+                    glServer.FontRenderer.Begin(projection);
+                    font.DrawText(glServer.FontRenderer, label.Text, new Vector2(textX, textY), textColor);
+                    glServer.FontRenderer.End();
+                }
+            }
+        }
+        
+        foreach (var child in entity.ChildEntities)
+        {
+            RenderText(child, projection, absX, absY);
         }
     }
     
     protected override void Unload()
     {
+        if (_font.Id != 0)
+        {
+            RenderingServer.DestroyFont(_font);
+        }
     }
 }
 

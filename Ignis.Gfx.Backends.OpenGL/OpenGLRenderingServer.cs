@@ -1,4 +1,5 @@
 using System.Numerics;
+using FontStashSharp;
 using Ignis.Core;
 using Silk.NET.OpenGL;
 
@@ -18,11 +19,13 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     private readonly Dictionary<int, GLTexture> _textures = new();
     private readonly Dictionary<int, GLShader> _shaders = new();
     private readonly Dictionary<int, GLRenderTarget> _renderTargets = new();
+    private readonly Dictionary<int, FontSystem> _fontSystems = new();
     
     private int _nextMeshId = 1;
     private int _nextTextureId = 1;
     private int _nextShaderId = 1;
     private int _nextRenderTargetId = 1;
+    private int _nextFontId = 1;
     
     // Default shaders
     private ShaderHandle _defaultShader3D;
@@ -31,6 +34,9 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     
     // 2D batching
     private GL2DBatch? _batch2D;
+    
+    // Font rendering
+    private GLFontRenderer? _fontRenderer;
     
     // Current state
     private Matrix4x4 _currentProjection = Matrix4x4.Identity;
@@ -43,6 +49,9 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     
     /// <summary>Direct access to the underlying OpenGL API. Internal use only.</summary>
     public GL? GL => _gl;
+    
+    /// <summary>Direct access to the font renderer for text drawing.</summary>
+    internal GLFontRenderer? FontRenderer => _fontRenderer;
     
     public ShaderHandle DefaultShader3D => _defaultShader3D;
     public ShaderHandle DefaultShader2D => _defaultShader2D;
@@ -109,6 +118,9 @@ public sealed class OpenGLRenderingServer : IRenderingServer
         
         // Create 2D batch
         _batch2D = new GL2DBatch(gl);
+        
+        // Create font renderer
+        _fontRenderer = new GLFontRenderer(gl);
         
         // Set default state
         gl.Enable(EnableCap.Blend);
@@ -210,26 +222,61 @@ public sealed class OpenGLRenderingServer : IRenderingServer
             shader.Dispose();
     }
     
-    // --- Font Management (stub) ---
+    // --- Font Management ---
     
     public FontHandle CreateFont(string name, ReadOnlySpan<byte> ttfData)
     {
-        // Font loading requires additional library (e.g., FreeType)
-        // Return invalid handle for now
-        return FontHandle.Invalid;
+        if (_fontRenderer == null) return FontHandle.Invalid;
+        
+        var settings = new FontSystemSettings
+        {
+            FontResolutionFactor = 2,
+            KernelWidth = 1,
+            KernelHeight = 1,
+            TextureWidth = 1024,
+            TextureHeight = 1024
+        };
+        
+        var fontSystem = new FontSystem(settings);
+        fontSystem.AddFont(ttfData.ToArray());
+        
+        var id = _nextFontId++;
+        _fontSystems[id] = fontSystem;
+        return new FontHandle(id);
     }
     
     public FontHandle CreateFontFromFile(string path)
     {
-        return FontHandle.Invalid;
+        if (!File.Exists(path)) return FontHandle.Invalid;
+        var data = File.ReadAllBytes(path);
+        return CreateFont(Path.GetFileNameWithoutExtension(path), data);
     }
     
-    public void DestroyFont(FontHandle handle) { }
+    public void DestroyFont(FontHandle handle)
+    {
+        if (_fontSystems.Remove(handle.Id, out var fontSystem))
+        {
+            fontSystem.Dispose();
+        }
+    }
     
     public (float width, float height) MeasureText(FontHandle font, string text, float fontSize)
     {
-        // Rough estimate
-        return (text.Length * fontSize * 0.6f, fontSize);
+        if (!_fontSystems.TryGetValue(font.Id, out var fontSystem))
+            return (text.Length * fontSize * 0.5f, fontSize);
+        
+        var spritFont = fontSystem.GetFont(fontSize);
+        var size = spritFont.MeasureString(text);
+        return (size.X, size.Y);
+    }
+    
+    /// <summary>
+    /// Get the FontSystem for a given font handle (for direct text rendering).
+    /// </summary>
+    public FontSystem? GetFontSystem(FontHandle handle)
+    {
+        _fontSystems.TryGetValue(handle.Id, out var fontSystem);
+        return fontSystem;
     }
     
     // --- Render Target Management ---
@@ -518,16 +565,19 @@ public sealed class OpenGLRenderingServer : IRenderingServer
         _disposed = true;
         
         _batch2D?.Dispose();
+        _fontRenderer?.Dispose();
         
         foreach (var mesh in _meshes.Values) mesh.Dispose();
         foreach (var tex in _textures.Values) tex.Dispose();
         foreach (var shader in _shaders.Values) shader.Dispose();
         foreach (var rt in _renderTargets.Values) rt.Dispose();
+        foreach (var font in _fontSystems.Values) font.Dispose();
         
         _meshes.Clear();
         _textures.Clear();
         _shaders.Clear();
         _renderTargets.Clear();
+        _fontSystems.Clear();
     }
 }
 

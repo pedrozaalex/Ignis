@@ -10,9 +10,11 @@
     <!-- Allow samples project access to internal members for debugging/testing -->
     <ItemGroup>
         <InternalsVisibleTo Include="Ignis.Gfx.Samples"/>
+        <InternalsVisibleTo Include="Ignis.Samples"/>
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="FontStashSharp" Version="1.3.9"/>
         <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0"/>
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     </ItemGroup>
