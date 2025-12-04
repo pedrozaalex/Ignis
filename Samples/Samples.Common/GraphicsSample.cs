@@ -16,6 +16,9 @@ public abstract class GraphicsSample : Scene
     /// <summary>The rendering server, set during OnEnter.</summary>
     protected IRenderingServer RenderingServer { get; private set; } = null!;
     
+    /// <summary>The sample context providing access to input and other services.</summary>
+    protected SampleContext? Context { get; private set; }
+    
     /// <summary>Window width in pixels.</summary>
     protected int Width { get; private set; }
     
@@ -26,6 +29,7 @@ public abstract class GraphicsSample : Scene
     {
         if (context is SampleContext sampleContext)
         {
+            Context = sampleContext;
             RenderingServer = sampleContext.RenderingServer;
             Width = sampleContext.Width;
             Height = sampleContext.Height;
@@ -72,6 +76,12 @@ public class SampleContext : EngineContext
     public IRenderingServer RenderingServer { get; }
     public int Width { get; set; }
     public int Height { get; set; }
+    
+    /// <summary>Input state provider - set by the sample runner.</summary>
+    public Func<InputState?>? InputProvider { get; set; }
+    
+    /// <summary>Get the current input state.</summary>
+    public InputState? GetInput() => InputProvider?.Invoke();
     
     public SampleContext(IRenderingServer server, int width, int height)
     {

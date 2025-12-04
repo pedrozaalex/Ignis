@@ -32,6 +32,7 @@ public sealed class OpenGLRenderingServer : IRenderingServer
 
     // Default shaders
     private ShaderHandle _defaultShader3D;
+    private ShaderHandle _defaultShader3DLit;
     private ShaderHandle _defaultShader2D;
     private ShaderHandle _defaultShaderText;
 
@@ -57,6 +58,7 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     internal GLFontRenderer? FontRenderer => _fontRenderer;
 
     public ShaderHandle DefaultShader3D => _defaultShader3D;
+    public ShaderHandle DefaultShader3DLit => _defaultShader3DLit;
     public ShaderHandle DefaultShader2D => _defaultShader2D;
     public ShaderHandle DefaultShaderText => _defaultShaderText;
 
@@ -118,6 +120,7 @@ public sealed class OpenGLRenderingServer : IRenderingServer
 
         // Create default shaders
         _defaultShader3D = CreateShader(DefaultShaders.Shader3DVertex, DefaultShaders.Shader3DFragment);
+        _defaultShader3DLit = CreateShader(DefaultShaders.Shader3DVertex, DefaultShaders.Shader3DLitFragment);
         _defaultShader2D = CreateShader(DefaultShaders.Shader2DVertex, DefaultShaders.Shader2DFragment);
         _defaultShaderText = CreateShader(DefaultShaders.ShaderTextVertex, DefaultShaders.ShaderTextFragment);
 
@@ -405,6 +408,21 @@ public sealed class OpenGLRenderingServer : IRenderingServer
 
             case CommandType.SetView:
                 _currentView = cmd.Matrix;
+                break;
+            
+            case CommandType.SetUniformVec3:
+                if (_shaders.TryGetValue(_currentShader.Id, out var shaderVec3))
+                    shaderVec3.SetVec3(cmd.UniformName!, cmd.UniformVec3);
+                break;
+            
+            case CommandType.SetUniformFloat:
+                if (_shaders.TryGetValue(_currentShader.Id, out var shaderFloat))
+                    shaderFloat.SetFloat(cmd.UniformName!, cmd.UniformFloat);
+                break;
+            
+            case CommandType.SetUniformColor:
+                if (_shaders.TryGetValue(_currentShader.Id, out var shaderColor))
+                    shaderColor.SetVec4(cmd.UniformName!, new System.Numerics.Vector4(cmd.Color.R, cmd.Color.G, cmd.Color.B, cmd.Color.A));
                 break;
 
             case CommandType.DrawMesh:

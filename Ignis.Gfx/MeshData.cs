@@ -203,5 +203,132 @@ public class MeshBuilder
         
         return builder.Build();
     }
+    
+    /// <summary>Creates a ground plane on the XZ plane.</summary>
+    public static MeshData CreatePlane(float width = 10f, float depth = 10f)
+    {
+        var hw = width * 0.5f;
+        var hd = depth * 0.5f;
+        
+        var builder = new MeshBuilder();
+        builder.AddVertex(new Vector3(-hw, 0, -hd), Vector3.UnitY, new Vector2(0, 0), Color4.White);
+        builder.AddVertex(new Vector3(hw, 0, -hd), Vector3.UnitY, new Vector2(1, 0), Color4.White);
+        builder.AddVertex(new Vector3(hw, 0, hd), Vector3.UnitY, new Vector2(1, 1), Color4.White);
+        builder.AddVertex(new Vector3(-hw, 0, hd), Vector3.UnitY, new Vector2(0, 1), Color4.White);
+        builder.AddQuad(0, 2, 1, 0);
+        builder.AddQuad(0, 3, 2, 0);
+        
+        return builder.Build();
+    }
+    
+    /// <summary>Creates a UV sphere.</summary>
+    public static MeshData CreateSphere(float radius = 0.5f, int segments = 16, int rings = 16)
+    {
+        var builder = new MeshBuilder();
+        
+        for (int ring = 0; ring <= rings; ring++)
+        {
+            float phi = MathF.PI * ring / rings;
+            float y = MathF.Cos(phi) * radius;
+            float ringRadius = MathF.Sin(phi) * radius;
+            
+            for (int seg = 0; seg <= segments; seg++)
+            {
+                float theta = 2f * MathF.PI * seg / segments;
+                float x = MathF.Cos(theta) * ringRadius;
+                float z = MathF.Sin(theta) * ringRadius;
+                
+                var pos = new Vector3(x, y, z);
+                var normal = Vector3.Normalize(pos);
+                var uv = new Vector2((float)seg / segments, (float)ring / rings);
+                
+                builder.AddVertex(pos, normal, uv, Color4.White);
+            }
+        }
+        
+        for (int ring = 0; ring < rings; ring++)
+        {
+            for (int seg = 0; seg < segments; seg++)
+            {
+                uint current = (uint)(ring * (segments + 1) + seg);
+                uint next = current + 1;
+                uint below = current + (uint)(segments + 1);
+                uint belowNext = below + 1;
+                
+                builder.AddTriangle(current, below, next);
+                builder.AddTriangle(next, below, belowNext);
+            }
+        }
+        
+        return builder.Build();
+    }
+    
+    /// <summary>Creates a cylinder along the Y axis.</summary>
+    public static MeshData CreateCylinder(float radius = 0.5f, float height = 1f, int segments = 16)
+    {
+        var builder = new MeshBuilder();
+        float halfHeight = height * 0.5f;
+        
+        // Side vertices
+        for (int i = 0; i <= segments; i++)
+        {
+            float theta = 2f * MathF.PI * i / segments;
+            float x = MathF.Cos(theta) * radius;
+            float z = MathF.Sin(theta) * radius;
+            var normal = Vector3.Normalize(new Vector3(x, 0, z));
+            float u = (float)i / segments;
+            
+            builder.AddVertex(new Vector3(x, -halfHeight, z), normal, new Vector2(u, 1), Color4.White);
+            builder.AddVertex(new Vector3(x, halfHeight, z), normal, new Vector2(u, 0), Color4.White);
+        }
+        
+        // Side indices
+        for (int i = 0; i < segments; i++)
+        {
+            uint bl = (uint)(i * 2);
+            uint tl = bl + 1;
+            uint br = bl + 2;
+            uint tr = bl + 3;
+            
+            builder.AddTriangle(bl, br, tl);
+            builder.AddTriangle(tl, br, tr);
+        }
+        
+        // Top cap center
+        uint topCenter = builder.VertexCount;
+        builder.AddVertex(new Vector3(0, halfHeight, 0), Vector3.UnitY, new Vector2(0.5f, 0.5f), Color4.White);
+        
+        uint topStart = builder.VertexCount;
+        for (int i = 0; i <= segments; i++)
+        {
+            float theta = 2f * MathF.PI * i / segments;
+            float x = MathF.Cos(theta) * radius;
+            float z = MathF.Sin(theta) * radius;
+            builder.AddVertex(new Vector3(x, halfHeight, z), Vector3.UnitY,
+                new Vector2(0.5f + x / radius * 0.5f, 0.5f + z / radius * 0.5f), Color4.White);
+        }
+        
+        for (int i = 0; i < segments; i++)
+            builder.AddTriangle(topCenter, topStart + (uint)i, topStart + (uint)i + 1);
+        
+        // Bottom cap center
+        uint bottomCenter = builder.VertexCount;
+        builder.AddVertex(new Vector3(0, -halfHeight, 0), -Vector3.UnitY, new Vector2(0.5f, 0.5f), Color4.White);
+        
+        uint bottomStart = builder.VertexCount;
+        for (int i = 0; i <= segments; i++)
+        {
+            float theta = 2f * MathF.PI * i / segments;
+            float x = MathF.Cos(theta) * radius;
+            float z = MathF.Sin(theta) * radius;
+            builder.AddVertex(new Vector3(x, -halfHeight, z), -Vector3.UnitY,
+                new Vector2(0.5f + x / radius * 0.5f, 0.5f + z / radius * 0.5f), Color4.White);
+        }
+        
+        for (int i = 0; i < segments; i++)
+            builder.AddTriangle(bottomCenter, bottomStart + (uint)i + 1, bottomStart + (uint)i);
+        
+        return builder.Build();
+    }
 }
 

@@ -50,6 +50,17 @@ public class RenderCommandList : IRenderCommandList
     public void SetViewMatrix(Matrix4x4 matrix) =>
         _commands.Add(new RenderCommand(CommandType.SetView) { Matrix = matrix });
     
+    // --- Shader Uniforms ---
+    
+    public void SetUniform(string name, Vector3 value) =>
+        _commands.Add(new RenderCommand(CommandType.SetUniformVec3) { UniformName = name, UniformVec3 = value });
+    
+    public void SetUniform(string name, float value) =>
+        _commands.Add(new RenderCommand(CommandType.SetUniformFloat) { UniformName = name, UniformFloat = value });
+    
+    public void SetUniform(string name, Color4 value) =>
+        _commands.Add(new RenderCommand(CommandType.SetUniformColor) { UniformName = name, Color = value });
+    
     // --- 3D Drawing ---
     
     public void DrawMesh(MeshHandle mesh, Matrix4x4 worldMatrix) =>
@@ -168,6 +179,9 @@ public enum CommandType
     SetScissor,
     SetProjection,
     SetView,
+    SetUniformVec3,
+    SetUniformFloat,
+    SetUniformColor,
     DrawMesh,
     DrawMeshInstanced,
     DrawSprite,
@@ -206,6 +220,11 @@ public struct RenderCommand(CommandType type)
     // Transforms
     public Matrix4x4 Matrix;
     public Matrix4x4[]? InstanceMatrices;
+    
+    // Uniforms
+    public string? UniformName;
+    public Vector3 UniformVec3;
+    public float UniformFloat;
     
     // Mesh
     public MeshHandle Mesh;

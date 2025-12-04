@@ -44,6 +44,17 @@ public interface IRenderCommandList
     /// <summary>Set view/camera matrix.</summary>
     void SetViewMatrix(Matrix4x4 matrix);
     
+    // --- Shader Uniforms ---
+    
+    /// <summary>Set a Vector3 uniform value.</summary>
+    void SetUniform(string name, Vector3 value);
+    
+    /// <summary>Set a float uniform value.</summary>
+    void SetUniform(string name, float value);
+    
+    /// <summary>Set a Color4 uniform value (as vec4).</summary>
+    void SetUniform(string name, Color4 value);
+    
     // --- 3D Drawing ---
     
     /// <summary>Draw a mesh with the given world transform.</summary>
