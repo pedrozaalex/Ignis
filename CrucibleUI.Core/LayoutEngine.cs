@@ -188,10 +188,10 @@ public static class LayoutEngine
             var maxCross = child.MaxCross(layoutType).ToPx(knownCross ?? 0, float.MaxValue);
 
             // Calculate Initial Sizes (if not auto)
-            float? mainSize = ResolveUnit(cMain, knownMain);
+            var mainSize = ResolveUnit(cMain, knownMain);
             if (mainSize.HasValue) mainSize = Math.Clamp(mainSize.Value, minMain, maxMain);
 
-            float? crossSize = ResolveUnit(cCross, knownCross);
+            var crossSize = ResolveUnit(cCross, knownCross);
             if (crossSize.HasValue) crossSize = Math.Clamp(crossSize.Value, minCross, maxCross);
 
             // Recursive Measurement if needed
@@ -618,14 +618,14 @@ public static class LayoutEngine
         var isStretchH = (child.Height ?? Units.Auto).Kind is UnitsKind.Stretch;
         
         // For stretch hints, apply max constraints even if min is Auto
-        float? hintW = w;
+        var hintW = w;
         if (!hintW.HasValue && isStretchW)
         {
             var maxW = child.MaxWidth?.ToPx(pW, float.MaxValue) ?? float.MaxValue;
             hintW = Math.Min(pW, maxW);
         }
         
-        float? hintH = h;
+        var hintH = h;
         if (!hintH.HasValue && isStretchH)
         {
             var maxH = child.MaxHeight?.ToPx(pH, float.MaxValue) ?? float.MaxValue;

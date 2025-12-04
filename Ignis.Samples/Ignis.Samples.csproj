@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Ignis.Core\Ignis.Core.csproj" />
         <ProjectReference Include="..\Ignis.Gfx\Ignis.Gfx.csproj" />
         <ProjectReference Include="..\Ignis.Gfx.Backends.OpenGL\Ignis.Gfx.Backends.OpenGL.csproj" />
     </ItemGroup>

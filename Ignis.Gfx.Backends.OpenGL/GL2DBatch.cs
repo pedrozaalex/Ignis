@@ -40,10 +40,10 @@ internal sealed class GL2DBatch : IDisposable
         
             // Create EBO (static indices)
             var indices = new uint[MaxQuadsPerBatch * IndicesPerQuad];
-            for (int i = 0; i < MaxQuadsPerBatch; i++)
+            for (var i = 0; i < MaxQuadsPerBatch; i++)
             {
-                uint baseVertex = (uint)(i * 4);
-                int baseIndex = i * 6;
+                var baseVertex = (uint)(i * 4);
+                var baseIndex = i * 6;
                 indices[baseIndex + 0] = baseVertex + 0;
                 indices[baseIndex + 1] = baseVertex + 1;
                 indices[baseIndex + 2] = baseVertex + 2;
@@ -94,7 +94,7 @@ internal sealed class GL2DBatch : IDisposable
         float u0 = src.X, v0 = src.Y;
         float u1 = src.X + src.Width, v1 = src.Y + src.Height;
         
-        int offset = _quadCount * VerticesPerQuad * FloatsPerVertex;
+        var offset = _quadCount * VerticesPerQuad * FloatsPerVertex;
         
         // Top-left
         _vertices[offset + 0] = x;
@@ -152,11 +152,11 @@ internal sealed class GL2DBatch : IDisposable
         if (_quadCount >= MaxQuadsPerBatch)
             Flush();
         
-        int offset = _quadCount * VerticesPerQuad * FloatsPerVertex;
+        var offset = _quadCount * VerticesPerQuad * FloatsPerVertex;
         
         void WriteVertex(int idx, Vector2 pos)
         {
-            int o = offset + idx * FloatsPerVertex;
+            var o = offset + idx * FloatsPerVertex;
             _vertices[o + 0] = pos.X;
             _vertices[o + 1] = pos.Y;
             _vertices[o + 2] = 0;
@@ -182,7 +182,7 @@ internal sealed class GL2DBatch : IDisposable
         _gl.BindVertexArray(_vao);
         _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
         
-        int vertexCount = _quadCount * VerticesPerQuad * FloatsPerVertex;
+        var vertexCount = _quadCount * VerticesPerQuad * FloatsPerVertex;
         fixed (float* ptr = _vertices)
         {
             _gl.BufferSubData(BufferTargetARB.ArrayBuffer, 0, (nuint)(vertexCount * sizeof(float)), ptr);

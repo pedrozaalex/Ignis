@@ -3,7 +3,7 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
-namespace Ignis.Gfx;
+namespace Ignis.Core;
 
 /// <summary>
 /// Detected platform for the current runtime.
@@ -30,6 +30,17 @@ public enum WindowBackend
 }
 
 /// <summary>
+/// Graphics API to use with the window.
+/// </summary>
+public enum GraphicsBackend
+{
+    /// <summary>OpenGL 3.3 Core Profile</summary>
+    OpenGL,
+    /// <summary>No graphics API (headless window for compute, etc.)</summary>
+    None
+}
+
+/// <summary>
 /// Configuration options for creating a window.
 /// </summary>
 public struct WindowOptions
@@ -42,6 +53,7 @@ public struct WindowOptions
     public bool Fullscreen;
     public int Samples;
     public WindowBackend Backend;
+    public GraphicsBackend GraphicsBackend;
     
     public static WindowOptions Default => new()
     {
@@ -52,51 +64,52 @@ public struct WindowOptions
         Resizable = true,
         Fullscreen = false,
         Samples = 0,
-        Backend = WindowBackend.Auto
+        Backend = WindowBackend.Auto,
+        GraphicsBackend = GraphicsBackend.OpenGL
     };
 }
 
 /// <summary>
-/// Cross-platform window wrapper using Silk.NET.Windowing.
+/// Cross-platform window using Silk.NET.Windowing.
 /// Supports Windows, Linux, and macOS via GLFW or SDL backends.
 /// </summary>
-public abstract class Window : IDisposable
+public sealed class Window : IDisposable
 {
-    protected readonly IWindow NativeWindow;
-    protected IInputContext? InputContext;
+    private readonly IWindow _nativeWindow;
+    private readonly GraphicsBackend _graphicsBackend;
+    private IInputContext? _inputContext;
     private InputState? _inputState;
     private bool _disposed;
     
     /// <summary>The current platform.</summary>
     public static Platform CurrentPlatform { get; } = DetectPlatform();
     
-    /// <summary>The underlying rendering server (set by derived class).</summary>
-    public abstract IRenderingServer RenderingServer { get; }
+    /// <summary>The underlying Silk.NET window for advanced usage.</summary>
+    public IWindow NativeWindow => _nativeWindow;
     
     /// <summary>
     /// Managed input state for the window. EndFrame() is called automatically after OnUpdate.
-    /// Use this instead of creating your own InputState to avoid timing issues.
     /// </summary>
     public InputState? InputState => _inputState;
     
     /// <summary>Current window width in pixels.</summary>
-    public int Width => NativeWindow.Size.X;
+    public int Width => _nativeWindow.Size.X;
     
     /// <summary>Current window height in pixels.</summary>
-    public int Height => NativeWindow.Size.Y;
+    public int Height => _nativeWindow.Size.Y;
     
     /// <summary>Window title.</summary>
     public string Title
     {
-        get => NativeWindow.Title;
-        set => NativeWindow.Title = value;
+        get => _nativeWindow.Title;
+        set => _nativeWindow.Title = value;
     }
     
     /// <summary>Whether VSync is enabled.</summary>
     public bool VSync
     {
-        get => NativeWindow.VSync;
-        set => NativeWindow.VSync = value;
+        get => _nativeWindow.VSync;
+        set => _nativeWindow.VSync = value;
     }
     
     /// <summary>Time elapsed since last frame in seconds.</summary>
@@ -106,13 +119,10 @@ public abstract class Window : IDisposable
     public double TotalTime { get; private set; }
     
     /// <summary>Current frames per second.</summary>
-    public double FramesPerSecond => NativeWindow.FramesPerSecond;
+    public double FramesPerSecond => _nativeWindow.FramesPerSecond;
     
     /// <summary>Whether the window is currently focused.</summary>
-    public bool IsFocused => !NativeWindow.IsClosing;
-    
-    /// <summary>The input context for keyboard/mouse/gamepad.</summary>
-    public IInputContext? Input => InputContext;
+    public bool IsFocused => !_nativeWindow.IsClosing;
     
     // Events
     public event Action? OnLoad;
@@ -124,8 +134,9 @@ public abstract class Window : IDisposable
     /// <summary>
     /// Creates a new cross-platform window with the specified options.
     /// </summary>
-    protected Window(WindowOptions options)
+    public Window(WindowOptions options)
     {
+        _graphicsBackend = options.GraphicsBackend;
         RegisterWindowingBackend(options.Backend);
         
         var silkOptions = Silk.NET.Windowing.WindowOptions.Default;
@@ -135,44 +146,62 @@ public abstract class Window : IDisposable
         silkOptions.WindowBorder = options.Resizable ? WindowBorder.Resizable : WindowBorder.Fixed;
         silkOptions.WindowState = options.Fullscreen ? WindowState.Fullscreen : WindowState.Normal;
         silkOptions.Samples = options.Samples;
-        silkOptions.API = GetGraphicsApi();
+        silkOptions.API = GetGraphicsApi(options.GraphicsBackend);
         
-        NativeWindow = Silk.NET.Windowing.Window.Create(silkOptions);
+        _nativeWindow = Silk.NET.Windowing.Window.Create(silkOptions);
         
-        NativeWindow.Load += HandleLoad;
-        NativeWindow.Update += HandleUpdate;
-        NativeWindow.Render += HandleRender;
-        NativeWindow.FramebufferResize += HandleResize;
-        NativeWindow.Closing += HandleClosing;
+        _nativeWindow.Load += HandleLoad;
+        _nativeWindow.Update += HandleUpdate;
+        _nativeWindow.Render += HandleRender;
+        _nativeWindow.FramebufferResize += HandleResize;
+        _nativeWindow.Closing += HandleClosing;
     }
     
     /// <summary>
-    /// Returns the graphics API configuration for this window type.
+    /// Creates a new window with default options.
     /// </summary>
-    protected abstract GraphicsAPI GetGraphicsApi();
+    public Window() : this(WindowOptions.Default) { }
     
     /// <summary>
-    /// Called when the window is loaded. Initialize graphics context here.
+    /// Creates a new window with title and size.
     /// </summary>
-    protected abstract void OnWindowLoad();
+    public Window(string title, int width, int height) : this(new WindowOptions
+    {
+        Title = title,
+        Width = width,
+        Height = height,
+        VSync = true,
+        Resizable = true,
+        Fullscreen = false,
+        Samples = 0,
+        Backend = WindowBackend.Auto,
+        GraphicsBackend = GraphicsBackend.OpenGL
+    }) { }
+    
+    private static GraphicsAPI GetGraphicsApi(GraphicsBackend backend) => backend switch
+    {
+        GraphicsBackend.OpenGL => new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.ForwardCompatible, new APIVersion(3, 3)),
+        GraphicsBackend.None => GraphicsAPI.None,
+        _ => GraphicsAPI.Default
+    };
     
     /// <summary>
     /// Starts the window and enters the main loop.
     /// This method blocks until the window is closed.
     /// </summary>
-    public void Run() => NativeWindow.Run();
+    public void Run() => _nativeWindow.Run();
     
     /// <summary>
     /// Closes the window.
     /// </summary>
-    public void Close() => NativeWindow.Close();
+    public void Close() => _nativeWindow.Close();
     
     /// <summary>
     /// Sets the window to fullscreen mode.
     /// </summary>
     public void SetFullscreen(bool fullscreen)
     {
-        NativeWindow.WindowState = fullscreen ? WindowState.Fullscreen : WindowState.Normal;
+        _nativeWindow.WindowState = fullscreen ? WindowState.Fullscreen : WindowState.Normal;
     }
     
     /// <summary>
@@ -180,7 +209,7 @@ public abstract class Window : IDisposable
     /// </summary>
     public void SetSize(int width, int height)
     {
-        NativeWindow.Size = new Vector2D<int>(width, height);
+        _nativeWindow.Size = new Vector2D<int>(width, height);
     }
     
     /// <summary>
@@ -188,21 +217,20 @@ public abstract class Window : IDisposable
     /// </summary>
     public void Center()
     {
-        var monitor = NativeWindow.Monitor;
+        var monitor = _nativeWindow.Monitor;
         if (monitor != null)
         {
             var bounds = monitor.Bounds;
-            var x = bounds.Origin.X + (bounds.Size.X - NativeWindow.Size.X) / 2;
-            var y = bounds.Origin.Y + (bounds.Size.Y - NativeWindow.Size.Y) / 2;
-            NativeWindow.Position = new Vector2D<int>(x, y);
+            var x = bounds.Origin.X + (bounds.Size.X - _nativeWindow.Size.X) / 2;
+            var y = bounds.Origin.Y + (bounds.Size.Y - _nativeWindow.Size.Y) / 2;
+            _nativeWindow.Position = new Vector2D<int>(x, y);
         }
     }
     
     private void HandleLoad()
     {
-        InputContext = NativeWindow.CreateInput();
-        _inputState = new InputState(InputContext);
-        OnWindowLoad();
+        _inputContext = _nativeWindow.CreateInput();
+        _inputState = new InputState(_inputContext);
         OnLoad?.Invoke();
     }
     
@@ -223,14 +251,8 @@ public abstract class Window : IDisposable
     
     private void HandleResize(Vector2D<int> size)
     {
-        OnWindowResize(size.X, size.Y);
         OnResize?.Invoke(size.X, size.Y);
     }
-    
-    /// <summary>
-    /// Called when the window is resized. Update viewport here.
-    /// </summary>
-    protected abstract void OnWindowResize(int width, int height);
     
     private void HandleClosing()
     {
@@ -264,22 +286,15 @@ public abstract class Window : IDisposable
         }
     }
     
-    protected virtual void Dispose(bool disposing)
+    public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
         
-        if (disposing)
-        {
-            _inputState?.Dispose();
-            InputContext?.Dispose();
-            NativeWindow.Dispose();
-        }
-    }
-    
-    public void Dispose()
-    {
-        Dispose(true);
+        _inputState?.Dispose();
+        _inputContext?.Dispose();
+        _nativeWindow.Dispose();
+        
         GC.SuppressFinalize(this);
     }
 }

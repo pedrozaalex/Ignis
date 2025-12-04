@@ -1,20 +1,20 @@
 using System.Numerics;
+using Ignis.Gfx;
 
-namespace Ignis.Gfx.Samples;
+namespace Ignis.Samples;
 
 /// <summary>
 /// Simple colored triangle sample using the rendering abstractions.
 /// </summary>
-public class TriangleSample : ISample
+public class TriangleSample : GraphicsSample
 {
-    public string Name => "Triangle";
+    public override string Name => "Triangle";
     
     private MeshHandle _triangleMesh;
     private float _rotation;
     
-    public void Load(IRenderingServer server)
+    protected override void Load()
     {
-        // Create a simple triangle with vertex colors
         var vertices = new Vertex3D[]
         {
             new(new Vector3(0.0f, 0.5f, 0.0f), Vector3.UnitZ, new Vector2(0.5f, 0.0f), Color4.Red),
@@ -23,48 +23,39 @@ public class TriangleSample : ISample
         };
         
         var indices = new uint[] { 0, 1, 2 };
-        
-        var meshData = new MeshData(vertices, indices);
-        _triangleMesh = server.CreateMesh(meshData);
+        _triangleMesh = Gfx.CreateMesh(new MeshData(vertices, indices));
     }
     
-    public void Update(double deltaTime)
+    protected override void OnUpdate(float deltaTime)
     {
-        _rotation += (float)deltaTime * 45f;
+        _rotation += deltaTime * 45f;
     }
     
-    public void Render(IRenderingServer server, int width, int height)
+    public override void Render(float alpha)
     {
-        // Use the abstraction layer - no direct GL access
         var pass = new RenderPass
         {
             Target = RenderTargetHandle.Screen,
-            ClearColor = new Color4(0.2f, 0.3f, 0.3f, 1.0f),
+            ClearColor = new Color4(0.2f, 0.3f, 0.3f),
             ClearDepth = true,
-            Viewport = new Rect(0, 0, width, height)
+            Viewport = new Rect(0, 0, Width, Height)
         };
         
-        server.BeginPass(pass);
+        Gfx.BeginPass(pass);
         
-        // Setup matrices
-        float aspect = (float)width / height;
+        var aspect = (float)Width / Height;
         var projection = Matrix4x4.CreateOrthographicOffCenter(-aspect, aspect, -1f, 1f, -10f, 10f);
         var view = Matrix4x4.Identity;
         var model = Matrix4x4.CreateRotationZ(_rotation * MathF.PI / 180f);
         
-        // Use command list
-        var commands = server.CreateCommandList();
-        commands.SetPipeline(server.DefaultShader3D);
+        var commands = Gfx.CreateCommandList();
+        commands.SetPipeline(Gfx.DefaultShader3D);
         commands.SetProjectionMatrix(projection);
         commands.SetViewMatrix(view);
         commands.DrawMesh(_triangleMesh, model);
-        server.Submit(commands);
+        Gfx.Submit(commands);
         
-        server.EndPass();
-    }
-    
-    public void Dispose()
-    {
+        Gfx.EndPass();
     }
 }
 

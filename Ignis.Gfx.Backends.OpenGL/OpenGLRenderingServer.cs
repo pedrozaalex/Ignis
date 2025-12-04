@@ -1,4 +1,5 @@
 using System.Numerics;
+using Ignis.Core;
 using Silk.NET.OpenGL;
 
 namespace Ignis.Gfx.Backends.OpenGL;
@@ -37,11 +38,11 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     private ShaderHandle _currentShader;
     private bool _disposed;
     
-public int Width => _width;
+    public int Width => _width;
     public int Height => _height;
     
     /// <summary>Direct access to the underlying OpenGL API. Internal use only.</summary>
-    internal GL? GL => _gl;
+    public GL? GL => _gl;
     
     public ShaderHandle DefaultShader3D => _defaultShader3D;
     public ShaderHandle DefaultShader2D => _defaultShader2D;
@@ -51,26 +52,24 @@ public int Width => _width;
     
     /// <summary>
     /// Creates a new OpenGL rendering server.
-    /// Must call Initialize() before use.
+    /// Call Initialize() with a Window before use.
     /// </summary>
     public OpenGLRenderingServer() { }
     
     /// <summary>
-    /// Creates and initializes the server with an existing GL context.
-    /// Use this when the window is already created (e.g., by Silk.NET.Windowing).
+    /// Initialize from an Ignis.Core.Window. Call this in the OnLoad handler.
     /// </summary>
-    public OpenGLRenderingServer(GL gl, int width, int height)
+    public void Initialize(Window window)
     {
-        InitializeWithContext(gl, width, height);
+        var gl = Silk.NET.OpenGL.GL.GetApi(window.NativeWindow);
+        InitializeWithContext(gl, window.Width, window.Height);
     }
     
     public void Initialize(IntPtr windowHandle, int width, int height)
     {
-        // For bare window handle initialization, create GL context
-        // This path is for when you have a raw window handle
         throw new NotSupportedException(
             "Direct window handle initialization is not supported. " +
-            "Use the constructor that takes a GL instance, or use Silk.NET.Windowing."
+            "Use Initialize(Window) instead."
         );
     }
     
@@ -84,9 +83,9 @@ public int Width => _width;
         _height = height;
         
         // Query capabilities
-        gl.GetInteger(GetPName.MaxTextureSize, out int maxTexSize);
-        gl.GetInteger(GetPName.MaxTextureImageUnits, out int maxTexUnits);
-        int maxSamples = 8; // Default, actual query varies by extension
+        gl.GetInteger(GetPName.MaxTextureSize, out var maxTexSize);
+        gl.GetInteger(GetPName.MaxTextureImageUnits, out var maxTexUnits);
+        var maxSamples = 8; // Default, actual query varies by extension
         
         Capabilities = new RenderCapabilities
         {

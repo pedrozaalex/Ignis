@@ -71,9 +71,9 @@ internal sealed class GLMesh : IDisposable
     {
         // 12 floats per vertex: pos(3) + normal(3) + uv(2) + color(4)
         var result = new float[vertices.Length * 12];
-        for (int i = 0; i < vertices.Length; i++)
+        for (var i = 0; i < vertices.Length; i++)
         {
-            int offset = i * 12;
+            var offset = i * 12;
             var v = vertices[i];
             result[offset + 0] = v.Position.X;
             result[offset + 1] = v.Position.Y;

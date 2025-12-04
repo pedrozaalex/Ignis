@@ -28,10 +28,10 @@ public class SpriteBatch
         _indices = new uint[MaxSpritesPerBatch * IndicesPerSprite];
         
         // Pre-fill index buffer pattern (0,1,2,0,2,3 repeated)
-        for (int i = 0; i < MaxSpritesPerBatch; i++)
+        for (var i = 0; i < MaxSpritesPerBatch; i++)
         {
-            uint baseVertex = (uint)(i * 4);
-            int baseIndex = i * 6;
+            var baseVertex = (uint)(i * 4);
+            var baseIndex = i * 6;
             _indices[baseIndex + 0] = baseVertex + 0;
             _indices[baseIndex + 1] = baseVertex + 1;
             _indices[baseIndex + 2] = baseVertex + 2;
@@ -108,7 +108,7 @@ public class SpriteBatch
         var uvRight = srcRect.X + srcRect.Width;
         var uvBottom = srcRect.Y + srcRect.Height;
         
-        int baseVertex = _spriteCount * 4;
+        var baseVertex = _spriteCount * 4;
         _vertices[baseVertex + 0] = new Vertex2D(v0, new Vector2(uvLeft, uvTop), color);
         _vertices[baseVertex + 1] = new Vertex2D(v1, new Vector2(uvRight, uvTop), color);
         _vertices[baseVertex + 2] = new Vertex2D(v2, new Vector2(uvRight, uvBottom), color);

@@ -1,7 +1,7 @@
 using System.Numerics;
 using Silk.NET.Input;
 
-namespace Ignis.Gfx;
+namespace Ignis.Core;
 
 /// <summary>
 /// Helper class for polling keyboard and mouse input state.
@@ -9,19 +9,19 @@ namespace Ignis.Gfx;
 /// Frame lifecycle:
 /// 1. Events are collected between frames (KeyDown, MouseMove, etc.)
 /// 2. During the frame, call IsKeyPressed/IsMousePressed to check one-shot events
-/// 3. At the end of the frame, call EndFrame() to clear one-shot states
+/// 3. At the end of the frame, EndFrame() is called automatically by Window
 /// 
-/// If using with Window, the Window automatically manages EndFrame() - do not call it manually.
+/// Use Window.InputState - do not create InputState manually.
 /// </summary>
 public sealed class InputState : IDisposable
 {
     private readonly IInputContext _input;
-    private readonly HashSet<Key> _keysDown = new();
-    private readonly HashSet<Key> _keysPressed = new();
-    private readonly HashSet<Key> _keysReleased = new();
-    private readonly HashSet<MouseButton> _mouseDown = new();
-    private readonly HashSet<MouseButton> _mousePressed = new();
-    private readonly HashSet<MouseButton> _mouseReleased = new();
+    private readonly HashSet<Key> _keysDown = [];
+    private readonly HashSet<Key> _keysPressed = [];
+    private readonly HashSet<Key> _keysReleased = [];
+    private readonly HashSet<MouseButton> _mouseDown = [];
+    private readonly HashSet<MouseButton> _mousePressed = [];
+    private readonly HashSet<MouseButton> _mouseReleased = [];
     
     private Vector2 _mousePosition;
     private Vector2 _mouseDelta;
@@ -38,10 +38,7 @@ public sealed class InputState : IDisposable
     /// <summary>Mouse scroll wheel delta since last frame.</summary>
     public float ScrollDelta => _scrollDelta;
     
-    /// <summary>
-    /// Creates an input state handler from a Silk.NET input context.
-    /// </summary>
-    public InputState(IInputContext input)
+    internal InputState(IInputContext input)
     {
         _input = input;
         
@@ -61,12 +58,9 @@ public sealed class InputState : IDisposable
     }
     
     /// <summary>
-    /// Clears per-frame input states (pressed/released keys, scroll delta, mouse delta).
-    /// Call this AFTER processing all input for the current frame.
-    /// 
-    /// If using Window.InputState, the Window calls this automatically - do not call it manually.
+    /// Clears per-frame input states. Called automatically by Window after OnUpdate.
     /// </summary>
-    public void EndFrame()
+    internal void EndFrame()
     {
         _keysPressed.Clear();
         _keysReleased.Clear();
@@ -83,12 +77,6 @@ public sealed class InputState : IDisposable
         _mouseDelta = _mousePosition - _lastMousePosition;
         _lastMousePosition = _mousePosition;
     }
-    
-    /// <summary>
-    /// Obsolete: Use EndFrame() instead. This method exists for backwards compatibility.
-    /// </summary>
-    [Obsolete("Use EndFrame() instead. If using Window.InputState, the Window manages this automatically.")]
-    public void Update() => EndFrame();
     
     // Keyboard
     

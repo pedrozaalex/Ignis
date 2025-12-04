@@ -20,13 +20,13 @@ internal sealed class GLShader : IDisposable
         _gl = gl;
         
         // Compile vertex shader
-        uint vertexShader = gl.CreateShader(ShaderType.VertexShader);
+        var vertexShader = gl.CreateShader(ShaderType.VertexShader);
         gl.ShaderSource(vertexShader, vertexSource);
         gl.CompileShader(vertexShader);
         CheckShaderCompilation(gl, vertexShader, "Vertex");
         
         // Compile fragment shader
-        uint fragmentShader = gl.CreateShader(ShaderType.FragmentShader);
+        var fragmentShader = gl.CreateShader(ShaderType.FragmentShader);
         gl.ShaderSource(fragmentShader, fragmentSource);
         gl.CompileShader(fragmentShader);
         CheckShaderCompilation(gl, fragmentShader, "Fragment");
@@ -47,20 +47,20 @@ internal sealed class GLShader : IDisposable
     
     private static void CheckShaderCompilation(GL gl, uint shader, string type)
     {
-        gl.GetShader(shader, ShaderParameterName.CompileStatus, out int status);
+        gl.GetShader(shader, ShaderParameterName.CompileStatus, out var status);
         if (status == 0)
         {
-            string log = gl.GetShaderInfoLog(shader);
+            var log = gl.GetShaderInfoLog(shader);
             throw new Exception($"{type} shader compilation error: {log}");
         }
     }
     
     private static void CheckProgramLinking(GL gl, uint program)
     {
-        gl.GetProgram(program, ProgramPropertyARB.LinkStatus, out int status);
+        gl.GetProgram(program, ProgramPropertyARB.LinkStatus, out var status);
         if (status == 0)
         {
-            string log = gl.GetProgramInfoLog(program);
+            var log = gl.GetProgramInfoLog(program);
             throw new Exception($"Shader program linking error: {log}");
         }
     }
@@ -69,7 +69,7 @@ internal sealed class GLShader : IDisposable
     
     private int GetUniformLocation(string name)
     {
-        if (!_uniformLocations.TryGetValue(name, out int location))
+        if (!_uniformLocations.TryGetValue(name, out var location))
         {
             location = _gl.GetUniformLocation(_handle, name);
             _uniformLocations[name] = location;
@@ -79,37 +79,37 @@ internal sealed class GLShader : IDisposable
     
     public void SetInt(string name, int value)
     {
-        int location = GetUniformLocation(name);
+        var location = GetUniformLocation(name);
         if (location >= 0) _gl.Uniform1(location, value);
     }
     
     public void SetFloat(string name, float value)
     {
-        int location = GetUniformLocation(name);
+        var location = GetUniformLocation(name);
         if (location >= 0) _gl.Uniform1(location, value);
     }
     
     public void SetVec2(string name, Vector2 value)
     {
-        int location = GetUniformLocation(name);
+        var location = GetUniformLocation(name);
         if (location >= 0) _gl.Uniform2(location, value.X, value.Y);
     }
     
     public void SetVec3(string name, Vector3 value)
     {
-        int location = GetUniformLocation(name);
+        var location = GetUniformLocation(name);
         if (location >= 0) _gl.Uniform3(location, value.X, value.Y, value.Z);
     }
     
     public void SetVec4(string name, Vector4 value)
     {
-        int location = GetUniformLocation(name);
+        var location = GetUniformLocation(name);
         if (location >= 0) _gl.Uniform4(location, value.X, value.Y, value.Z, value.W);
     }
     
     public unsafe void SetMat4(string name, Matrix4x4 value)
     {
-        int location = GetUniformLocation(name);
+        var location = GetUniformLocation(name);
         if (location >= 0)
         {
             _gl.UniformMatrix4(location, 1, false, (float*)&value);

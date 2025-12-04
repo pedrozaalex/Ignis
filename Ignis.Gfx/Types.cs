@@ -83,10 +83,10 @@ public struct Rect
     /// <summary>Returns the intersection of two rectangles, or empty if they don't intersect.</summary>
     public static Rect Intersect(Rect a, Rect b)
     {
-        float x = MathF.Max(a.X, b.X);
-        float y = MathF.Max(a.Y, b.Y);
-        float right = MathF.Min(a.Right, b.Right);
-        float bottom = MathF.Min(a.Bottom, b.Bottom);
+        var x = MathF.Max(a.X, b.X);
+        var y = MathF.Max(a.Y, b.Y);
+        var right = MathF.Min(a.Right, b.Right);
+        var bottom = MathF.Min(a.Bottom, b.Bottom);
         
         if (right <= x || bottom <= y)
             return default;

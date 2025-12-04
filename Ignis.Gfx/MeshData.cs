@@ -66,10 +66,10 @@ public class MeshData
     /// <summary>Recalculates normals based on triangle faces.</summary>
     public void RecalculateNormals()
     {
-        for (int i = 0; i < Vertices.Length; i++)
+        for (var i = 0; i < Vertices.Length; i++)
             Vertices[i].Normal = Vector3.Zero;
         
-        for (int i = 0; i < Indices.Length; i += 3)
+        for (var i = 0; i < Indices.Length; i += 3)
         {
             var i0 = (int)Indices[i];
             var i1 = (int)Indices[i + 1];
@@ -86,7 +86,7 @@ public class MeshData
             Vertices[i2].Normal += faceNormal;
         }
         
-        for (int i = 0; i < Vertices.Length; i++)
+        for (var i = 0; i < Vertices.Length; i++)
         {
             var len = Vertices[i].Normal.Length();
             if (len > 0.0001f)
