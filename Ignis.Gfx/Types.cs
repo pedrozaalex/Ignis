@@ -14,21 +14,20 @@ public struct Color4
         R = r; G = g; B = b; A = a;
     }
     
-    public Color4(byte r, byte g, byte b, byte a = 255)
-    {
-        R = r / 255f; G = g / 255f; B = b / 255f; A = a / 255f;
-    }
+    /// <summary>Creates a color from byte values (0-255).</summary>
+    public static Color4 FromBytes(byte r, byte g, byte b, byte a = 255)
+        => new(r / 255f, g / 255f, b / 255f, a / 255f);
     
-    public static Color4 White => new(1, 1, 1, 1);
-    public static Color4 Black => new(0, 0, 0, 1);
-    public static Color4 Transparent => new(0, 0, 0, 0);
-    public static Color4 Red => new(1, 0, 0, 1);
-    public static Color4 Green => new(0, 1, 0, 1);
-    public static Color4 Blue => new(0, 0, 1, 1);
-    public static Color4 Yellow => new(1, 1, 0, 1);
-    public static Color4 Cyan => new(0, 1, 1, 1);
-    public static Color4 Magenta => new(1, 0, 1, 1);
-    public static Color4 Gray => new(0.5f, 0.5f, 0.5f, 1);
+    public static Color4 White => new(1f, 1f, 1f, 1f);
+    public static Color4 Black => new(0f, 0f, 0f, 1f);
+    public static Color4 Transparent => new(0f, 0f, 0f, 0f);
+    public static Color4 Red => new(1f, 0f, 0f, 1f);
+    public static Color4 Green => new(0f, 1f, 0f, 1f);
+    public static Color4 Blue => new(0f, 0f, 1f, 1f);
+    public static Color4 Yellow => new(1f, 1f, 0f, 1f);
+    public static Color4 Cyan => new(0f, 1f, 1f, 1f);
+    public static Color4 Magenta => new(1f, 0f, 1f, 1f);
+    public static Color4 Gray => new(0.5f, 0.5f, 0.5f, 1f);
     
     public Vector4 ToVector4() => new(R, G, B, A);
     public static Color4 FromVector4(Vector4 v) => new(v.X, v.Y, v.Z, v.W);
