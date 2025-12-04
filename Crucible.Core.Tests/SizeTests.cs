@@ -1,4 +1,4 @@
-using Crucible.Core.Ecs;
+using Crucible.Core.Tests.Ecs;
 using Crucible.Core.Types;
 
 namespace Crucible.Core.Tests;

@@ -1,6 +1,6 @@
 using Friflo.Engine.ECS;
 
-namespace Crucible.Core.Ecs;
+namespace Crucible.Core.Tests.Ecs;
 
 /// <summary>
 /// Sublayout context for content size calculations.
@@ -22,6 +22,6 @@ public class SubLayoutContext
 
     public ContentSizeFunc.ContentSizeDelegate? GetContentSize(Entity entity)
     {
-        return _contentSizeFuncs.TryGetValue(entity.Id, out var func) ? func : null;
+        return _contentSizeFuncs.GetValueOrDefault(entity.Id);
     }
 }

@@ -10,15 +10,8 @@ public static class LayoutEngine
     // Internal State Types
     // -------------------------------------------------------------------------
 
-    private enum StretchType
-    {
-        Size,
-        Gap
-    }
-
     private record struct StretchItem(
         int Index,
-        StretchType Type,
         float Factor,
         float Min,
         float Max,
@@ -229,7 +222,7 @@ public static class LayoutEngine
 
             // Register Stretch or Accumulate Size
             if (cMain.Kind is UnitsKind.Stretch)
-                stretchItems.Add(new StretchItem(i, StretchType.Size, Math.Max(cMain.Value, 1f), minMain, maxMain));
+                stretchItems.Add(new StretchItem(i, Math.Max(cMain.Value, 1f), minMain, maxMain));
             else if (mainSize.HasValue)
                 totalDefinedMain += mainSize.Value;
 
@@ -269,7 +262,7 @@ public static class LayoutEngine
             // Add one stretch item per gap (index encoded as -(gapIndex + 1))
             for (var g = 0; g < numGaps; g++)
             {
-                stretchItems.Add(new StretchItem(-(g + 1), StretchType.Gap, gapFactor, minGap, maxGap));
+                stretchItems.Add(new StretchItem(-(g + 1), gapFactor, minGap, maxGap));
             }
         }
         else

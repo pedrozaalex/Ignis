@@ -1,6 +1,6 @@
-using Crucible.Core.Ecs;
+using Crucible.Core.Tests.Ecs;
 using Friflo.Engine.ECS;
-using CrucibleEntityNode = Crucible.Core.Ecs.EntityNode;
+using CrucibleEntityNode = Crucible.Core.Tests.Ecs.EntityNode;
 
 namespace Crucible.Core.Tests;
 

@@ -88,16 +88,6 @@ public readonly struct Units : IEquatable<Units>
     public static Units Auto => new(UnitsKind.Auto, 0);
 
     /// <summary>
-    /// Returns true if the value is in pixels.
-    /// </summary>
-    public bool IsPixels => Kind == UnitsKind.Pixels;
-
-    /// <summary>
-    /// Returns true if the value is a percentage.
-    /// </summary>
-    public bool IsPercentage => Kind == UnitsKind.Percentage;
-
-    /// <summary>
     /// Returns true if the value is a stretch factor.
     /// </summary>
     public bool IsStretch => Kind == UnitsKind.Stretch;
@@ -121,39 +111,6 @@ public readonly struct Units : IEquatable<Units>
             UnitsKind.Auto => defaultValue,
             _ => defaultValue
         };
-    }
-
-    /// <summary>
-    /// Returns the units converted to pixels, clamped between min and max.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float ToPxClamped(float parentValue, float defaultValue, Units min, Units max)
-    {
-        float minPx = min.ToPx(parentValue, float.MinValue);
-        float maxPx = max.ToPx(parentValue, float.MaxValue);
-
-        float result = Kind switch
-        {
-            UnitsKind.Pixels => Value,
-            UnitsKind.Percentage => Value / 100.0f * parentValue,
-            UnitsKind.Stretch => defaultValue,
-            UnitsKind.Auto => defaultValue,
-            _ => defaultValue
-        };
-
-        return Math.Clamp(result, minPx, maxPx);
-    }
-
-    /// <summary>
-    /// Clamps this units value between min and max (only if all are same kind).
-    /// </summary>
-    public Units Clamp(Units min, Units max)
-    {
-        if (Kind == min.Kind && Kind == max.Kind)
-        {
-            return new Units(Kind, Math.Clamp(Value, min.Value, max.Value));
-        }
-        return this;
     }
 
     public bool Equals(Units other) => Kind == other.Kind && Value.Equals(other.Value);

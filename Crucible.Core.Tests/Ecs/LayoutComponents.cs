@@ -1,7 +1,7 @@
 using Crucible.Core.Types;
 using Friflo.Engine.ECS;
 
-namespace Crucible.Core.Ecs;
+namespace Crucible.Core.Tests.Ecs;
 
 /// <summary>
 /// Component storing layout properties for an entity.

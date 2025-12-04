@@ -1,7 +1,7 @@
 using Crucible.Core.Types;
 using Friflo.Engine.ECS;
 
-namespace Crucible.Core.Ecs;
+namespace Crucible.Core.Tests.Ecs;
 
 /// <summary>
 /// Extension methods for Entity to provide a fluent API similar to the Rust morphorm tests.
