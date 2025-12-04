@@ -1,7 +1,8 @@
 using System.Numerics;
 using Ignis.Gfx;
+using Samples.Common;
 
-namespace Ignis.Samples;
+namespace Samples.Triangle;
 
 /// <summary>
 /// Simple colored triangle sample using the rendering abstractions.

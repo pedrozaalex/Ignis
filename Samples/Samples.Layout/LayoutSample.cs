@@ -4,9 +4,9 @@ using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 using Ignis.Gfx;
 using Ignis.Gfx.Backends.OpenGL;
-using Ignis.Samples.Layout;
+using Samples.Common;
 
-namespace Ignis.Samples;
+namespace Samples.Layout;
 
 /// <summary>
 /// Sample demonstrating CrucibleUI layout engine with rendered shapes and text.
@@ -22,21 +22,18 @@ public class LayoutSample : GraphicsSample
     private bool _needsLayout = true;
     private FontHandle _font;
     
-protected override void Load()
+    protected override void Load()
     {
         _store = new EntityStore();
         _cache = new LayoutCache();
         _subLayout = new SubLayoutContext();
         
-        // Load a default font
         _font = LoadFont();
-        
         BuildLayoutTree();
     }
     
     private FontHandle LoadFont()
     {
-        // Try common system font paths
         string[] fontPaths = 
         {
             @"C:\Windows\Fonts\segoeui.ttf",
@@ -60,7 +57,6 @@ protected override void Load()
     
     private void BuildLayoutTree()
     {
-        // Root container
         _root = _store.CreateEntity();
         _root.AddComponent(new LayoutProperties
         {
@@ -86,7 +82,6 @@ protected override void Load()
             PaddingRight = Units.Pixels(15)
         }, new ShapeColor(0.2f, 0.2f, 0.25f));
         
-        // Logo placeholder
         var logo = CreateChild(header, new LayoutProperties
         {
             Width = Units.Pixels(40),
@@ -95,15 +90,13 @@ protected override void Load()
         }, ShapeColor.Blue);
         logo.AddComponent(new TextLabel("◆", 24f));
         
-        // Title
         var title = CreateChild(header, new LayoutProperties
         {
             Width = Units.Stretch(1),
             Height = Units.Stretch(1)
-        }, new ShapeColor(0, 0, 0, 0)); // Transparent
+        }, new ShapeColor(0, 0, 0, 0));
         title.AddComponent(new TextLabel("Layout Sample", 20f));
         
-        // Menu buttons
         CreateMenuButton(header, "File");
         CreateMenuButton(header, "Edit");
         CreateMenuButton(header, "View");
@@ -130,7 +123,6 @@ protected override void Load()
             VerticalGap = Units.Pixels(4)
         }, new ShapeColor(0.18f, 0.18f, 0.22f));
         
-        // Sidebar items
         CreateSidebarItem(sidebar, "Dashboard", ShapeColor.Blue);
         CreateSidebarItem(sidebar, "Projects", ShapeColor.Green);
         CreateSidebarItem(sidebar, "Tasks", ShapeColor.Yellow);
@@ -150,7 +142,6 @@ protected override void Load()
             VerticalGap = Units.Pixels(15)
         }, new ShapeColor(0.15f, 0.15f, 0.18f));
         
-        // Content header
         var contentHeader = CreateChild(content, new LayoutProperties
         {
             Width = Units.Stretch(1),
@@ -181,7 +172,6 @@ protected override void Load()
             HorizontalGap = Units.Pixels(15)
         }, new ShapeColor(0, 0, 0, 0));
         
-        // Chart placeholder
         var chart = CreateChild(mainGrid, new LayoutProperties
         {
             LayoutType = LayoutType.Column,
@@ -207,7 +197,6 @@ protected override void Load()
         }, new ShapeColor(0.25f, 0.25f, 0.3f));
         chartArea.AddComponent(new TextLabel("Chart Placeholder", 14f, 0.5f, 0.5f, 0.5f));
         
-        // Activity list
         var activity = CreateChild(mainGrid, new LayoutProperties
         {
             LayoutType = LayoutType.Column,
@@ -274,7 +263,6 @@ protected override void Load()
             HorizontalGap = Units.Pixels(10)
         }, new ShapeColor(0.22f, 0.22f, 0.28f));
         
-        // Accent dot
         CreateChild(item, new LayoutProperties
         {
             Width = Units.Pixels(8),
@@ -282,7 +270,6 @@ protected override void Load()
             Top = Units.Pixels(14)
         }, accentColor);
         
-        // Label
         var labelEntity = CreateChild(item, new LayoutProperties
         {
             Width = Units.Stretch(1),
@@ -304,14 +291,12 @@ protected override void Load()
             PaddingBottom = Units.Pixels(12)
         }, new ShapeColor(0.2f, 0.2f, 0.25f));
         
-        // Accent bar at top
         CreateChild(card, new LayoutProperties
         {
             Width = Units.Stretch(1),
             Height = Units.Pixels(4)
         }, accentColor);
         
-        // Title
         var titleEntity = CreateChild(card, new LayoutProperties
         {
             Width = Units.Stretch(1),
@@ -320,7 +305,6 @@ protected override void Load()
         }, new ShapeColor(0, 0, 0, 0));
         titleEntity.AddComponent(new TextLabel(title, 12f, 0.6f, 0.6f, 0.6f));
         
-        // Value
         var valueEntity = CreateChild(card, new LayoutProperties
         {
             Width = Units.Stretch(1),
@@ -384,7 +368,7 @@ protected override void Load()
             Target = RenderTargetHandle.Screen,
             ClearColor = new Color4(0.08f, 0.08f, 0.1f),
             ClearDepth = true,
-            Viewport = new Gfx.Rect(0, 0, Width, Height)
+            Viewport = new Ignis.Gfx.Rect(0, 0, Width, Height)
         };
         
         RenderingServer.BeginPass(pass);
@@ -395,15 +379,11 @@ protected override void Load()
         commands.SetProjectionMatrix(projection);
         commands.SetViewMatrix(Matrix4x4.Identity);
         
-        // Render all quads first
         RenderQuads(_root, commands, 0, 0);
         
         RenderingServer.Submit(commands);
-        
-        // End pass flushes the 2D batch (draws shapes)
         RenderingServer.EndPass();
         
-        // Render text AFTER shapes so it appears on top
         RenderText(_root, projection, 0, 0);
     }
     
@@ -438,7 +418,6 @@ protected override void Load()
         float absX = parentX + bounds.PosX;
         float absY = parentY + bounds.PosY;
         
-        // Render text if entity has a TextLabel
         if (entity.TryGetComponent<TextLabel>(out var label) && !string.IsNullOrEmpty(label.Text))
         {
             if (RenderingServer is OpenGLRenderingServer { FontRenderer: not null } glServer)
@@ -454,10 +433,9 @@ protected override void Load()
                         (byte)(label.A * 255)
                     );
                     
-                    // Center text vertically in the bounds
                     var textSize = font.MeasureString(label.Text);
                     float textY = absY + (bounds.Height - textSize.Y) / 2;
-                    float textX = absX + 5; // Small left padding
+                    float textX = absX + 5;
                     
                     glServer.FontRenderer.Begin(projection);
                     font.DrawText(glServer.FontRenderer, label.Text, new Vector2(textX, textY), textColor);

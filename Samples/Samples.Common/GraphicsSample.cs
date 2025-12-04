@@ -3,7 +3,7 @@ using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 using Ignis.Gfx;
 
-namespace Ignis.Samples;
+namespace Samples.Common;
 
 /// <summary>
 /// Base class for graphics samples. Extends Scene to integrate with the engine.
@@ -24,7 +24,6 @@ public abstract class GraphicsSample : Scene
     
     public override void OnEnter(EngineContext context)
     {
-        // Server is injected via the SampleRunner
         if (context is SampleContext sampleContext)
         {
             RenderingServer = sampleContext.RenderingServer;

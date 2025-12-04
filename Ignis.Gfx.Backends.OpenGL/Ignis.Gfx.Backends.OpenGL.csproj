@@ -11,6 +11,7 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Ignis.Gfx.Samples"/>
         <InternalsVisibleTo Include="Ignis.Samples"/>
+        <InternalsVisibleTo Include="Samples.Layout"/>
     </ItemGroup>
 
     <ItemGroup>

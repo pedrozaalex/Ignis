@@ -2,7 +2,7 @@ using CrucibleUI.Interfaces;
 using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 
-namespace Ignis.Samples.Layout;
+namespace Samples.Layout;
 
 /// <summary>
 /// Component storing layout properties for an entity.

@@ -9,11 +9,9 @@ Ensure your project references the following packages:
 
 ```xml
 <PackageReference Include="FontStashSharp.PlatformAgnostic" Version="..." />
-<PackageReference Include="Silk.NET.Input" Version="2.15.0" />
-<PackageReference Include="Silk.NET.OpenGL" Version="2.15.0" />
-<PackageReference Include="Silk.NET.Windowing" Version="2.15.0" />
-<!-- Optional: For complex scripts (Arabic, Hindi, etc.) -->
-<PackageReference Include="FontStashSharp.TextShapers.HarfBuzz" Version="..." />
+<PackageReference Include="Silk.NET.Input" Version="2.22.0" />
+<PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+<PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
 ```
 
 ## 2. Implementing the Backend
