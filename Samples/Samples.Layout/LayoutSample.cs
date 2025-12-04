@@ -247,7 +247,7 @@ public class LayoutSample : GraphicsSample
         {
             Width = Units.Pixels(60),
             Height = Units.Pixels(30),
-            Top = Units.Pixels(10)
+            Top = Units.Pixels(10),
         }, new ShapeColor(0.25f, 0.25f, 0.3f));
         btn.AddComponent(new TextLabel(label, 14f));
     }
@@ -422,10 +422,9 @@ public class LayoutSample : GraphicsSample
         {
             if (RenderingServer is OpenGLRenderingServer { FontRenderer: not null } glServer)
             {
-                var fontSystem = glServer.GetFontSystem(_font);
-                if (fontSystem != null)
+                var font = glServer.GetFont(_font, label.FontSize);
+                if (font != null)
                 {
-                    var font = fontSystem.GetFont(label.FontSize);
                     var textColor = new FontStashSharp.FSColor(
                         (byte)(label.R * 255),
                         (byte)(label.G * 255),

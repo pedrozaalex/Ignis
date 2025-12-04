@@ -131,11 +131,12 @@ internal sealed class GLFontRenderer : IFontStashRenderer2, IDisposable
         _vertices[offset + 1] = v.Position.Y;
         _vertices[offset + 2] = v.Position.Z;
         
-        // Color (non-premultiplied)
-        _vertices[offset + 3] = v.Color.R / 255f;
-        _vertices[offset + 4] = v.Color.G / 255f;
-        _vertices[offset + 5] = v.Color.B / 255f;
-        _vertices[offset + 6] = v.Color.A / 255f;
+        // Color (premultiplied alpha for better blending)
+        float a = v.Color.A / 255f;
+        _vertices[offset + 3] = (v.Color.R / 255f) * a;
+        _vertices[offset + 4] = (v.Color.G / 255f) * a;
+        _vertices[offset + 5] = (v.Color.B / 255f) * a;
+        _vertices[offset + 6] = a;
         
         // TexCoord
         _vertices[offset + 7] = v.TextureCoordinate.X;
@@ -156,7 +157,8 @@ internal sealed class GLFontRenderer : IFontStashRenderer2, IDisposable
         // Setup state for text rendering
         _gl.Disable(EnableCap.DepthTest);
         _gl.Enable(EnableCap.Blend);
-        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        // Use premultiplied alpha blending for better text quality
+        _gl.BlendFunc(BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         
         _shader.Use();
         _shader.SetMat4("uTransform", _transform);
