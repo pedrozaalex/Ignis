@@ -23,7 +23,7 @@ public class TriangleSample : GraphicsSample
         };
         
         var indices = new uint[] { 0, 1, 2 };
-        _triangleMesh = Gfx.CreateMesh(new MeshData(vertices, indices));
+        _triangleMesh = RenderingServer.CreateMesh(new MeshData(vertices, indices));
     }
     
     protected override void OnUpdate(float deltaTime)
@@ -41,21 +41,21 @@ public class TriangleSample : GraphicsSample
             Viewport = new Rect(0, 0, Width, Height)
         };
         
-        Gfx.BeginPass(pass);
+        RenderingServer.BeginPass(pass);
         
         var aspect = (float)Width / Height;
         var projection = Matrix4x4.CreateOrthographicOffCenter(-aspect, aspect, -1f, 1f, -10f, 10f);
         var view = Matrix4x4.Identity;
         var model = Matrix4x4.CreateRotationZ(_rotation * MathF.PI / 180f);
         
-        var commands = Gfx.CreateCommandList();
-        commands.SetPipeline(Gfx.DefaultShader3D);
+        var commands = RenderingServer.CreateCommandList();
+        commands.SetPipeline(RenderingServer.DefaultShader3D);
         commands.SetProjectionMatrix(projection);
         commands.SetViewMatrix(view);
         commands.DrawMesh(_triangleMesh, model);
-        Gfx.Submit(commands);
+        RenderingServer.Submit(commands);
         
-        Gfx.EndPass();
+        RenderingServer.EndPass();
     }
 }
 

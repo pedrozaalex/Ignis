@@ -9,6 +9,7 @@ using Silk.NET.Input;
 var samples = new GraphicsSample[]
 {
     new TriangleSample(),
+    new LayoutSample(),
 };
 
 var currentSampleIndex = 0;

@@ -185,9 +185,9 @@ public enum CommandType
 /// <summary>
 /// Union-style struct holding data for any render command.
 /// </summary>
-public struct RenderCommand
+public struct RenderCommand(CommandType type)
 {
-    public CommandType Type;
+    public CommandType Type = type;
     
     // Pipeline state
     public ShaderHandle Shader;
@@ -230,10 +230,5 @@ public struct RenderCommand
     
     // Debug
     public string? DebugMarker;
-    
-    public RenderCommand(CommandType type) : this()
-    {
-        Type = type;
-    }
 }
 

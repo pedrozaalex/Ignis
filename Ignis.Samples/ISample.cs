@@ -14,7 +14,7 @@ public abstract class GraphicsSample : Scene
     public abstract string Name { get; }
     
     /// <summary>The rendering server, set during OnEnter.</summary>
-    protected IRenderingServer Gfx { get; private set; } = null!;
+    protected IRenderingServer RenderingServer { get; private set; } = null!;
     
     /// <summary>Window width in pixels.</summary>
     protected int Width { get; private set; }
@@ -27,7 +27,7 @@ public abstract class GraphicsSample : Scene
         // Server is injected via the SampleRunner
         if (context is SampleContext sampleContext)
         {
-            Gfx = sampleContext.RenderingServer;
+            RenderingServer = sampleContext.RenderingServer;
             Width = sampleContext.Width;
             Height = sampleContext.Height;
         }

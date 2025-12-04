@@ -1,6 +1,6 @@
 namespace Ignis.Core.Tests;
 
-using Ignis.Core;
+using Core;
 using Ignis.Core.Assets;
 using Ignis.Core.Events;
 using Ignis.Core.IO;

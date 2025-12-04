@@ -1,6 +1,6 @@
 namespace Ignis.Core.Tests.Scenery;
 
-using Ignis.Core;
+using Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 

@@ -1,6 +1,6 @@
 namespace Ignis.Core.Tests;
 
-using Ignis.Core;
+using Core;
 using Ignis.Core.Timing;
 
 public class EngineLoopTests

@@ -61,7 +61,7 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     /// </summary>
     public void Initialize(Window window)
     {
-        var gl = Silk.NET.OpenGL.GL.GetApi(window.NativeWindow);
+        var gl = GL.GetApi(window.NativeWindow);
         InitializeWithContext(gl, window.Width, window.Height);
     }
     
@@ -342,18 +342,30 @@ public sealed class OpenGLRenderingServer : IRenderingServer
                 break;
                 
             case CommandType.DrawQuad:
+                Setup2DShaderIfNeeded();
                 _batch2D?.DrawQuad(cmd.Position, cmd.Size, cmd.Color);
                 break;
                 
             case CommandType.DrawLine:
+                Setup2DShaderIfNeeded();
                 _batch2D?.DrawLine(cmd.Position, cmd.LineEnd, cmd.Color, cmd.Thickness);
                 break;
                 
             case CommandType.DrawSprite:
+                Setup2DShaderIfNeeded();
                 if (_textures.TryGetValue(cmd.Texture.Id, out var spriteTex))
                     _batch2D?.DrawQuad(cmd.Position, cmd.Size, cmd.Color, spriteTex.Handle);
                 break;
         }
+    }
+    
+    private void Setup2DShaderIfNeeded()
+    {
+        if (!_shaders.TryGetValue(_currentShader.Id, out var shader)) return;
+        
+        shader.Use();
+        shader.SetMat4("uProjection", _currentProjection);
+        shader.SetInt("uUseTexture", 0);
     }
     
     private void DrawMeshInternal(MeshHandle meshHandle, Matrix4x4 worldMatrix)
@@ -466,11 +478,32 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     
     public void EndPass()
     {
+        if (_gl == null) return;
+        
+        // Set up state for 2D rendering
+        // Use LessEqual so overlapping quads at same Z pass, and disable depth writes
+        _gl.DepthFunc(DepthFunction.Lequal);
+        _gl.DepthMask(false);
+        _gl.Enable(EnableCap.Blend);
+        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        
+        // Set up 2D shader before flushing batch
+        if (_shaders.TryGetValue(_defaultShader2D.Id, out var shader2D))
+        {
+            shader2D.Use();
+            shader2D.SetMat4("uProjection", _currentProjection);
+            shader2D.SetInt("uUseTexture", 0);
+        }
+        
         // Flush 2D batch
         _batch2D?.End();
         
+        // Restore default depth state
+        _gl.DepthFunc(DepthFunction.Less);
+        _gl.DepthMask(true);
+        
         // Unbind render target
-        _gl?.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        _gl.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
     }
     
     public void SwapBuffers()
