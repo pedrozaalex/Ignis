@@ -1,6 +1,6 @@
 using System;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>
 /// Null rendering server for testing and headless operation.

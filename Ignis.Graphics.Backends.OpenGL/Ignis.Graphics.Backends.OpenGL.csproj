@@ -9,7 +9,7 @@
 
     <!-- Allow samples project access to internal members for debugging/testing -->
     <ItemGroup>
-        <InternalsVisibleTo Include="Ignis.Gfx.Samples"/>
+        <InternalsVisibleTo Include="Ignis.Graphics.Samples"/>
         <InternalsVisibleTo Include="Ignis.Samples"/>
         <InternalsVisibleTo Include="Samples.Layout"/>
     </ItemGroup>
@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Ignis.Gfx\Ignis.Gfx.csproj"/>
+        <ProjectReference Include="..\Ignis.Graphics\Ignis.Graphics.csproj" />
     </ItemGroup>
 
 </Project>

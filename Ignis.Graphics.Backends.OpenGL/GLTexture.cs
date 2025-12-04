@@ -2,7 +2,7 @@ using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace Ignis.Gfx.Backends.OpenGL;
+namespace Ignis.Graphics.Backends.OpenGL;
 
 /// <summary>
 /// Wraps an OpenGL texture.

@@ -1,7 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>RGBA color with float components.</summary>
 [StructLayout(LayoutKind.Sequential)]

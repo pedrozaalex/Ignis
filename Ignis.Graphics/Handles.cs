@@ -1,6 +1,6 @@
 using System;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>Handle to an uploaded mesh resource on the GPU.</summary>
 public readonly struct MeshHandle : IEquatable<MeshHandle>

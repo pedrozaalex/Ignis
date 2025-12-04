@@ -8,7 +8,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />
-        <ProjectReference Include="..\..\Ignis.Gfx\Ignis.Gfx.csproj" />
+        <ProjectReference Include="..\..\Ignis.Graphics\Ignis.Graphics.csproj" />
     </ItemGroup>
 
 </Project>

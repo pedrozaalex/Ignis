@@ -1,7 +1,7 @@
 using System.Numerics;
 using Silk.NET.OpenGL;
 
-namespace Ignis.Gfx.Backends.OpenGL;
+namespace Ignis.Graphics.Backends.OpenGL;
 
 /// <summary>
 /// Wraps an OpenGL shader program (vertex + fragment).

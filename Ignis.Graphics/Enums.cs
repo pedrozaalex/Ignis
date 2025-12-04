@@ -1,4 +1,4 @@
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>Blend mode for draw operations.</summary>
 public enum BlendMode

@@ -1,4 +1,4 @@
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>
 /// Tracks GPU resource handles and manages their lifetimes.

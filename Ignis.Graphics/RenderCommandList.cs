@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>
 /// Base command list that records commands into a buffer.

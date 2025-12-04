@@ -4,9 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrucibleUI", "CrucibleUI\Cr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrucibleUI.Tests", "CrucibleUI.Tests\CrucibleUI.Tests.csproj", "{A8C3C614-0372-4343-8B12-C12AD03B38A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Gfx", "Ignis.Gfx\Ignis.Gfx.csproj", "{5E76FE1C-9656-424A-A232-413CC57F4677}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Graphics", "Ignis.Graphics\Ignis.Graphics.csproj", "{5E76FE1C-9656-424A-A232-413CC57F4677}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Gfx.Backends.OpenGL", "Ignis.Gfx.Backends.OpenGL\Ignis.Gfx.Backends.OpenGL.csproj", "{69730A6E-F074-4335-8288-19CEB64705A9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Graphics.Backends.OpenGL", "Ignis.Graphics.Backends.OpenGL\Ignis.Graphics.Backends.OpenGL.csproj", "{69730A6E-F074-4335-8288-19CEB64705A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Core", "Ignis.Core\Ignis.Core.csproj", "{22F33E4A-64EE-451F-AF6B-87253ACC16D9}"
 EndProject

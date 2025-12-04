@@ -1,7 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>Standard vertex format for 3D meshes.</summary>
 [StructLayout(LayoutKind.Sequential)]

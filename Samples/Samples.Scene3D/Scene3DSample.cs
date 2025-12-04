@@ -1,7 +1,7 @@
 using System.Numerics;
 using Ignis.Core;
-using Ignis.Gfx;
-using Ignis.Gfx.Backends.OpenGL;
+using Ignis.Graphics;
+using Ignis.Graphics.Backends.OpenGL;
 using Samples.Common;
 using Silk.NET.Input;
 

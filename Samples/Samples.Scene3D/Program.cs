@@ -1,7 +1,7 @@
 using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
-using Ignis.Gfx.Backends.OpenGL;
+using Ignis.Graphics.Backends.OpenGL;
 using Samples.Common;
 
 var sample = new Samples.Scene3D.Scene3DSample();

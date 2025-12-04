@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>
 /// Records rendering commands for deferred execution.

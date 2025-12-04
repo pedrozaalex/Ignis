@@ -1,5 +1,5 @@
 using System.Numerics;
-using Ignis.Gfx;
+using Ignis.Graphics;
 using Samples.Common;
 
 namespace Samples.Triangle;

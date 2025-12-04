@@ -2,7 +2,7 @@ using System.Drawing;
 using FontStashSharp.Interfaces;
 using Silk.NET.OpenGL;
 
-namespace Ignis.Gfx.Backends.OpenGL;
+namespace Ignis.Graphics.Backends.OpenGL;
 
 /// <summary>
 /// FontStashSharp texture manager implementation for OpenGL.

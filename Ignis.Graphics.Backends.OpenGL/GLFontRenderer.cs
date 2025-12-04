@@ -3,7 +3,7 @@ using FontStashSharp;
 using FontStashSharp.Interfaces;
 using Silk.NET.OpenGL;
 
-namespace Ignis.Gfx.Backends.OpenGL;
+namespace Ignis.Graphics.Backends.OpenGL;
 
 /// <summary>
 /// FontStashSharp renderer implementation for OpenGL.

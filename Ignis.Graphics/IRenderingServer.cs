@@ -1,4 +1,4 @@
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>
 /// Main rendering server interface. Manages GPU resources and command execution.

@@ -1,4 +1,4 @@
-namespace Ignis.Gfx.Backends.OpenGL;
+namespace Ignis.Graphics.Backends.OpenGL;
 
 /// <summary>
 /// Default GLSL shaders for the OpenGL backend.

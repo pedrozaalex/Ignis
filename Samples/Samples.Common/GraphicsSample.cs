@@ -1,7 +1,7 @@
 using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
-using Ignis.Gfx;
+using Ignis.Graphics;
 
 namespace Samples.Common;
 

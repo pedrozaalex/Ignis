@@ -1,6 +1,6 @@
 using Silk.NET.OpenGL;
 
-namespace Ignis.Gfx.Backends.OpenGL;
+namespace Ignis.Graphics.Backends.OpenGL;
 
 /// <summary>
 /// Wraps an OpenGL buffer (VBO or EBO).

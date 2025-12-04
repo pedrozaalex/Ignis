@@ -2,8 +2,8 @@ using System.Numerics;
 using CrucibleUI;
 using CrucibleUI.Types;
 using Friflo.Engine.ECS;
-using Ignis.Gfx;
-using Ignis.Gfx.Backends.OpenGL;
+using Ignis.Graphics;
+using Ignis.Graphics.Backends.OpenGL;
 using Samples.Common;
 
 namespace Samples.Layout;
@@ -368,7 +368,7 @@ public class LayoutSample : GraphicsSample
             Target = RenderTargetHandle.Screen,
             ClearColor = new Color4(0.08f, 0.08f, 0.1f),
             ClearDepth = true,
-            Viewport = new Ignis.Gfx.Rect(0, 0, Width, Height)
+            Viewport = new Ignis.Graphics.Rect(0, 0, Width, Height)
         };
         
         RenderingServer.BeginPass(pass);

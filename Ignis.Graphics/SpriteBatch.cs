@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Ignis.Gfx;
+namespace Ignis.Graphics;
 
 /// <summary>
 /// Batches 2D sprite draw calls into efficient batches.
