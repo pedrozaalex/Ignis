@@ -35,6 +35,8 @@ window.OnLoad += () =>
 
     gameContext = new BreakoutContext(server, window.Width, window.Height, window);
     gameContext.Initialize();
+    gameContext.Audio.Initialize();
+    gameContext.Audio.UpdateFromSettings(gameContext.Settings);
 
     sceneManager = new SceneManager(gameContext);
 
@@ -46,6 +48,7 @@ window.OnLoad += () =>
     engineLoop.OnFixedUpdate += time =>
     {
         sceneManager.Update(time);
+        gameContext.Audio.Update();
     };
 
     engineLoop.OnRender += time =>

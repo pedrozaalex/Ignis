@@ -11,6 +11,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Samples.Common\Samples.Common.csproj" />
         <ProjectReference Include="..\..\CrucibleUI\CrucibleUI.csproj" />
+        <ProjectReference Include="..\..\Ignis.Audio\Ignis.Audio.csproj" />
         <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />
         <ProjectReference Include="..\..\Ignis.Graphics\Ignis.Graphics.csproj" />
         <ProjectReference

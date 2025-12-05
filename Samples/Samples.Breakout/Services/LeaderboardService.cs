@@ -5,7 +5,7 @@ namespace Samples.Breakout.Services;
 /// <summary>
 /// Represents a single leaderboard entry.
 /// </summary>
-public record LeaderboardEntry(string Initials, int Score, int Level, DateTime Date);
+public record LeaderboardEntry(string Name, int Score, int Level, DateTime Date);
 
 /// <summary>
 /// Manages high scores with optional file persistence.
@@ -14,30 +14,35 @@ public sealed class LeaderboardService
 {
     private const int MaxEntries = 10;
     private const string FileName = "leaderboard.json";
-    
+
     private List<LeaderboardEntry> _entries = [];
-    
+
     public IReadOnlyList<LeaderboardEntry> Entries => _entries;
-    
-    public bool IsHighScore(int score) => 
+
+    public bool IsHighScore(int score) =>
         _entries.Count < MaxEntries || score > _entries[^1].Score;
-    
-    public void AddEntry(string initials, int score, int level)
+
+    public int AddEntry(string name, int score, int level)
     {
         var entry = new LeaderboardEntry(
-            initials.ToUpperInvariant().PadRight(3)[..3],
+            name.Length > 10 ? name[..10] : name,
             score,
             level,
             DateTime.Now
         );
-        
+
         _entries.Add(entry);
         _entries = _entries
             .OrderByDescending(e => e.Score)
             .Take(MaxEntries)
             .ToList();
+
+        return _entries.IndexOf(entry);
     }
-    
+
+    public List<LeaderboardEntry> GetTopEntries(int count) =>
+        _entries.Take(count).ToList();
+
     public void Load()
     {
         try
@@ -57,7 +62,7 @@ public sealed class LeaderboardService
             _entries = [];
         }
     }
-    
+
     public void Save()
     {
         try
@@ -66,10 +71,10 @@ public sealed class LeaderboardService
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
-            
-            var json = JsonSerializer.Serialize(_entries, new JsonSerializerOptions 
-            { 
-                WriteIndented = true 
+
+            var json = JsonSerializer.Serialize(_entries, new JsonSerializerOptions
+            {
+                WriteIndented = true
             });
             File.WriteAllText(path, json);
         }
@@ -78,7 +83,7 @@ public sealed class LeaderboardService
             Console.WriteLine($"Failed to save leaderboard: {ex.Message}");
         }
     }
-    
+
     private static string GetSavePath()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
