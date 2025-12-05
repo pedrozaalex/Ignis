@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />
+        <ProjectReference Include="..\..\Ignis.Graphics\Ignis.Graphics.csproj" />
+        <ProjectReference
+            Include="..\..\Ignis.Graphics.Backends.OpenGL\Ignis.Graphics.Backends.OpenGL.csproj" />
+        <ProjectReference Include="..\..\Ignis.Audio\Ignis.Audio.csproj" />
+        <ProjectReference Include="..\Samples.Common\Samples.Common.csproj" />
+    </ItemGroup>
+
+</Project>
