@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using Ignis.Core;
 using Ignis.Core.Scenery;
@@ -44,6 +45,13 @@ public sealed class GameScene : Scene, ITowerDefenseScene
     private (int x, int y)? _hoveredCell;
     private bool _canPlaceAtHovered;
 
+    // FPS counter
+    private readonly Stopwatch _fpsStopwatch = Stopwatch.StartNew();
+    private int _fpsFrameCount;
+    private int _displayFps;
+    private float _displayFrameTimeMs;
+    private const long FpsUpdateIntervalMs = 500;
+
     // Constants
     private const float TileSize = 60f;
     private const float PathWidth = 40f;
@@ -89,6 +97,18 @@ public sealed class GameScene : Scene, ITowerDefenseScene
     public override void Update(GameTime time)
     {
         var dt = time.DeltaTime;
+
+        // Update FPS counter using system time
+        _fpsFrameCount++;
+        var elapsedMs = _fpsStopwatch.ElapsedMilliseconds;
+        if (elapsedMs >= FpsUpdateIntervalMs)
+        {
+            _displayFps = (int)(_fpsFrameCount * 1000L / elapsedMs);
+            _displayFrameTimeMs = (float)elapsedMs / _fpsFrameCount;
+            _fpsFrameCount = 0;
+            _fpsStopwatch.Restart();
+        }
+
         var input = _context.GetInput();
         if (input == null) return;
 
@@ -717,13 +737,12 @@ public sealed class GameScene : Scene, ITowerDefenseScene
             var baseSize = 30f;
             commands.DrawQuad(turret.Position - new Vector2(baseSize / 2), new Vector2(baseSize, baseSize), color);
 
-            // Barrel (simplified as a line toward target)
+            // Barrel - draw as a thick line pointing toward target
             var barrelLength = 20f;
-            var barrelEnd = turret.Position + new Vector2(MathF.Cos(turret.Rotation), MathF.Sin(turret.Rotation)) * barrelLength;
-            var barrelDir = Vector2.Normalize(barrelEnd - turret.Position);
-            var barrelPerp = new Vector2(-barrelDir.Y, barrelDir.X) * 4f;
-
-            commands.DrawQuad(turret.Position - barrelPerp, new Vector2(barrelLength, 8f), new Color4(color.R * 0.8f, color.G * 0.8f, color.B * 0.8f, color.A));
+            var barrelDir = new Vector2(MathF.Cos(turret.Rotation), MathF.Sin(turret.Rotation));
+            var barrelEnd = turret.Position + barrelDir * barrelLength;
+            var barrelColor = new Color4(color.R * 0.8f, color.G * 0.8f, color.B * 0.8f, color.A);
+            commands.DrawLine(turret.Position, barrelEnd, barrelColor, 8f);
 
             // Range indicator when selected (simplified)
             if (_phase == GamePhase.Build && _hoveredCell.HasValue &&
@@ -814,6 +833,9 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         // Top bar background
         commands.DrawQuad(Vector2.Zero, new Vector2(_width, 70f), new Color4(0.1f, 0.08f, 0.15f, 0.9f));
 
+        // FPS counter (top left)
+        UIRenderer.DrawText(commands, _context.Font, $"FPS: {_displayFps} ({_displayFrameTimeMs:F1}ms)", 10f, 5f, 12f, new Color4(0.6f, 0.6f, 0.6f, 1f));
+
         // Level info
         UIRenderer.DrawText(commands, _context.Font, $"Level {_context.CurrentLevel}: {_level.Name}", 20f, 20f, 18f, Color4.White);
 
@@ -883,13 +905,12 @@ public sealed class GameScene : Scene, ITowerDefenseScene
                 TurretType.Freezer => new Color4(0.4f, 0.8f, 0.9f, 1f),
                 _ => Color4.White
             };
-            commands.DrawQuad(new Vector2(x + 25f, panelY + 20f), new Vector2(30f, 20f), iconColor);
+            commands.DrawQuad(new Vector2(x + 25f, panelY + 15f), new Vector2(30f, 18f), iconColor);
 
-            // Name and cost
+            // Name and cost - adjusted to fit within panel (panelY+10 to panelY+70)
             var textColor = canAfford ? Color4.White : new Color4(0.5f, 0.3f, 0.3f, 1f);
-            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"[{i + 1}]", x + 40f, panelY + 52f, 10f, new Color4(0.6f, 0.6f, 0.7f, 1f));
-            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, def.Name, x + 40f, panelY + 65f, 12f, textColor);
-            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"${def.Cost}", x + 40f, panelY + 78f, 10f, new Color4(1f, 0.85f, 0.2f, canAfford ? 1f : 0.5f));
+            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"[{i + 1}] {def.Name}", x + 40f, panelY + 42f, 10f, textColor);
+            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"${def.Cost}", x + 40f, panelY + 56f, 10f, new Color4(1f, 0.85f, 0.2f, canAfford ? 1f : 0.5f));
         }
 
         // Instructions
