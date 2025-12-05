@@ -14,19 +14,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Core.Tests", "Ignis.C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{E282E124-214B-425F-B30C-08B838205CF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Common", "Samples\Samples.Common\Samples.Common.csproj", "{2BBA982A-DAB4-43AC-B686-85F7F213727F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Samples\Common\Common.csproj", "{2BBA982A-DAB4-43AC-B686-85F7F213727F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Triangle", "Samples\Samples.Triangle\Samples.Triangle.csproj", "{13AB38C5-08BC-41CF-96A3-E589DD24EFC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Triangle", "Samples\Triangle\Triangle.csproj", "{13AB38C5-08BC-41CF-96A3-E589DD24EFC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Layout", "Samples\Samples.Layout\Samples.Layout.csproj", "{6BF6FB39-8681-4457-B480-826AD0B964C6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Layout", "Samples\Layout\Layout.csproj", "{6BF6FB39-8681-4457-B480-826AD0B964C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Scene3D", "Samples\Samples.Scene3D\Samples.Scene3D.csproj", "{DA2AF0F2-FAE3-4D89-98A8-92AF78AEDC6F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scene3D", "Samples\Scene3D\Scene3D.csproj", "{DA2AF0F2-FAE3-4D89-98A8-92AF78AEDC6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Breakout", "Samples\Samples.Breakout\Samples.Breakout.csproj", "{CBF172A9-B21E-4048-842B-805CD26D1FBA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Breakout", "Samples\Breakout\Breakout.csproj", "{CBF172A9-B21E-4048-842B-805CD26D1FBA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Audio", "Ignis.Audio\Ignis.Audio.csproj", "{C768A3E8-D6C9-479B-AD90-D276D1694A08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.TowerDefense", "Samples\Samples.TowerDefense\Samples.TowerDefense.csproj", "{DA0C92D2-6C0C-4658-BA77-BB266E6928D8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TowerDefense", "Samples\TowerDefense\TowerDefense.csproj", "{DA0C92D2-6C0C-4658-BA77-BB266E6928D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

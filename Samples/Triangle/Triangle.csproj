@@ -6,15 +6,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>Samples.Triangle</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Samples.Common\Samples.Common.csproj" />
-        <ProjectReference Include="..\..\CrucibleUI\CrucibleUI.csproj" />
+        <ProjectReference Include="..\Common\Common.csproj" />
         <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />
         <ProjectReference Include="..\..\Ignis.Graphics\Ignis.Graphics.csproj" />
         <ProjectReference Include="..\..\Ignis.Graphics.Backends.OpenGL\Ignis.Graphics.Backends.OpenGL.csproj" />

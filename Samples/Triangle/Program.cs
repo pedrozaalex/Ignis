@@ -1,10 +1,11 @@
 using Ignis.Core;
 using Ignis.Core.Scenery;
-using Ignis.Core.Timing;
 using Ignis.Graphics.Backends.OpenGL;
 using Samples.Common;
+using Samples.Triangle;
+using Silk.NET.Input;
 
-var sample = new Samples.Triangle.TriangleSample();
+var sample = new TriangleSample();
 
 var server = new OpenGLRenderingServer();
 var engineLoop = new EngineLoop
@@ -45,7 +46,7 @@ window.OnLoad += () =>
 
 window.OnUpdate += _ =>
 {
-    if (window.InputState?.IsKeyPressed(Silk.NET.Input.Key.Escape) == true)
+    if (window.InputState?.IsKeyPressed(Key.Escape) == true)
     {
         window.Close();
         return;

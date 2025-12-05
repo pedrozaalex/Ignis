@@ -6,10 +6,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>Samples.Breakout</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Samples.Common\Samples.Common.csproj" />
+        <ProjectReference Include="..\Common\Common.csproj" />
         <ProjectReference Include="..\..\CrucibleUI\CrucibleUI.csproj" />
         <ProjectReference Include="..\..\Ignis.Audio\Ignis.Audio.csproj" />
         <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />

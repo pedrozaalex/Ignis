@@ -4,12 +4,13 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>Samples.Common</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\CrucibleUI\CrucibleUI.csproj" />
         <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />
         <ProjectReference Include="..\..\Ignis.Graphics\Ignis.Graphics.csproj" />
     </ItemGroup>
 
 </Project>
-

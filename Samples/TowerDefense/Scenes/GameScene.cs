@@ -3,6 +3,7 @@ using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 using Ignis.Graphics;
+using Samples.Common;
 using Samples.TowerDefense.Core;
 using Samples.TowerDefense.Services;
 using Silk.NET.Input;
@@ -814,20 +815,20 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         commands.DrawQuad(Vector2.Zero, new Vector2(_width, 70f), new Color4(0.1f, 0.08f, 0.15f, 0.9f));
 
         // Level info
-        DrawText(commands, $"Level {_context.CurrentLevel}: {_level.Name}", 20f, 20f, 18f, Color4.White);
+        UIRenderer.DrawText(commands, _context.Font, $"Level {_context.CurrentLevel}: {_level.Name}", 20f, 20f, 18f, Color4.White);
 
         // Wave info
         var waveText = _phase == GamePhase.Build
             ? $"Wave {_currentWave}/{_level.Waves.Count} - Press SPACE to start"
             : $"Wave {_currentWave}/{_level.Waves.Count}";
-        DrawText(commands, waveText, 20f, 45f, 14f, new Color4(0.7f, 0.7f, 0.8f, 1f));
+        UIRenderer.DrawText(commands, _context.Font, waveText, 20f, 45f, 14f, new Color4(0.7f, 0.7f, 0.8f, 1f));
 
         // Resources (right side)
         var rightX = _width - 250f;
 
-        DrawText(commands, $"Gold: {_context.Gold}", rightX, 15f, 18f, new Color4(1f, 0.85f, 0.2f, 1f));
-        DrawText(commands, $"Lives: {_context.Lives}", rightX, 38f, 18f, new Color4(1f, 0.4f, 0.4f, 1f));
-        DrawText(commands, $"Score: {_context.TotalScore}", rightX + 120f, 15f, 18f, Color4.White);
+        UIRenderer.DrawText(commands, _context.Font, $"Gold: {_context.Gold}", rightX, 15f, 18f, new Color4(1f, 0.85f, 0.2f, 1f));
+        UIRenderer.DrawText(commands, _context.Font, $"Lives: {_context.Lives}", rightX, 38f, 18f, new Color4(1f, 0.4f, 0.4f, 1f));
+        UIRenderer.DrawText(commands, _context.Font, $"Score: {_context.TotalScore}", rightX + 120f, 15f, 18f, Color4.White);
 
         // Phase-specific UI
         switch (_phase)
@@ -871,7 +872,7 @@ public sealed class GameScene : Scene, ITowerDefenseScene
 
             if (isSelected)
             {
-                DrawBorder(commands, x, panelY + 10f, 80f, 60f, 2f, new Color4(0.5f, 0.7f, 1f, 1f));
+                UIRenderer.DrawBorder(commands, x, panelY + 10f, 80f, 60f, 2f, new Color4(0.5f, 0.7f, 1f, 1f));
             }
 
             // Turret icon color
@@ -886,63 +887,44 @@ public sealed class GameScene : Scene, ITowerDefenseScene
 
             // Name and cost
             var textColor = canAfford ? Color4.White : new Color4(0.5f, 0.3f, 0.3f, 1f);
-            DrawCenteredText(commands, $"[{i + 1}]", x + 40f, panelY + 52f, 10f, new Color4(0.6f, 0.6f, 0.7f, 1f));
-            DrawCenteredText(commands, def.Name, x + 40f, panelY + 65f, 12f, textColor);
-            DrawCenteredText(commands, $"${def.Cost}", x + 40f, panelY + 78f, 10f, new Color4(1f, 0.85f, 0.2f, canAfford ? 1f : 0.5f));
+            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"[{i + 1}]", x + 40f, panelY + 52f, 10f, new Color4(0.6f, 0.6f, 0.7f, 1f));
+            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, def.Name, x + 40f, panelY + 65f, 12f, textColor);
+            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"${def.Cost}", x + 40f, panelY + 78f, 10f, new Color4(1f, 0.85f, 0.2f, canAfford ? 1f : 0.5f));
         }
 
         // Instructions
-        DrawCenteredText(commands, "Left Click: Place | Right Click: Sell | 1-2-3: Select Turret",
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Left Click: Place | Right Click: Sell | 1-2-3: Select Turret",
             _width / 2f, panelY - 10f, 12f, new Color4(0.5f, 0.5f, 0.6f, 1f));
     }
 
     private void RenderPauseOverlay(IRenderCommandList commands)
     {
         commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0f, 0f, 0f, 0.7f));
-        DrawCenteredText(commands, "PAUSED", _width / 2f, _height / 2f - 40f, 48f, Color4.White);
-        DrawCenteredText(commands, "Press Space/Escape to Resume", _width / 2f, _height / 2f + 20f, 18f,
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "PAUSED", _width / 2f, _height / 2f - 40f, 48f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Space/Escape to Resume", _width / 2f, _height / 2f + 20f, 18f,
             new Color4(0.7f, 0.7f, 0.8f, 1f));
-        DrawCenteredText(commands, "Press Q to Quit", _width / 2f, _height / 2f + 50f, 16f,
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Q to Quit", _width / 2f, _height / 2f + 50f, 16f,
             new Color4(0.6f, 0.6f, 0.7f, 1f));
     }
 
     private void RenderVictoryOverlay(IRenderCommandList commands)
     {
         commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0f, 0.1f, 0f, 0.7f));
-        DrawCenteredText(commands, "VICTORY!", _width / 2f, _height / 2f - 60f, 48f, new Color4(0.2f, 1f, 0.4f, 1f));
-        DrawCenteredText(commands, $"Level {_context.CurrentLevel} Complete", _width / 2f, _height / 2f - 10f, 24f, Color4.White);
-        DrawCenteredText(commands, $"Score: {_context.TotalScore}", _width / 2f, _height / 2f + 30f, 20f, Color4.White);
-        DrawCenteredText(commands, "Press Enter to Continue", _width / 2f, _height / 2f + 80f, 16f,
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "VICTORY!", _width / 2f, _height / 2f - 60f, 48f, new Color4(0.2f, 1f, 0.4f, 1f));
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Level {_context.CurrentLevel} Complete", _width / 2f, _height / 2f - 10f, 24f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Score: {_context.TotalScore}", _width / 2f, _height / 2f + 30f, 20f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Enter to Continue", _width / 2f, _height / 2f + 80f, 16f,
             new Color4(0.7f, 0.7f, 0.8f, 1f));
     }
 
     private void RenderGameOverOverlay(IRenderCommandList commands)
     {
         commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0.1f, 0f, 0f, 0.7f));
-        DrawCenteredText(commands, "GAME OVER", _width / 2f, _height / 2f - 60f, 48f, new Color4(1f, 0.3f, 0.3f, 1f));
-        DrawCenteredText(commands, $"Reached Wave {_currentWave}", _width / 2f, _height / 2f - 10f, 24f, Color4.White);
-        DrawCenteredText(commands, $"Final Score: {_context.TotalScore}", _width / 2f, _height / 2f + 30f, 20f, Color4.White);
-        DrawCenteredText(commands, "Press Enter to Continue", _width / 2f, _height / 2f + 80f, 16f,
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "GAME OVER", _width / 2f, _height / 2f - 60f, 48f, new Color4(1f, 0.3f, 0.3f, 1f));
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Reached Wave {_currentWave}", _width / 2f, _height / 2f - 10f, 24f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Final Score: {_context.TotalScore}", _width / 2f, _height / 2f + 30f, 20f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Enter to Continue", _width / 2f, _height / 2f + 80f, 16f,
             new Color4(0.7f, 0.7f, 0.8f, 1f));
-    }
-
-    private void DrawBorder(IRenderCommandList commands, float x, float y, float w, float h, float thickness, Color4 color)
-    {
-        commands.DrawQuad(new Vector2(x, y), new Vector2(w, thickness), color);
-        commands.DrawQuad(new Vector2(x, y + h - thickness), new Vector2(w, thickness), color);
-        commands.DrawQuad(new Vector2(x, y), new Vector2(thickness, h), color);
-        commands.DrawQuad(new Vector2(x + w - thickness, y), new Vector2(thickness, h), color);
-    }
-
-    private void DrawText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        commands.DrawText(_context.Font, text, new Vector2(x, y), size, color);
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, size);
-        commands.DrawText(_context.Font, text, new Vector2(x - textWidth / 2, y - textHeight / 2), size, color);
     }
 
     #endregion

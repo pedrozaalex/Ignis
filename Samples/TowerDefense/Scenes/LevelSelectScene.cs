@@ -3,6 +3,7 @@ using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 using Ignis.Graphics;
+using Samples.Common;
 using Samples.TowerDefense.Core;
 using Samples.TowerDefense.Services;
 using Silk.NET.Input;
@@ -16,6 +17,7 @@ public sealed class LevelSelectScene : Scene, ITowerDefenseScene
 {
     private readonly TowerDefenseContext _context;
     private readonly SceneManager _sceneManager;
+    private readonly UIRenderer _ui;
 
     private int _selectedLevel = 1;
     private int _width;
@@ -25,6 +27,7 @@ public sealed class LevelSelectScene : Scene, ITowerDefenseScene
     {
         _context = context;
         _sceneManager = sceneManager;
+        _ui = new UIRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
     }
@@ -110,7 +113,7 @@ public sealed class LevelSelectScene : Scene, ITowerDefenseScene
         commands.SetViewMatrix(Matrix4x4.Identity);
 
         // Title
-        DrawCenteredText(commands, "SELECT LEVEL", _width / 2f, 60f, 36f, Color4.White);
+        _ui.DrawCenteredText(commands, "SELECT LEVEL", _width / 2f, 60f, 36f, Color4.White);
 
         // Level grid
         var levelCount = _context.Levels.LevelCount;
@@ -137,41 +140,8 @@ public sealed class LevelSelectScene : Scene, ITowerDefenseScene
             var isSelected = level == _selectedLevel;
             var isUnlocked = level <= _context.Settings.HighestLevelUnlocked;
 
-            // Box background
-            Color4 boxColor;
-            if (isSelected)
-                boxColor = isUnlocked ? new Color4(0.3f, 0.5f, 0.8f, 1f) : new Color4(0.4f, 0.2f, 0.2f, 1f);
-            else if (isUnlocked)
-                boxColor = new Color4(0.15f, 0.2f, 0.3f, 1f);
-            else
-                boxColor = new Color4(0.1f, 0.1f, 0.15f, 0.5f);
-
-            commands.DrawQuad(new Vector2(x, y), new Vector2(boxSize, boxSize), boxColor);
-
-            // Border
-            if (isSelected)
-            {
-                var borderColor = isUnlocked ? new Color4(0.5f, 0.8f, 1f, 1f) : new Color4(0.8f, 0.3f, 0.3f, 1f);
-                DrawBorder(commands, x, y, boxSize, boxSize, 3f, borderColor);
-            }
-
-            // Level number
-            var numColor = isUnlocked ? Color4.White : new Color4(0.4f, 0.4f, 0.4f, 1f);
-            DrawCenteredText(commands, level.ToString(), x + boxSize / 2, y + 25f, 32f, numColor);
-
-            // Level name
             var levelData = _context.Levels.GetLevel(level);
-            if (levelData != null)
-            {
-                var nameColor = isUnlocked ? new Color4(0.7f, 0.7f, 0.8f, 1f) : new Color4(0.3f, 0.3f, 0.35f, 1f);
-                DrawCenteredText(commands, levelData.Name, x + boxSize / 2, y + 60f, 12f, nameColor);
-            }
-
-            // Lock icon for locked levels
-            if (!isUnlocked)
-            {
-                DrawCenteredText(commands, "[LOCKED]", x + boxSize / 2, y + 80f, 10f, new Color4(0.5f, 0.3f, 0.3f, 1f));
-            }
+            _ui.DrawLevelBox(commands, x, y, boxSize, level, levelData?.Name, isSelected, isUnlocked);
         }
 
         // Selected level info
@@ -181,33 +151,19 @@ public sealed class LevelSelectScene : Scene, ITowerDefenseScene
             var infoY = startY + gridHeight + 40f;
             var isUnlocked = _selectedLevel <= _context.Settings.HighestLevelUnlocked;
 
-            DrawCenteredText(commands, selectedData.Name, _width / 2f, infoY, 24f,
+            _ui.DrawCenteredText(commands, selectedData.Name, _width / 2f, infoY, 24f,
                 isUnlocked ? Color4.White : new Color4(0.5f, 0.5f, 0.5f, 1f));
 
             var wavesText = $"{selectedData.Waves.Count} Waves";
-            DrawCenteredText(commands, wavesText, _width / 2f, infoY + 35f, 16f, new Color4(0.6f, 0.6f, 0.7f, 1f));
+            _ui.DrawCenteredText(commands, wavesText, _width / 2f, infoY + 35f, 16f, new Color4(0.6f, 0.6f, 0.7f, 1f));
         }
 
         // Instructions
-        DrawCenteredText(commands, "Arrow Keys to Navigate, Enter to Play, Escape to Return",
+        _ui.DrawCenteredText(commands, "Arrow Keys to Navigate, Enter to Play, Escape to Return",
             _width / 2f, _height - 40f, 14f, new Color4(0.5f, 0.5f, 0.6f, 1f));
 
         server.Submit(commands);
         server.EndPass();
-    }
-
-    private void DrawBorder(IRenderCommandList commands, float x, float y, float w, float h, float thickness, Color4 color)
-    {
-        commands.DrawQuad(new Vector2(x, y), new Vector2(w, thickness), color); // Top
-        commands.DrawQuad(new Vector2(x, y + h - thickness), new Vector2(w, thickness), color); // Bottom
-        commands.DrawQuad(new Vector2(x, y), new Vector2(thickness, h), color); // Left
-        commands.DrawQuad(new Vector2(x + w - thickness, y), new Vector2(thickness, h), color); // Right
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, size);
-        commands.DrawText(_context.Font, text, new Vector2(x - textWidth / 2, y - textHeight / 2), size, color);
     }
 
     public void OnResize(int width, int height)

@@ -5,6 +5,7 @@ using Ignis.Core.Timing;
 using Ignis.Graphics;
 using Samples.Breakout.Core;
 using Samples.Breakout.Services;
+using Samples.Common;
 using Silk.NET.Input;
 
 namespace Samples.Breakout.Scenes;
@@ -520,30 +521,30 @@ public sealed class GameScene : Scene, IBreakoutScene
         switch (_state)
         {
             case GameState.Ready:
-                DrawCenteredText(commands, "Press SPACE to Launch", _width / 2f, _height - 100f, 24f, Color4.Yellow);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press SPACE to Launch", _width / 2f, _height - 100f, 24f, Color4.Yellow);
                 break;
             case GameState.Paused:
                 DrawOverlayBackground(commands);
-                DrawCenteredText(commands, "PAUSED", _width / 2f, _height / 2f - 30f, 48f, Color4.White);
-                DrawCenteredText(commands, "Press ENTER to Resume", _width / 2f, _height / 2f + 30f, 20f, Color4.Gray);
-                DrawCenteredText(commands, "Press ESC to Quit", _width / 2f, _height / 2f + 60f, 16f, Color4.Gray);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "PAUSED", _width / 2f, _height / 2f - 30f, 48f, Color4.White);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ENTER to Resume", _width / 2f, _height / 2f + 30f, 20f, Color4.Gray);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ESC to Quit", _width / 2f, _height / 2f + 60f, 16f, Color4.Gray);
                 break;
             case GameState.LevelComplete:
                 DrawOverlayBackground(commands);
-                DrawCenteredText(commands, "LEVEL COMPLETE!", _width / 2f, _height / 2f - 30f, 48f, new Color4(0.2f, 0.9f, 0.2f, 1f));
-                DrawCenteredText(commands, "Press ENTER to Continue", _width / 2f, _height / 2f + 30f, 20f, Color4.Gray);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "LEVEL COMPLETE!", _width / 2f, _height / 2f - 30f, 48f, new Color4(0.2f, 0.9f, 0.2f, 1f));
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ENTER to Continue", _width / 2f, _height / 2f + 30f, 20f, Color4.Gray);
                 break;
             case GameState.GameOver:
                 DrawOverlayBackground(commands);
-                DrawCenteredText(commands, "GAME OVER", _width / 2f, _height / 2f - 30f, 48f, new Color4(0.9f, 0.2f, 0.2f, 1f));
-                DrawCenteredText(commands, $"Final Score: {_context.Score}", _width / 2f, _height / 2f + 30f, 24f, Color4.White);
-                DrawCenteredText(commands, "Press ENTER to Continue", _width / 2f, _height / 2f + 70f, 20f, Color4.Gray);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "GAME OVER", _width / 2f, _height / 2f - 30f, 48f, new Color4(0.9f, 0.2f, 0.2f, 1f));
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Final Score: {_context.Score}", _width / 2f, _height / 2f + 30f, 24f, Color4.White);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ENTER to Continue", _width / 2f, _height / 2f + 70f, 20f, Color4.Gray);
                 break;
             case GameState.Victory:
                 DrawOverlayBackground(commands);
-                DrawCenteredText(commands, "VICTORY!", _width / 2f, _height / 2f - 30f, 48f, new Color4(1f, 0.8f, 0.2f, 1f));
-                DrawCenteredText(commands, $"Final Score: {_context.Score}", _width / 2f, _height / 2f + 30f, 24f, Color4.White);
-                DrawCenteredText(commands, "Press ENTER to Continue", _width / 2f, _height / 2f + 70f, 20f, Color4.Gray);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "VICTORY!", _width / 2f, _height / 2f - 30f, 48f, new Color4(1f, 0.8f, 0.2f, 1f));
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Final Score: {_context.Score}", _width / 2f, _height / 2f + 30f, 24f, Color4.White);
+                UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ENTER to Continue", _width / 2f, _height / 2f + 70f, 20f, Color4.Gray);
                 break;
         }
     }
@@ -551,13 +552,6 @@ public sealed class GameScene : Scene, IBreakoutScene
     private void DrawOverlayBackground(IRenderCommandList commands)
     {
         commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0, 0, 0, 0.7f));
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float fontSize, Color4 color)
-    {
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, fontSize);
-        commands.DrawText(_context.Font, text,
-            new Vector2(x - textWidth / 2, y - textHeight / 2), fontSize, color);
     }
 
     public void OnResize(int width, int height)

@@ -3,6 +3,7 @@ using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 using Ignis.Graphics;
+using Samples.Common;
 using Samples.TowerDefense.Core;
 using Samples.TowerDefense.Services;
 using Silk.NET.Input;
@@ -16,6 +17,7 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
 {
     private readonly TowerDefenseContext _context;
     private readonly SceneManager _sceneManager;
+    private readonly UIRenderer _ui;
 
     private int _selectedIndex;
     private readonly string[] _menuItems = ["New Game", "Level Select", "Settings", "Exit"];
@@ -28,6 +30,7 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
     {
         _context = context;
         _sceneManager = sceneManager;
+        _ui = new UIRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
     }
@@ -121,7 +124,7 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
 
         // Title with glow effect
         var titleY = 100f + MathF.Sin(_animTime * 2f) * 5f;
-        DrawCenteredText(commands, "TOWER DEFENSE", _width / 2f, titleY, 48f, new Color4(0.8f, 0.3f, 1f, 1f));
+        _ui.DrawCenteredText(commands, "TOWER DEFENSE", _width / 2f, titleY, 48f, new Color4(0.8f, 0.3f, 1f, 1f));
 
         // Menu items
         var menuStartY = 280f;
@@ -144,22 +147,16 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
                     new Vector2(boxWidth, boxHeight),
                     new Color4(0.4f, 0.2f, 0.6f, 0.5f)
                 );
-
-                // Selection arrows
-                DrawCenteredText(commands, "> ", _width / 2f - 120f, y, 28f, new Color4(1f, 0.8f, 0.2f, 1f));
-                DrawCenteredText(commands, " <", _width / 2f + 120f, y, 28f, new Color4(1f, 0.8f, 0.2f, 1f));
             }
 
-            var color = isSelected ? new Color4(1f, 1f, 1f, 1f) : new Color4(0.6f, 0.6f, 0.7f, 1f);
-            var size = isSelected ? 28f : 24f;
-            DrawCenteredText(commands, _menuItems[i], _width / 2f, y, size, color);
+            _ui.DrawMenuItem(commands, _menuItems[i], _width / 2f, y, isSelected);
         }
 
         // Instructions
-        DrawCenteredText(commands, "Use Arrow Keys to Navigate, Enter to Select", _width / 2f, _height - 80f, 16f, new Color4(0.5f, 0.5f, 0.6f, 1f));
+        _ui.DrawCenteredText(commands, "Use Arrow Keys to Navigate, Enter to Select", _width / 2f, _height - 80f, 16f, new Color4(0.5f, 0.5f, 0.6f, 1f));
 
         // Version
-        DrawText(commands, "v1.0", 10f, _height - 30f, 14f, new Color4(0.3f, 0.3f, 0.4f, 1f));
+        _ui.DrawText(commands, "v1.0", 10f, _height - 30f, 14f, new Color4(0.3f, 0.3f, 0.4f, 1f));
 
         server.Submit(commands);
         server.EndPass();
@@ -179,24 +176,13 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
             var x = (baseX + _animTime * 20f * speed) % _width;
             var y = baseY + MathF.Sin(_animTime + i) * 30f;
 
-            var alpha = 0.1f + (float)random.NextDouble() * 0.2f;
+            var particleAlpha = 0.1f + (float)random.NextDouble() * 0.2f;
             commands.DrawQuad(
                 new Vector2(x, y),
                 new Vector2(size, size),
-                new Color4(0.4f, 0.2f, 0.8f, alpha)
+                new Color4(0.4f, 0.2f, 0.8f, particleAlpha)
             );
         }
-    }
-
-    private void DrawText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        commands.DrawText(_context.Font, text, new Vector2(x, y), size, color);
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, size);
-        commands.DrawText(_context.Font, text, new Vector2(x - textWidth / 2, y - textHeight / 2), size, color);
     }
 
     public void OnResize(int width, int height)

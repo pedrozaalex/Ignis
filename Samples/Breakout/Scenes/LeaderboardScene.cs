@@ -4,6 +4,7 @@ using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 using Ignis.Graphics;
 using Samples.Breakout.Core;
+using Samples.Common;
 using Silk.NET.Input;
 
 namespace Samples.Breakout.Scenes;
@@ -120,7 +121,7 @@ public sealed class LeaderboardScene : Scene, IBreakoutScene
         commands.SetViewMatrix(Matrix4x4.Identity);
 
         // Title
-        DrawCenteredText(commands, "HIGH SCORES", _width / 2f, 60f, 36f, Color4.Yellow);
+        UIRenderer.DrawCenteredText(commands, server, _context.Font, "HIGH SCORES", _width / 2f, 60f, 36f, Color4.Yellow);
 
         if (_enteringName)
         {
@@ -137,10 +138,10 @@ public sealed class LeaderboardScene : Scene, IBreakoutScene
 
     private void DrawNameEntryUI(IRenderCommandList commands)
     {
-        DrawCenteredText(commands, "NEW HIGH SCORE!", _width / 2f, 120f, 28f, new Color4(0.2f, 0.9f, 0.2f, 1f));
-        DrawCenteredText(commands, $"Score: {_finalScore}", _width / 2f, 160f, 24f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "NEW HIGH SCORE!", _width / 2f, 120f, 28f, new Color4(0.2f, 0.9f, 0.2f, 1f));
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Score: {_finalScore}", _width / 2f, 160f, 24f, Color4.White);
 
-        DrawCenteredText(commands, "Enter Your Name:", _width / 2f, 220f, 20f, Color4.Gray);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Enter Your Name:", _width / 2f, 220f, 20f, Color4.Gray);
 
         // Name input box
         var boxWidth = 200f;
@@ -149,15 +150,12 @@ public sealed class LeaderboardScene : Scene, IBreakoutScene
         var boxY = 250f;
 
         commands.DrawQuad(new Vector2(boxX, boxY), new Vector2(boxWidth, boxHeight), new Color4(0.1f, 0.1f, 0.15f, 1f));
-        commands.DrawQuad(new Vector2(boxX, boxY), new Vector2(boxWidth, 2), Color4.Yellow);
-        commands.DrawQuad(new Vector2(boxX, boxY + boxHeight - 2), new Vector2(boxWidth, 2), Color4.Yellow);
-        commands.DrawQuad(new Vector2(boxX, boxY), new Vector2(2, boxHeight), Color4.Yellow);
-        commands.DrawQuad(new Vector2(boxX + boxWidth - 2, boxY), new Vector2(2, boxHeight), Color4.Yellow);
+        UIRenderer.DrawBorder(commands, boxX, boxY, boxWidth, boxHeight, 2f, Color4.Yellow);
 
         var displayName = _playerName + "_";
-        DrawCenteredText(commands, displayName, _width / 2f, boxY + boxHeight / 2, 24f, Color4.White);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, displayName, _width / 2f, boxY + boxHeight / 2, 24f, Color4.White);
 
-        DrawCenteredText(commands, "Press ENTER to Confirm", _width / 2f, _height - 40f, 14f, Color4.Gray);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ENTER to Confirm", _width / 2f, _height - 40f, 14f, Color4.Gray);
     }
 
     private void DrawLeaderboard(IRenderCommandList commands)
@@ -166,7 +164,7 @@ public sealed class LeaderboardScene : Scene, IBreakoutScene
 
         if (entries.Count == 0)
         {
-            DrawCenteredText(commands, "No high scores yet!", _width / 2f, _height / 2f, 24f, Color4.Gray);
+            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "No high scores yet!", _width / 2f, _height / 2f, 24f, Color4.Gray);
         }
         else
         {
@@ -174,13 +172,10 @@ public sealed class LeaderboardScene : Scene, IBreakoutScene
             const float rowHeight = 40f;
 
             // Header
-            if (_context.Font.IsValid)
-            {
-                commands.DrawText(_context.Font, "Rank", new Vector2(_width / 2f - 200, startY), 18f, Color4.Gray);
-                commands.DrawText(_context.Font, "Name", new Vector2(_width / 2f - 100, startY), 18f, Color4.Gray);
-                commands.DrawText(_context.Font, "Score", new Vector2(_width / 2f + 80, startY), 18f, Color4.Gray);
-                commands.DrawText(_context.Font, "Level", new Vector2(_width / 2f + 180, startY), 18f, Color4.Gray);
-            }
+            UIRenderer.DrawText(commands, _context.Font, "Rank", _width / 2f - 200, startY, 18f, Color4.Gray);
+            UIRenderer.DrawText(commands, _context.Font, "Name", _width / 2f - 100, startY, 18f, Color4.Gray);
+            UIRenderer.DrawText(commands, _context.Font, "Score", _width / 2f + 80, startY, 18f, Color4.Gray);
+            UIRenderer.DrawText(commands, _context.Font, "Level", _width / 2f + 180, startY, 18f, Color4.Gray);
 
             startY += 30f;
 
@@ -191,26 +186,14 @@ public sealed class LeaderboardScene : Scene, IBreakoutScene
                 var isNew = i == _newEntryIndex;
                 var color = isNew ? Color4.Yellow : Color4.White;
 
-                if (_context.Font.IsValid)
-                {
-                    commands.DrawText(_context.Font, $"{i + 1}.", new Vector2(_width / 2f - 200, y), 20f, color);
-                    commands.DrawText(_context.Font, entry.Name, new Vector2(_width / 2f - 100, y), 20f, color);
-                    commands.DrawText(_context.Font, entry.Score.ToString(), new Vector2(_width / 2f + 80, y), 20f, color);
-                    commands.DrawText(_context.Font, entry.Level.ToString(), new Vector2(_width / 2f + 180, y), 20f, color);
-                }
+                UIRenderer.DrawText(commands, _context.Font, $"{i + 1}.", _width / 2f - 200, y, 20f, color);
+                UIRenderer.DrawText(commands, _context.Font, entry.Name, _width / 2f - 100, y, 20f, color);
+                UIRenderer.DrawText(commands, _context.Font, entry.Score.ToString(), _width / 2f + 80, y, 20f, color);
+                UIRenderer.DrawText(commands, _context.Font, entry.Level.ToString(), _width / 2f + 180, y, 20f, color);
             }
         }
 
-        DrawCenteredText(commands, "Press ENTER or ESC to Return", _width / 2f, _height - 40f, 14f, Color4.Gray);
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float fontSize, Color4 color)
-    {
-        if (!_context.Font.IsValid) return;
-
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, fontSize);
-        commands.DrawText(_context.Font, text,
-            new Vector2(x - textWidth / 2, y - textHeight / 2), fontSize, color);
+        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press ENTER or ESC to Return", _width / 2f, _height - 40f, 14f, Color4.Gray);
     }
 
     public void OnResize(int width, int height)

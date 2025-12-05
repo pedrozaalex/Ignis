@@ -5,6 +5,7 @@ using Ignis.Core.Timing;
 using Ignis.Graphics;
 using Samples.Breakout.Core;
 using Samples.Breakout.Services;
+using Samples.Common;
 using Silk.NET.Input;
 
 namespace Samples.Breakout.Scenes;
@@ -16,6 +17,7 @@ public sealed class LevelSelectScene : Scene, IBreakoutScene
 {
     private readonly BreakoutContext _context;
     private readonly SceneManager _sceneManager;
+    private readonly UIRenderer _ui;
 
     private int _selectedLevel = 1;
     private int _width;
@@ -25,6 +27,7 @@ public sealed class LevelSelectScene : Scene, IBreakoutScene
     {
         _context = context;
         _sceneManager = sceneManager;
+        _ui = new UIRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
     }
@@ -89,7 +92,7 @@ public sealed class LevelSelectScene : Scene, IBreakoutScene
         commands.SetViewMatrix(Matrix4x4.Identity);
 
         // Title
-        DrawCenteredText(commands, "SELECT LEVEL", _width / 2f, 80f, 36f, Color4.White);
+        _ui.DrawCenteredText(commands, "SELECT LEVEL", _width / 2f, 80f, 36f, Color4.White);
 
         // Level grid
         var levelCount = _context.Levels.LevelCount;
@@ -113,46 +116,24 @@ public sealed class LevelSelectScene : Scene, IBreakoutScene
             var levelNum = i + 1;
 
             var isSelected = levelNum == _selectedLevel;
-            var boxColor = isSelected
-                ? new Color4(0.3f, 0.5f, 0.9f, 1f)
-                : new Color4(0.2f, 0.2f, 0.3f, 1f);
 
-            commands.DrawQuad(new Vector2(x, y), new Vector2(boxSize), boxColor);
-
-            if (isSelected)
-            {
-                // Selection border
-                commands.DrawQuad(new Vector2(x - 3, y - 3), new Vector2(boxSize + 6, 3), Color4.Yellow);
-                commands.DrawQuad(new Vector2(x - 3, y + boxSize), new Vector2(boxSize + 6, 3), Color4.Yellow);
-                commands.DrawQuad(new Vector2(x - 3, y), new Vector2(3, boxSize), Color4.Yellow);
-                commands.DrawQuad(new Vector2(x + boxSize, y), new Vector2(3, boxSize), Color4.Yellow);
-            }
-
-            DrawCenteredText(commands, levelNum.ToString(), x + boxSize / 2, y + boxSize / 2, 32f, Color4.White);
+            // All levels are unlocked in Breakout
+            _ui.DrawLevelBox(commands, x, y, boxSize, levelNum, null, isSelected, isUnlocked: true);
         }
 
         // Selected level info
         var level = _context.Levels.GetLevel(_selectedLevel);
         if (level != null)
         {
-            DrawCenteredText(commands, level.Name, _width / 2f, _height - 100f, 24f, Color4.Yellow);
+            _ui.DrawCenteredText(commands, level.Name, _width / 2f, _height - 100f, 24f, Color4.Yellow);
         }
 
         // Instructions
-        DrawCenteredText(commands, "Arrow Keys to Select, Enter to Play, ESC to Go Back",
+        _ui.DrawCenteredText(commands, "Arrow Keys to Select, Enter to Play, ESC to Go Back",
             _width / 2f, _height - 40f, 14f, Color4.Gray);
 
         server.Submit(commands);
         server.EndPass();
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float fontSize, Color4 color)
-    {
-        if (!_context.Font.IsValid) return;
-
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, fontSize);
-        commands.DrawText(_context.Font, text,
-            new Vector2(x - textWidth / 2, y - textHeight / 2), fontSize, color);
     }
 
     public void OnResize(int width, int height)

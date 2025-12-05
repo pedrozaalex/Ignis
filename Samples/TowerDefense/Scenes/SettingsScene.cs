@@ -3,6 +3,7 @@ using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
 using Ignis.Graphics;
+using Samples.Common;
 using Samples.TowerDefense.Core;
 using Samples.TowerDefense.Services;
 using Silk.NET.Input;
@@ -16,6 +17,7 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
 {
     private readonly TowerDefenseContext _context;
     private readonly SceneManager _sceneManager;
+    private readonly UIRenderer _ui;
 
     private int _selectedIndex;
     private readonly string[] _menuItems = ["Master Volume", "SFX Volume", "Music Volume", "Back"];
@@ -27,6 +29,7 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
     {
         _context = context;
         _sceneManager = sceneManager;
+        _ui = new UIRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
     }
@@ -122,30 +125,22 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
         commands.SetViewMatrix(Matrix4x4.Identity);
 
         // Title
-        DrawCenteredText(commands, "SETTINGS", _width / 2f, 80f, 36f, Color4.White);
+        _ui.DrawCenteredText(commands, "SETTINGS", _width / 2f, 80f, 36f, Color4.White);
 
         // Settings items
         var startY = 200f;
         var spacing = 70f;
+        var sliderX = _width / 2f + 20f;
+        var sliderWidth = 200f;
 
         for (var i = 0; i < _menuItems.Length; i++)
         {
             var isSelected = i == _selectedIndex;
             var y = startY + i * spacing;
-
             var color = isSelected ? Color4.White : new Color4(0.6f, 0.6f, 0.7f, 1f);
 
             if (i < 3) // Volume sliders
             {
-                // Label
-                DrawText(commands, _menuItems[i], _width / 2f - 200f, y, 20f, color);
-
-                // Slider background
-                var sliderX = _width / 2f + 20f;
-                var sliderWidth = 200f;
-                commands.DrawQuad(new Vector2(sliderX, y - 8f), new Vector2(sliderWidth, 16f), new Color4(0.2f, 0.2f, 0.3f, 1f));
-
-                // Slider fill
                 var value = i switch
                 {
                     0 => _context.Audio.MasterVolume,
@@ -154,53 +149,21 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
                     _ => 0f
                 };
 
-                var fillWidth = sliderWidth * value;
-                if (fillWidth > 0)
-                {
-                    var fillColor = isSelected ? new Color4(0.4f, 0.7f, 1f, 1f) : new Color4(0.3f, 0.5f, 0.8f, 1f);
-                    commands.DrawQuad(new Vector2(sliderX, y - 8f), new Vector2(fillWidth, 16f), fillColor);
-                }
-
-                // Value text
-                DrawText(commands, $"{(int)(value * 100)}%", sliderX + sliderWidth + 20f, y, 16f, color);
-
-                // Selection indicator
-                if (isSelected)
-                {
-                    DrawText(commands, "<", sliderX - 25f, y, 20f, new Color4(1f, 0.8f, 0.2f, 1f));
-                    DrawText(commands, ">", sliderX + sliderWidth + 70f, y, 20f, new Color4(1f, 0.8f, 0.2f, 1f));
-                }
+                _ui.DrawSliderWithLabel(commands, _menuItems[i], _width / 2f - 200f, sliderX, y,
+                    sliderWidth, 16f, value, isSelected, color);
             }
             else // Back button
             {
-                var size = isSelected ? 24f : 20f;
-                DrawCenteredText(commands, _menuItems[i], _width / 2f, y, size, color);
-
-                if (isSelected)
-                {
-                    DrawCenteredText(commands, "> ", _width / 2f - 60f, y, 24f, new Color4(1f, 0.8f, 0.2f, 1f));
-                    DrawCenteredText(commands, " <", _width / 2f + 60f, y, 24f, new Color4(1f, 0.8f, 0.2f, 1f));
-                }
+                _ui.DrawMenuItem(commands, _menuItems[i], _width / 2f, y, isSelected);
             }
         }
 
         // Instructions
-        DrawCenteredText(commands, "Left/Right to Adjust, Escape to Return",
+        _ui.DrawCenteredText(commands, "Left/Right to Adjust, Escape to Return",
             _width / 2f, _height - 60f, 14f, new Color4(0.5f, 0.5f, 0.6f, 1f));
 
         server.Submit(commands);
         server.EndPass();
-    }
-
-    private void DrawText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        commands.DrawText(_context.Font, text, new Vector2(x, y - size / 2), size, color);
-    }
-
-    private void DrawCenteredText(IRenderCommandList commands, string text, float x, float y, float size, Color4 color)
-    {
-        var (textWidth, textHeight) = _context.RenderingServer.MeasureText(_context.Font, text, size);
-        commands.DrawText(_context.Font, text, new Vector2(x - textWidth / 2, y - textHeight / 2), size, color);
     }
 
     public void OnResize(int width, int height)

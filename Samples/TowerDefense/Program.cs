@@ -1,10 +1,8 @@
 using Ignis.Core;
 using Ignis.Core.Scenery;
-using Ignis.Core.Timing;
 using Ignis.Graphics.Backends.OpenGL;
 using Samples.TowerDefense.Core;
 using Samples.TowerDefense.Scenes;
-using Samples.Common;
 
 // Create game context with shared services
 var server = new OpenGLRenderingServer();
