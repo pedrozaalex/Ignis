@@ -1,5 +1,6 @@
 using System.Numerics;
 using Samples.TowerDefense.Core;
+using Samples.TowerDefense.ECS;
 
 namespace Samples.TowerDefense.Services;
 

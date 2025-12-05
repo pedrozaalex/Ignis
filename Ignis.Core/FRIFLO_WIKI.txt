@@ -1,0 +1,4713 @@
+Directory structure:
+└── friflo-ecs-wiki/
+    ├── README.md
+    ├── SUMMARY.md
+    ├── docs/
+    │   ├── batch.md
+    │   ├── component-index.md
+    │   ├── entity.md
+    │   ├── events.md
+    │   ├── query-optimization.md
+    │   ├── query.md
+    │   ├── relations.md
+    │   ├── relationships.md
+    │   └── systems.md
+    ├── examples/
+    │   ├── Component-Types.md
+    │   ├── General.md
+    │   └── Optimization.md
+    ├── extensions/
+    │   └── Unity-extension.md
+    └── package/
+        ├── Features.md
+        ├── Library.md
+        ├── native-aot.md
+        └── Release-Notes.md
+
+
+Files Content:
+
+================================================
+FILE: README.md
+================================================
+[![friflo ECS](images/friflo-ECS.svg)](https://github.com/friflo/Friflo.Engine.ECS)
+
+[![Github Repo](images/github-mark.svg)](https://github.com/friflo/Friflo.Engine.ECS)
+[![Github Repo](https://img.shields.io/badge/GitHub-grey)](https://github.com/friflo/Friflo.Engine.ECS)
+[![Demos](https://img.shields.io/badge/Demos-22aa22)](https://github.com/friflo/Friflo.Engine.ECS-Demos)
+[![C# API](https://img.shields.io/badge/C%23%20API-22aaaa)](https://github.com/friflo/Friflo.Engine-docs)
+[![Discord](https://img.shields.io/badge/Discord-5865F2)](https://discord.gg/nFfrhgQkb8)   
+[![Benchmarks](https://img.shields.io/badge/Benchmark%20🏁%20of%20C%23%20ECS%20frameworks-ffffff)](https://github.com/friflo/ECS.CSharp.Benchmark-common-use-cases)
+
+
+
+**friflo ECS**, a small and high-performance **C# ECS** - Entity Component System.  
+Its an archetype based ECS with focus on performance and simplicity.
+
+<details>
+<summary>🛈 What is an Entity Component System?</summary>
+
+An Entity Component System (**ECS**) is a software architecture pattern. [Wikipedia](https://en.wikipedia.org/wiki/Entity_component_system).  
+It is often used in software development for **Games**, **Simulation**, **Analytics** and **In-Memory Database** providing high performant data processing.
+
+An ECS has two major strengths:
+
+1. It enables writing **highly decoupled code**. Data is stored in **Components** which are assigned to objects - aka **Entities** - at runtime.  
+   Code decoupling is accomplished by dividing implementation in pure data structures (**Component types**) - and code (**Systems**) to process them.  
+  
+2. It provides **high performant query execution** by storing components in continuous memory to leverage L1 CPU cache and its prefetcher.  
+   It improves CPU branch prediction by minimizing conditional branches when processing components in tight loops. 
+   [Data-oriented design ⋅ Wikipedia](https://en.wikipedia.org/wiki/Data-oriented_design).
+</details>
+
+## Design goals
+
+<details>
+<summary>🔥 <strong>High Performance</strong></summary>
+Optimal and efficient query / system execution.<br/>
+Fast entity creation and component changes.
+</details>
+
+<details>
+<summary>🎯 <strong>Simple</strong></summary>
+Simple API - convenient to debug. No boilerplate code.<br/>
+CLS Compliant API - supporting all .NET languages: C#, F#, VB.NET,...
+
+</details>
+
+<details>
+<summary>🔄 <strong>Low memory footprint</strong></summary>
+Minimal heap allocations at start phase.<br/>
+No heap allocations after internal buffers grown large enough.<br/>
+No GC pauses / no frame drops.
+</details>
+
+<details>
+<summary>🛡️ <strong>Reliable</strong></summary>
+100% verifiably <strong>safe C#</strong>. No <strong>unsafe</strong> code or native bindings.<br/>
+Full test coverage. Expressive runtime errors. Actively maintained.<br/>
+Your code requires no <strong>Unsafe</strong> quirks for maximum performance.
+</details>
+
+<details>
+<summary>🤏 <strong>Small</strong></summary>
+Friflo.Engine.ECS.dll size: only 320 kb.  <br/>
+No code generation. No 3rd party dependencies.
+</details>
+
+
+# Overview
+
+A common ECS provide the basic features listed bellow.  
+To solve other common use-cases not covered by basic implementations this ECS provide the listed extensions.
+
+## Basic features
+
+> An ECS acts like an in-memory database and stores entities in an [EntityStore](docs/entity.md#entitystore) aka *World*.  
+> An [Entity](docs/entity.md) is a value type - aka `struct` - with a unique `Id`.
+
+> Data is stored in [Components](docs/entity.md#component) added to entities.  
+> Components are stored highly packed in continuous memory.
+
+> The major strength of an archetype based ECS is efficient and performant [Query](docs/query.md) execution.  
+> [Query filters](docs/query.md#query-filter) are used to reduce the amount of components returned by the query result.
+
+
+## Extended features
+
+> Support [Events](docs/events.md) to subscribe entity changes like adding or removing components.  
+> Event handlers can be added to a single `Entity` or the entire `EntityStore`.
+
+> [Index / Search](docs/component-index.md) to enable lookup entities with specific component values. **v3.0.0**  
+> A lookup for a specific component value - aka search - executes in **O(1)** ~ 4 ns.  
+> *Possibly the first and only ECS that supports indexing.*
+
+> [Relationships](docs/relationships.md) to create links between entities. **v3.0.0**  
+> A link is directed and bidirectional. Deleting *source* or *target* entity removes a link.
+
+> [Relations](docs/relations.md) to add multiple *"components"* to an entity. **v3.0.0**  
+> Relations are not implemented as components to avoid *archetype fragmentation*.
+
+> [Systems](docs/systems.md) are optional. They are used to group queries or custom operations.  
+> They support logging / monitoring of execution times and memory allocations in realtime.
+
+> [Hierarchy / Scene tree](docs/entity.md#hierarchy) used to setup a child/parent relationship between entities.  
+> An entity in the hierarchy provide direct access to its children and parent.
+
+> [JSON Serialization](docs/entity.md#json-serialization) to serialize entities or the entire EntityStore as JSON.
+
+
+## Library
+
+> 100% verifiably safe 🔒 C#. No [*unsafe code*](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/unsafe-code)
+> or native bindings.  
+> This prevents *segmentation faults*, *access violations* and *memory corruption*.
+
+> Minimal heap allocations.  
+> After internal buffers grown large enough no heap allocation will occur.  
+> At this point no garbage collection will be executed. This avoids frame stuttering / lagging caused by GC runs.  
+> Especially no allocation when
+> - Creating or deleting entities
+> - Adding or removing components / tags
+> - Adding or removing relations or relationships
+> - Emitting events
+> - Changes in entity hierarchy
+> - Query or system execution
+
+> Aims for 100% test coverage:  
+> Code coverage: [![codecov](https://img.shields.io/codecov/c/gh/friflo/Friflo.Engine.ECS?logoColor=white&label=codecov)](https://app.codecov.io/gh/friflo/Friflo.Engine.ECS/tree/main/src/ECS)
+
+<br>
+
+
+# Project
+
+[Release Notes](package/Release-Notes.md) - document all nuget releases.
+
+[Library](package/Library.md) describes assembly specific characteristics.
+
+[Unity Extension](extensions/Unity-extension.md) with ECS integration in Unity Editor.
+
+
+## External Links
+
+GitHub: [https://github.com/friflo/Friflo.Engine.ECS](https://github.com/friflo/Friflo.Engine.ECS)
+
+Discord: [friflo ECS](https://discord.gg/nFfrhgQkb8)
+
+Benchmark: [C# ECS Benchmarks](https://github.com/friflo/ECS.CSharp.Benchmark-common-use-cases)
+
+<br/>
+
+
+## GitHub
+
+[![Star History Chart](https://api.star-history.com/svg?repos=friflo/Friflo.Engine.ECS)](https://github.com/friflo/Friflo.Engine.ECS)
+
+💖 In case you like this project?  
+Leave a ⭐ on [GitHub ⋅ friflo/Friflo.Engine.ECS](https://github.com/friflo/Friflo.Engine.ECS)
+
+
+
+================================================
+FILE: SUMMARY.md
+================================================
+# Table of contents
+
+* [Start](README.md)
+
+
+
+## 📖 Documentation
+
+* [Entity](docs/entity.md)
+    * [EntityStore](docs/entity.md#entitystore)
+    * [Component](docs/entity.md#component)
+    * [Tag](docs/entity.md#tag)
+    * [Hierarchy / Scene tree](docs/entity.md#hierarchy)
+    * [Archetype](docs/entity.md#archetype)
+    * [JSON Serialization](docs/entity.md#json-serialization)
+
+* [Query](docs/query.md)
+    * [Query Filter](docs/query.md#query-filter)
+    * [CommandBuffer](docs/query.md#commandbuffer)
+
+* [Events](docs/events.md)
+    * [Entity changes](docs/events.md#entity-changes)
+    * [EventRecorder](docs/events.md#eventrecorder)
+    * [Signals](docs/events.md#signals)
+
+* [Index / Search](docs/component-index.md)
+
+* [Relationships](docs/relationships.md)
+
+* [Relations](docs/relations.md)
+
+* [Systems](docs/systems.md)
+
+* [Query Optimization](docs/query-optimization.md)
+    * [Boosted Query](docs/query-optimization.md#boosted-query)
+    * [Enumerate Chunks](docs/query-optimization.md#enumerate-query-chunks)
+    * [Parallel Query / Multithreading](docs/query-optimization.md#parallel-query-job)
+    * [Vectorization / SIMD](docs/query-optimization.md#query-vectorization-simd)
+
+* [Batch Operations](docs/batch.md)
+    * [Create entities](docs/batch.md#create-entities)
+    * [Add/Remove components](docs/batch.md#add-remove-components)
+
+
+
+## 📦 Project
+
+* Package
+    * [Release Notes](package/Release-Notes.md)
+
+    * [Features](package/Features.md)
+
+    * [Library](package/Library.md)
+
+    * [Native AOT](package/native-aot.md)
+
+* [Unity Extension](extensions/Unity-extension.md)
+
+
+
+
+================================================
+FILE: docs/batch.md
+================================================
+
+Batch operations can be used to improved performance and minimize *archetype fragmentation* when creating or modifying entities.  
+For example the creation of an entity can be executed in multiple steps.
+Each step moves the entity to a different archetype.
+
+```cs
+var entity = store. CreateEntity();
+entity.AddComponent(new Position(1,2,3));
+entity.AddComponent(new Transform());
+entity.AddComponent(new EntityName("test"));
+```
+
+A Batch operation like `CreateEntity<>()` combine these steps in a single call and put the entity directly in the final archetype.
+```cs
+var entity = store.CreateEntity(new Position(1,2,3), new Transform(), new EntityName("test"));
+```
+
+*Terminology*
+- A **Batch** combines multiple component changes in a single operation on the same entity.
+- A **Bulk** operation performance the same operation on multiple entities.
+
+
+# Create entities
+
+🔥 **Update** - New example to use simpler / more performant approach to create entities.
+
+**Optimization**  
+Minimize structural changes when creating entities.
+
+Entities can be created with multiple components and tags in a single step.  
+This can be done by one of the EntityStoreExtensions
+[CreateEntity<T1, ... , Tn>](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStoreExtensions.md) overloads.
+
+```csharp
+public static void CreateEntityOperation()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 10; n++) {
+        store.CreateEntity(new EntityName("test"), new Position(), Tags.Get<MyTag1>());
+    }
+    var taggedEntities = store.Query().AllTags(Tags.Get<MyTag1>());
+    Console.WriteLine(taggedEntities);      // > Query: [#MyTag1]  Count: 10
+}
+```
+<br/>
+
+
+## Bulk - Create entities
+
+🔥 **Update** - New example for bulk creation of entities.
+
+**Optimization**  
+Create multiple entities with the same set of components / tags in a single step.
+
+Entities can be created one by one with `store.CreateEntity()`.  
+To create multiple entities with the same set of components and tags use  
+[archetype.CreateEntities(int count)](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Archetype.CreateEntities(int).md).
+
+```csharp
+public static void CreateEntities()
+{
+    var store     = new EntityStore();
+    var archetype = store.GetArchetype(ComponentTypes.Get<Position, Scale3>(), Tags.Get<MyTag1>());
+    var entities  = archetype.CreateEntities(100_000);  // ~ 0.5 ms
+    Console.WriteLine(entities.Count);                  // 100000
+}
+```
+<br/>
+
+
+# Add/Remove components
+
+🔥 **Update** - Add example to batch **add**, **remove** and **get** components and tags.
+
+**Optimization**  
+Minimize structural changes when adding / removing **multiple** components or tags.
+
+Components can be added / removed **one by one** to / from an entity with  
+`entity.AddComponent()` / `entity.RemoveComponent()`.  
+Every operation may cause a structural change which is an expensive operation.
+
+To execute these operations in a single step use the
+[EntityExtensions overloads](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityExtensions.md).  
+This approach also reduces the amount of code to perform these operations.
+
+In case accessing multiple components of the same entity use [entity.Data](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityData.md)
+instead of multiple `entity.GetComponent<>()` calls.
+
+```csharp
+public static void EntityBatchOperations()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // batch: add operations
+    entity.Add(
+        new Position(1, 2, 3),
+        new Scale3(4, 5, 6),
+        new EntityName("test"),
+        Tags.Get<MyTag1>());
+    Console.WriteLine(entity); // id: 1  "test"  [EntityName, Position, Scale3, #MyTag1]
+    
+    // batch: get operations
+    var data    = entity.Data; // introduced in 3.0.0-preview.7
+    var pos     = data.Get<Position>();
+    var scale   = data.Get<Scale3>();
+    var name    = data.Get<EntityName>();
+    var tags    = data.Tags;
+    Console.WriteLine($"({pos}),({scale}),({name})"); // (1, 2, 3), (4, 5, 6), ('test')
+    Console.WriteLine(tags);                          // Tags: [#MyTag1]
+    
+    // batch: remove operations
+    entity.Remove<Position, Scale3, EntityName>(Tags.Get<MyTag1>());
+    Console.WriteLine(entity); // id: 1  []
+}
+```
+
+## Add/Remove components with `EntityBatch`
+
+**Optimization**  
+Minimize structural changes when adding **and** removing components or tags to / from a **single entity**.
+
+**Note**  
+An `EntityBatch` should only be used when adding **AND** removing components / tags to an entity at the same entity.  
+If only adding **OR** removing components / tags use the **Add()** / **Remove()** overloads shown above.
+
+When adding/removing components or tags to/from a single entity it will be moved to a new archetype.  
+This is also called a *structural change* and in comparison to other methods a more costly operation.  
+Every component / tag change will cause a *structural change*.
+
+In case of multiple changes on a single entity use an [EntityBatch](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityBatch.md)
+to apply all changes at once.  
+Using this approach only a single or no *structural change* will be executed.
+
+```csharp
+public static void EntityBatch()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    entity.Batch()
+        .Add(new Position(1, 2, 3))
+        .AddTag<MyTag1>()
+        .Apply();
+    
+    Console.WriteLine($"entity: {entity}"); // > entity: id: 1  [Position, #MyTag1]
+}
+```
+<br/>
+
+
+## `EntityBatch` - Bulk execution
+
+**Optimization**: Minimize structural changes when adding / removing components or tags to / from **multiple entities**.
+
+In cases you need to add/remove components or tags to entities returned by a query use a **bulk operation**.  
+Executing these type of changes are most efficient using a bulk operation.  
+This can be done by either using `ApplyBatch()` or a common `foreach ()` loop as shown below.  
+To prevent unnecessary allocations the application should cache and reuse the list instance for future batches.
+
+```csharp
+public static void BulkBatch()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 1000; n++) {
+        store.CreateEntity();
+    }
+    var batch = new EntityBatch();
+    batch.Add(new Position(1, 2, 3)).AddTag<MyTag1>();
+    store.Entities.ApplyBatch(batch);
+    
+    var query = store.Query<Position>().AllTags(Tags.Get<MyTag1>());
+    Console.WriteLine(query);               // > Query: [Position, #MyTag1]  Count: 1000
+    
+    // Same as: store.Entities.ApplyBatch(batch) above
+    foreach (var entity in store.Entities) {
+        batch.ApplyTo(entity);
+    }
+}
+```
+<br/>
+
+
+## Apply `EntityBatch` to an `EntityList`
+
+An [EntityList](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityList.md) is a container
+of entities added to the list.  
+Single entities are added using `Add()`. `AddTree()` adds an entity and all its children including their children etc.  
+A **bulk operation** can be applied to all entities in the lists as shown in the example below.  
+
+
+```csharp
+public static void EntityList()
+{
+    var store   = new EntityStore();
+    var root    = store.CreateEntity();
+    for (int n = 0; n < 10; n++) {
+        var child = store.CreateEntity();
+        root.AddChild(child);
+        // Add two children to each child
+        child.AddChild(store.CreateEntity());
+        child.AddChild(store.CreateEntity());
+    }
+    var list = new EntityList(store);
+    // Add root and all its children to the list
+    list.AddTree(root);
+    Console.WriteLine($"list - {list}");        // > list - Count: 31
+    
+    var batch = new EntityBatch();
+    batch.Add(new Position());
+    list.ApplyBatch(batch);
+    
+    var query = store.Query<Position>();
+    Console.WriteLine(query);                   // > Query: [Position]  Count: 31
+}
+```
+<br/>
+
+
+
+================================================
+FILE: docs/component-index.md
+================================================
+
+A **Component Index** enables efficient search of indexed component field values.  
+This enables **lookup** aka **search** of entities having components with specific a specific value like in the example below.  
+Any type can be used as indexed component type. E.g. `int`, `long`, `float`, `Guid`, `DateTime`, `enum`, ... .  
+A search / query for a specific value executes in O(1).
+
+> **Info**  
+> A component index is the counterpart of database index used to index a column with `CREATE INDEX` in SQL.
+
+## Indexed Components
+
+An [IIndexedComponent<>](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/IIndexedComponent_TValue_.md)
+provide the same functionality and behavior as normal components implementing `IComponent`.  
+For every indexed component type the store creates a an [inverted index ⋅ Wikipedia](https://en.wikipedia.org/wiki/Inverted_index).  
+Adding, removing or updating an indexed component updates the index.  
+These operations are executed in O(1) but significant slower than the non indexed counterparts ~10x.  
+*Performance:* Indexing 1000 different component values ~60 μs.
+
+The [ComponentIndex<,>](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ComponentIndex_TIndexedComponent,TValue_.md)
+provide access to indexed components.
+
+```cs
+struct TileComponent : IIndexedComponent<int> // indexed field type: int
+{
+    public  int  tileId;
+    public  int  GetIndexedValue() => tileId; // indexed field
+}
+
+public static void ComponentLookup()
+{
+    var store   = new EntityStore();
+    var index   = store.ComponentIndex<TileComponent,int>();
+    store.CreateEntity(new TileComponent{ tileId = 10 });
+    store.CreateEntity(new TileComponent{ tileId = 20 });
+
+    // lookup entities where component tileId = 10 in O(1)
+    var entities = index[10];   // Count: 1
+
+    // get all unique tileId's in O(1)
+    var values = index.Values;  // { 10, 20 }
+}
+```
+
+> **Important**  
+> When changing the indexed component value `entity.AddComponent<>()` must be used to enable the store updating the index.  
+> Changing the indexed component with `ref` access don't update the index.  
+> E.g. with `entity.GetComponent<>()` or within a `Query()` using the `ref` parameter of a component.
+```cs
+store.AddComponent(new TileComponent{ tileId = 33 }); // OK
+store.GetComponent<TileComponent>().tileId = 33;      // No index update
+```
+
+## Range query
+
+In case the indexed component type implements `IComparable<>` like int, string, DateTime, ... range queries can be executed.  
+A range query returns all entities with a component value in the specified range. See example code.
+
+```cs
+struct Player : IIndexedComponent<string>       // indexed field type: string
+{
+    public  string  name;
+    public  string  GetIndexedValue() => name;  // indexed field
+}
+
+public static void IndexedComponents()
+{
+    var store   = new EntityStore();
+    var index   = store.ComponentIndex<Player,string>();
+    for (int n = 0; n < 1000; n++) {
+        var entity = store.CreateEntity();
+        entity.AddComponent(new Player { name = $"Player-{n,0:000}"});
+    }
+    // get all entities where Player.name == "Player-001". O(1)
+    var entities = index["Player-001"];                                    // Count: 1
+    
+    // return same result as lookup using a Query(). O(1)
+    store.Query().HasValue    <Player,string>("Player-001");               // Count: 1
+    
+    // return all entities with a Player.name in the given range.
+    // O(N ⋅ log N) - N: all unique player names
+    store.Query().ValueInRange<Player,string>("Player-000", "Player-099"); // Count: 100
+    
+    // get all unique Player.name's. O(1)
+    var values = index.Values;                                             // Count: 1000
+}
+```
+
+## Benchmark - Indexing
+
+The number of components having the same key value should not exceed 100.  
+The reason is that inserting and removing a component to / from the index is executed in O(N).  
+N: number of components having the same key value (duplicates).
+
+*Benchmark* [see Tests](https://github.com/friflo/Friflo.Engine.ECS/blob/main/src/Tests/ECS/Index/Test_Index.cs)  
+Add 1.000.000 indexed int components. Each to an individual entity. Type:
+```cs
+public struct IndexedInt : IIndexedComponent<int> {
+    public          int         value;
+    public          int         GetIndexedValue()   => value;
+}
+```
+|     duplicateCount |        duration ms |           entities |
+| ------------------:| ------------------:| ------------------:|
+|                  1 |             119.68 |            1000000 |
+|                  2 |              91.73 |            1000000 |
+|                  4 |              96.08 |            1000000 |
+|                  8 |              97.06 |            1000000 |
+|                 16 |             103.75 |            1000000 |
+|                 32 |             150.19 |            1000000 |
+|                 64 |              98.52 |            1000000 |
+|                128 |             106.64 |            1000000 |
+|                256 |             111.62 |            1000000 |
+|                512 |             123.53 |            1000000 |
+|               1024 |             137.13 |            1000000 |
+|               2048 |             254.83 |            1000000 |
+|               4096 |             234.58 |            1000000 |
+|               8192 |             433.60 |            1000000 |
+|              16384 |             817.92 |            1000000 |
+|              32768 |            1662.16 |            1000000 |
+
+
+================================================
+FILE: docs/entity.md
+================================================
+The `Entity` is the main data structure when working with an ECS.  
+
+An `Entity` has a unique identity - `Id` - and acts as a container for components, tags, script and child entities.  
+An `EntityStore` is a container of entities and used to create entities with `store.CreateEntity()`.
+
+```csharp
+public static void CreateEntity()
+{
+    var store = new EntityStore();
+    store.CreateEntity();
+    store.CreateEntity();
+    
+    foreach (var entity in store.Entities) {
+        Console.WriteLine($"entity {entity}");
+    }
+    // > entity id: 1  []       Info:  [] entity has no components
+    // > entity id: 2  []
+}
+```
+
+Entities can be deleted with `entity.DeleteEntity()`.  
+Variables of type `Entity` mimic the behavior of reference types.  
+Using an entity method on a deleted entity throws a `NullReferenceException`.  
+To handled this case use `entity.IsNull`.
+
+```csharp
+public static void DeleteEntity()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.DeleteEntity();
+    var isDeleted = entity.IsNull;
+    Console.WriteLine($"deleted: {isDeleted}");     // > deleted: True
+}
+```
+
+Entities can be disabled.  
+Disabled entities are excluded from query results by default.  
+To include disabled entities in a query result use `query.WithDisabled()`.
+
+```csharp
+public static void DisableEntity()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.Enabled = false;
+    Console.WriteLine(entity);                      // > id: 1  [#Disabled]
+    
+    var query    = store.Query();
+    Console.WriteLine($"default - {query}");        // > default - Query: []  Count: 0
+    
+    var disabled = store.Query().WithDisabled();
+    Console.WriteLine($"disabled - {disabled}");    // > disabled - Query: []  Count: 1
+}
+```
+
+Entity example code is part of the unit tests see:
+[Tests/ECS/Examples](https://github.com/friflo/Friflo.Engine.ECS/tree/main/src/Tests/ECS/Examples).
+
+When tying out the examples use a debugger to check entity state changes while stepping throw the code.
+
+<img src="../images/entity-debugger.png" width="630" height="370"></img>  
+*Screenshot:* Entity state - enables browsing the entire store hierarchy.
+
+Examples showing typical use cases of the [Entity API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Entity.md)
+
+
+## EntityStore
+
+An `EntityStore` is a container for entities running as an in-memory database.  
+It is highly optimized for efficient storage fast queries and event handling.  
+In other ECS implementations this type is typically called *World*.
+
+The store enables to
+- create entities
+- modify entities - add / remove components, tags, scripts and child entities
+- query entities with a specific set of components or tags
+- subscribe events like adding / removing components, tags, scripts and child entities
+
+Multiple stores can be used in parallel and act completely independent from each other.  
+The example shows how to create a store. Mainly every example will start with this line.
+
+```csharp
+public static void CreateStore()
+{
+    var store = new EntityStore();
+}
+```
+<br/>
+
+
+## Component
+
+`Components` are `struct`s used to store data on entities.  
+Multiple components with different types can be added / removed to / from an entity.  
+If adding a component using a type already stored in the entity its value gets updated. 
+
+```csharp
+[ComponentKey("my-component")]
+public struct MyComponent : IComponent {
+    public int value;
+}
+
+public static void AddComponents()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add components
+    entity.AddComponent(new EntityName("Hello World!"));// EntityName is build-in
+    entity.AddComponent(new MyComponent { value = 42 });
+    Console.WriteLine($"entity: {entity}");             // > entity: id: 1  "Hello World!"  [EntityName, Position]
+    
+    // get component
+    Console.WriteLine($"name: {entity.Name.value}");    // > name: Hello World!
+    var value = entity.GetComponent<MyComponent>().value;
+    Console.WriteLine($"MyComponent: {value}");         // > MyComponent: 42
+    
+    // Serialize entity to JSON
+    Console.WriteLine(entity.DebugJSON);
+}
+```
+
+Result of `entity.DebugJSON`:
+```json
+{
+    "id": 1,
+    "components": {
+        "name": {"value":"Hello World!"},
+        "my-component": {"value":42}
+    }
+}
+```
+<br/>
+
+
+## Unique entity
+
+Add a `UniqueEntity` component to an entity to mark it as a *"singleton"* with a unique `string` id.  
+The entity can than be retrieved with `EntityStore.GetUniqueEntity()` to reduce code coupling.  
+It enables access to a unique entity without the need to pass an entity by external code.   
+
+```csharp
+public static void GetUniqueEntity()
+{
+    var store   = new EntityStore();
+    store.CreateEntity(new UniqueEntity("Player"));     // UniqueEntity is build-in
+    
+    var player  = store.GetUniqueEntity("Player");
+    Console.WriteLine($"entity: {player}");             // > entity: id: 1  [UniqueEntity]
+}
+```
+<br/>
+
+> **Info**  
+> Since version 3.0.0 there is more flexible and performant alternative available by using a [Component Index](/docs/component-index.md).  
+> It supports defining a custom `IIndexedComponent<>` type and have several advantages:
+> - The unique key can be of any type - e.g. `int`, `Guid`, `enum`, `string`, ... . The key of unique entities is always a `string`.
+> - The storage of a **Component Index** is optimized for low memory footprint and fast lookup.
+> - Additional fields can be added to an `IIndexedComponent<>` type.
+
+
+## Tag
+
+`Tags` are `struct`s similar to components - except they store no data.  
+They can be utilized in queries similar as components to restrict the amount of entities returned by a query.  
+If adding a tag using a type already attached to the entity the entity remains unchanged.
+
+```csharp
+public struct MyTag1 : ITag { }
+public struct MyTag2 : ITag { }
+
+public static void AddTags()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add tags
+    entity.AddTag<MyTag1>();
+    entity.AddTag<MyTag2>();
+    Console.WriteLine($"entity: {entity}");     // > entity: id: 1  [#MyTag1, #MyTag2]
+    
+    // get tag
+    var tag1 = entity.Tags.Has<MyTag1>();
+    Console.WriteLine($"tag1: {tag1}");         // > tag1: True
+}
+```
+<br/>
+
+## Clone / Copy entity
+
+The methods `Entity.CloneEntity()` and `Entity.CopyEntity(Entity target)` are used to copy all
+components and tags from one entity to another.
+
+- `CloneEntity()` creates a new entity having the same components and tags as the original entity.
+- `CopyEntity(Entity target)` copy all components and tags to the given `target` entity.  
+  The target entity can be in the same or in a different store.
+
+The example creates a new entity with the same components and tags as the original entity.
+
+```cs
+public static void CloneEntity()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity(new Position(1,2,3), Tags.Get<MyTag1>());
+    
+    var clone = entity.CloneEntity();
+    // the cloned entity have the same components and tags as the original entity.
+}
+```
+
+`CopyEntity(Entity target)` can be used to copy a subset or all entities of one store to another store.  
+The entities in the target store will have the same entities ids as in the original store.  
+
+```cs
+public struct NetTag : ITag { }
+
+public static void CopyEntities()
+{
+    var store       = new EntityStore();
+    var targetStore = new EntityStore();
+        
+    store.CreateEntity(new Position(1,1,1));                     // 1
+    store.CreateEntity(new Position(2,2,2), Tags.Get<NetTag>()); // 2
+    store.CreateEntity(new Position(3,3,3));                     // 3
+    store.CreateEntity(new Position(4,4,4), Tags.Get<NetTag>()); // 4
+    store.CreateEntity(new Position(5,5,5));                     // 5
+        
+    // Query will copy only entities [2, 4] having a NetTag
+    var query = store.Query().AnyTags(Tags.Get<NetTag>());
+    foreach (var entity in query.Entities) {
+        // preserve same entity ids in target store
+        if (!targetStore.TryGetEntityById(entity.Id, out Entity targetEntity)) {
+            targetEntity = targetStore.CreateEntity(entity.Id);
+        }
+        entity.CopyEntity(targetEntity);
+    }
+    // target store contains two entities [2, 4] with same components and tags as in the original store
+} 
+```
+
+
+## Script
+
+`Script`s are similar to components and can be added / removed to / from entities.  
+`Script`s are classes and can also be used to store data.  
+Additional to components they enable adding behavior in the common OOP style.
+
+In case dealing only with a few thousands of entities `Script`s are fine.  
+If dealing with a multiple of 10.000 components should be used for efficiency / performance.
+
+```csharp
+public class MyScript : Script { public int data; }
+
+public static void AddScript()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add script
+    entity.AddScript(new MyScript{ data = 123 });
+    Console.WriteLine($"entity: {entity}");             // > entity: id: 1  [*MyScript]
+    
+    // get script
+    var myScript = entity.GetScript<MyScript>();
+    Console.WriteLine($"data: {myScript.data}");        // > data: 123
+}
+```
+
+`Script`s enable to `override` their `Start()` and `Update()`.
+```cs
+public class MyScript : Script
+{
+    public override void Start()  { }
+    public override void Update() { }
+}
+```
+
+These methods need to be called manually. The ECS has no build mechanism to execute these methods.    
+The ECS provide only access to all scripts added to entities of an `EntityStore`.  
+E.g. Executing `Update()` of all scripts in a store use:
+```cs
+foreach (var scripts in store.EntityScripts) {
+    foreach (var script in scripts) {
+        script.Update();
+    }
+}
+```
+
+
+
+<br/>
+
+
+## Hierarchy
+
+A typical use case in an Game or Editor is to build up a hierarchy of entities.  
+To add an entity as a child to another entity use `Entity.AddChild()`.  
+In case the added child already has a parent it gets removed from the old parent.  
+The children of the added (moved) entity remain being its children.  
+If removing a child from its parent all its children are removed from the hierarchy.
+
+```csharp
+public static void AddChildEntities()
+{
+    var store   = new EntityStore();
+    var root    = store.CreateEntity();
+    var child1  = store.CreateEntity();
+    var child2  = store.CreateEntity();
+    
+    // add child entities
+    root.AddChild(child1);
+    root.AddChild(child2);
+    
+    Console.WriteLine($"entities: {root.ChildEntities}"); // > entities: Count: 2
+}
+```
+<br/>
+
+
+## Archetype
+
+An `Archetype` defines a specific set of components and tags for its entities.  
+At the same time it is also a container of entities with exactly this combination of components and tags.  
+
+> **Explanation**  
+> An `Archetype` instance corresponds to an SQL `TABLE` where its components are the counterpart of the table rows.  
+> In contrast to tables archetypes are created automatically on demand. A relational database requires to create tables upfront.
+
+The following comparison shows the difference in modeling types in **ECS** vs **OOP**.  
+
+<table>
+<tr>
+<th>ECS - Composition</th>
+<th>OOP - Polymorphism</th>
+</tr>
+<tr>
+  <td><i>Inheritance</i><br/>
+      ECS does not utilize inheritance.<br/>
+      It prefers composition over inheritance.
+  </td>
+  <td><br/>
+      Common OPP is based on inheritance.<br/>
+      Likely result: A god base class responsible for everything. 😊
+  </td>  
+</tr>
+<tr>
+  <td><i>Code coupling</i><br/>
+      Data lives in components - behavior in systems.<br/>
+      New behaviors does not affect existing code.
+  </td>
+  <td><br/>
+      Data and behavior are both in classes.<br/>
+      New behaviors may add dependencies or side effects.
+  </td>  
+</tr>
+<tr>
+  <td><i>Storage</i><br/>
+      An Archetype is also a container of entities.
+  </td>
+  <td><br/>
+      Organizing containers is part of application code.
+  </td>
+</tr>
+<tr>
+  <td><i>Changing a type</i><br/>
+      Supported by adding/removing tags or components.
+  </td>
+  <td><br/>
+      Type is fixed an cannot be changed.
+  </td>
+</tr>
+<tr>
+  <td><i>Component access / visibility</i><br/>
+    Having a reference to an EntityStore enables<br/>
+    unrestricted reading and changing of components.
+  </td>
+  <td><br/>
+    Is controlled by access modifiers:<br/>
+    public, protected, internal and private.
+  </td>
+</tr>
+
+<tr>
+  <td colspan="2" align="center"><b>Example</b>
+  </td>
+</tr>
+
+<tr>
+<td style="padding:0px;">
+
+```csharp
+// No base class Animal in ECS
+struct Dog : ITag { }
+struct Cat : ITag { }
+
+
+var store = new EntityStore();
+
+var dogType = store.GetArchetype(Tags.Get<Dog>());
+var catType = store.GetArchetype(Tags.Get<Cat>());
+WriteLine(dogType.Name);            // [#Dog]
+
+dogType.CreateEntity();
+catType.CreateEntity();
+
+var dogs = store.Query().AnyTags(Tags.Get<Dog>());
+var all  = store.Query().AnyTags(Tags.Get<Dog, Cat>());
+
+WriteLine($"dogs: {dogs.Count}");   // dogs: 1
+WriteLine($"all: {all.Count}");     // all: 2
+```
+
+</td>
+<td style="padding:0px;">
+
+```csharp
+class Animal { }
+class Dog : Animal { }
+class Cat : Animal { }
+
+
+var animals = new List<Animal>();
+
+var dogType = typeof(Dog);
+var catType = typeof(Cat);
+WriteLine(dogType.Name);            // Dog
+
+animals.Add(new Dog());
+animals.Add(new Cat());
+
+var dogs = animals.Where(a => a is Dog);
+var all  = animals.Where(a => a is Dog or Cat);
+
+WriteLine($"dogs: {dogs.Count()}"); // dogs: 1
+WriteLine($"all: {all.Count()}");   // all: 2
+```
+
+</td>
+</tr>
+
+<tr>
+  <td colspan="2" align="center"><b>Performance</b>
+  </td>
+</tr>
+<tr>
+  <td><i>Runtime complexity O() of queries for specific types</i><br/>
+      O(size of result set)
+  </td>
+  <td><br/>
+      O(size of all objects)
+  </td>
+</tr>
+<tr>
+  <td><i>Memory layout</i><br/>
+      Continuous memory in heap - high hit rate of L1 cache.
+  </td>
+  <td><br/>
+      Randomly placed in heap - high rate of L1 cache misses.
+  </td>
+</tr>
+<tr>
+  <td><i>Instruction pipelining</i><br/>
+      Minimize conditional branches in update loops.<br/>
+      Process multiple components at once using SIMD.
+  </td>
+  <td><br/><br/>
+      Virtual method calls prevent branch prediction.
+  </td>
+</tr>
+
+</table>
+<br/>
+
+
+## JSON Serialization
+
+The entities stored in an EntityStore can be serialized as JSON using an
+[EntitySerializer](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntitySerializer.md).  
+
+
+> **Note**  
+> Currently serialization / deserialization only support struct fields - properties not.
+> See [Issue #28](https://github.com/friflo/Friflo.Engine.ECS/issues/28).  
+> Component and relation types are required to be struct's.
+
+Writing the entities of a store to a JSON file is done with `WriteStore()`.  
+Reading the entities of a JSON file into a store with `ReadIntoStore()`.
+
+Following attributes can be used to customize JSON serialization
+- `[ComponentKey("data")]` - the attributed component `struct` uses `"data"` as component key
+- `[Ignore]` - the attributed component field is ignored
+- `[Serialize("n")]` - the attributed component field uses `"n"` as JSON key
+
+```csharp
+[ComponentKey("data")]  // use "data" as component key in JSON
+struct DataComponent : IComponent
+{
+    [Ignore]            // field is ignored in JSON
+    public int          temp;
+    
+    [Serialize("n")]    // use "n" as field key in JSON 
+    public string       name;
+}
+
+public static void JsonSerialization()
+{
+    var store = new EntityStore();
+    store.CreateEntity(new EntityName("hello JSON"));
+    store.CreateEntity(new Position(1, 2, 3));
+    store.CreateEntity(new DataComponent{ temp = 42, name = "foo" });
+
+    // --- Write store entities as JSON array
+    var serializer = new EntitySerializer();
+    var writeStream = new FileStream("entity-store.json", FileMode.Create);
+    serializer.WriteStore(store, writeStream);
+    writeStream.Close();
+
+    // --- Read JSON array into new store
+    var targetStore = new EntityStore();
+    serializer.ReadIntoStore(targetStore, new FileStream("entity-store.json", FileMode.Open));
+
+    Console.WriteLine($"entities: {targetStore.Count}"); // > entities: 3
+}
+```
+
+The JSON content of the file `"entity-store.json"` created with `serializer.WriteStore()`
+```json
+[{
+    "id": 1,
+    "components": {
+        "name": {"value":"hello JSON"}
+    }
+},{
+    "id": 2,
+    "components": {
+        "pos": {"x":1,"y":2,"z":3}
+    }
+},{
+    "id": 3,
+    "components": {
+        "data": {"n":"foo"}
+    }
+}]
+```
+<br/>
+
+
+================================================
+FILE: docs/events.md
+================================================
+Events are messages sent used to notify about state changes of an `Entity`.
+
+These events can be consumed in two different ways.
+- Process events directly by an event handler subscribed to an event like `entity.OnComponentChanged`.
+- Or by recording all events using an [EventRecorder](#eventrecorder) and process recorded events later within a `Query`.
+
+# Entity changes
+
+If changing an entity by adding or removing components, tags, scripts or child entities events are emitted.  
+An application can subscribe to these events like shown in the example.  
+Emitting these type of events increase code decoupling.  
+Without events these modifications need to be notified by direct method calls.  
+The *build-in* events can be subscribed on `EntityStore` and on `Entity` level like shown in the example below.  
+
+```csharp
+public static void AddEventHandlers()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.OnComponentChanged     += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Component: [MyComponent]
+    entity.OnTagsChanged          += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Tags: [#MyTag1]
+    entity.OnScriptChanged        += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Script: [*MyScript]
+    entity.OnChildEntitiesChanged += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Child[0] = 2
+
+    entity.AddComponent(new MyComponent());
+    entity.AddTag<MyTag1>();
+    entity.AddScript(new MyScript());
+    entity.AddChild(store.CreateEntity());
+}
+```
+
+## Component events
+
+Event handlers for component changes notify one of the following `ev.Action`
+- `Add` - a component was newly added to the entity.
+- `Update` - the component value changed.
+- `Remove` - the component was removed.
+
+In case of `Update` or `Remove` the handler provide access to the old component value.
+
+```csharp
+public static void ComponentEvents()
+{
+    var store  = new EntityStore();
+    var entity = store.CreateEntity();
+    entity.OnComponentChanged += ev =>
+    {
+        if (ev.Type == typeof(EntityName)) {
+            string log = ev.Action switch
+            {
+                Add    => $"new: {ev.Component<EntityName>()}",
+                Update => $"new: {ev.Component<EntityName>()}  old: {ev.OldComponent<EntityName>()}",
+                Remove => $"old: {ev.OldComponent<EntityName>()}",
+                _      => null
+            };
+            Console.WriteLine($"entity: {ev.Entity.Id} - {ev.Action} {log}");
+        }
+    };
+    entity.AddComponent(new EntityName("Peter"));
+    entity.AddComponent(new EntityName("Paul"));
+    entity.RemoveComponent<EntityName>();
+}
+```
+
+Log Output 
+```js
+entity: 1 - Add new: 'Peter'
+entity: 1 - Update new: 'Paul'  old: 'Peter'
+entity: 1 - Remove old: 'Paul'
+```
+
+## Tag events
+
+Event handlers for tag changes notify which entity tags are changed.
+- `AddedTags` - tags added to an entity.
+- `RemovedTags` - tags removed from an entity.
+- `ChangedTags` - tags added or removed from an entity.
+
+```csharp
+public struct MyTag1 : ITag { }
+public struct MyTag2 : ITag { }
+
+public static void TagEvents()
+{
+    var store  = new EntityStore();
+    var entity = store.CreateEntity();
+    entity.OnTagsChanged += ev =>
+    {
+        string log = "";
+        if (ev.AddedTags.  Has<MyTag1>()) { log += " added:   MyTag1"; }
+        if (ev.RemovedTags.Has<MyTag1>()) { log += " removed: MyTag1"; }
+        
+        if (ev.AddedTags.  Has<MyTag2>()) { log += " added:   MyTag2"; }
+        if (ev.RemovedTags.Has<MyTag2>()) { log += " removed: MyTag2"; }
+        
+        Console.WriteLine($"entity: {entity.Id} -{log}");
+    };
+    entity.AddTag<MyTag1>();
+    entity.RemoveTag<MyTag1>();
+    entity.AddTags(Tags.Get<MyTag1, MyTag2>());
+}
+```
+
+Log Output 
+```js
+entity: 1 - added:   MyTag1
+entity: 1 - removed: MyTag1
+entity: 1 - added:   MyTag1 added:   MyTag2
+```
+<br/>
+
+
+# EventRecorder
+
+An `EventRecorder` record all component and tag changes of an `EntityStore` when `Enabled`.  
+A recorder is required for queries using `EventFilter`'s.  
+To clear all recorded events use `store.EventRecorder.ClearEvents()`.  
+In a game loop this is typically performed at the beginning of a new frame.  
+To stop recording events entirely use `store.EventRecorder.Enabled = false`.
+
+## EventFilter
+
+The intended use-case for `EventFilter`'s are queries.  
+When iterating the entities of a query result it can be checked if an entity was changed by an operation matching the specified filters.  
+E.g a specific component or tag was added.
+```cs
+    query.EventFilter.ComponentAdded<Position>();
+    query.EventFilter.TagAdded<MyTag1>();
+```
+
+`EventFilter`'s can be used on its own or within a query, see the examples below.  
+All events that need to be filtered - like added/removed components/tags - can be added to the `EventFilter`.  
+
+```csharp
+public static void FilterEntityEvents()
+{
+    var store   = new EntityStore();
+    store.EventRecorder.Enabled = true; // required for EventFilter
+    
+    var entity1 = store.CreateEntity(1);
+    var entity2 = store.CreateEntity(2);
+    var entity3 = store.CreateEntity(3);
+    
+    entity1.AddComponent(new Position());
+    entity2.AddTag<MyTag1>();
+    
+    var query = store.Query();
+    query.EventFilter.ComponentAdded<Position>();
+    query.EventFilter.TagAdded<MyTag1>();
+    
+    foreach (var entity in store.Entities) {
+        bool hasEvent = query.HasEvent(entity.Id);
+        Console.WriteLine($"{entity,-20} hasEvent: {hasEvent}");
+    }
+    // id: 3  []            hasEvent: False
+    // id: 1  [Position]    hasEvent: True
+    // id: 2  [#MyTag1]     hasEvent: True
+    
+    store.EventRecorder.ClearEvents(); // typically called on new frame 
+    foreach (var entity in store.Entities) {
+        bool hasEvent = query.HasEvent(entity.Id);
+        Console.WriteLine($"{entity,-20} hasEvent: {hasEvent}");
+    }
+    // id: 3  []            hasEvent: False
+    // id: 1  [Position]    hasEvent: False
+    // id: 2  [#MyTag1]     hasEvent: False
+}
+```
+
+<br/>
+
+
+# Signals
+
+**Signals** are similar to events.  
+They are used to **send** and **subscribe** **custom events** on entity level in an application.  
+To prevent heap allocations signal types must be structs.  
+
+The use of signals is intended for scenarios when something happens occasionally.  
+This avoids the need to check a state every frame to detect a specific condition.  
+For example signals could be used to react on collisions between entities.
+
+Signal handlers can be added as shown below and removed if needed.
+```csharp
+    var handler = entity.AddSignalHandler<MyEvent2>(signal => { ... });
+    entity.RemoveSignalHandler(handler);
+```
+Multiple signal handlers can be added to an entity and are automatically removed if the entity is deleted.
+
+```csharp
+public struct CollisionSignal {
+    public Entity other;
+}
+
+public static void AddSignalHandler()
+{
+    var store  = new EntityStore();
+    var player = store.CreateEntity(1);
+    player.AddSignalHandler<CollisionSignal>(signal => {
+        Console.WriteLine($"collision signal - entity: {signal.Entity.Id} other: {signal.Event.other.Id}");
+    });
+    var npc = store.CreateEntity(2);
+    // ... detect collision. e.g. with a collision system. In case of collision:
+    player.EmitSignal(new CollisionSignal{ other = npc });
+}
+```
+
+Log Output 
+```js
+collision signal - entity: 1 other: 2
+```
+
+> **Note** Avoid emitting signals inside a query loop.
+
+When using a query loop to detect collisions signals should not be emitted directly.  
+The the event handler may perform a structural change - e.g removing or adding a components.  
+Doing this will invalidate the query loop.  
+To avoid this detected collisions can be stored inside the query loop in a `List<Event, CollisionSignal>`.  
+After the collision loop finishes collision events can be emitted and are allowed to perform structural changes.
+
+<br/>
+
+
+
+
+================================================
+FILE: docs/query-optimization.md
+================================================
+
+The straight forward way to execute a query is using `query.ForEachEntity()`.  
+This implementation is super compact and provide a direct result during development. E.g.
+
+```csharp
+// query creation
+var query = store.Query<EntityName>();
+
+// query execution
+query.ForEachEntity((ref EntityName name, Entity entity) => {
+    ....
+});
+```
+This execution type creates a delegate (lambda) and the callback for every result add additional execution costs.
+
+There are various ways to improve query execution significant.  
+Query creation remains unchanged for all variants by using the same `Query<>()` instance.  
+```csharp
+    var query = store.Query<EntityName>();
+```
+Only the code related for query execution is different and require additional boilerplate code.  
+This approach enables:
+- Query optimization can be postponed. E.g. a specific query turns out to be a bottleneck.
+- All optimization variants require only local code changes.
+
+Query optimizations can be achieved by using various query technics like:
+- [Boosted Query](#boosted-query)
+- [Enumerate Query Chunks](#enumerate-query-chunks)
+- [Parallel Query Job](#parallel-query-job)
+- [Query Vectorization - SIMD](#query-vectorization---simd)
+
+
+Query optimization examples are part of the unit tests see:
+[Tests/ECS/Examples](https://github.com/friflo/Friflo.Engine.ECS/tree/main/src/Tests/ECS/Examples)
+
+> **Info**  
+> In general *friflo ECS* provides in many areas only a single API to implement a specific behavior.  
+> This avoids confusion to select a one of multiple API variants if available.  
+> **Query optimization** and **Batch operations** are an exception to this rule.  
+> The reason is to provide provide room for significant performance gains if needed.
+
+<br/>
+
+## Boosted Query
+
+
+🔥 **Update** - Introduced new query approach using [Friflo.Engine.ECS.Boost](https://www.nuget.org/packages/Friflo.Engine.ECS.Boost#readme-body-tab).
+
+**Optimization**: Use `query.Each()` and a struct implementing `Execute(...)` for maximum query performance.  
+
+This query approach is the most performant approach - except Query vectorization / SIMD.  
+A unique feature of **Friflo.Engine.ECS** - it uses no **unsafe code**. This enables running the dll in trusted environments.  
+For maximum performance unsafe code is required to elide bounds checks.  
+
+Instead of processing components of a query with `query.ForEachEntity(...)`  
+the `MoveEach` struct below process components in its `Execute()` method.  
+The processing of all query components is performed by `query.Each(new MoveEach())`.
+
+The performance gain compared with `query.ForEachEntity(...)` is ~3x.  
+The method `query.Each()` requires adding the dependency [Friflo.Engine.ECS.Boost](https://www.nuget.org/packages/Friflo.Engine.ECS.Boost#readme-body-tab).
+
+```cs
+public struct Velocity : IComponent { public Vector3 value; }
+
+public static void BoostedQuery()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 100; n++) {
+        store.CreateEntity(new Position(), new Velocity());
+    }
+    var query = store.Query<Position, Velocity>();
+    query.Each(new MoveEach()); // requires https://www.nuget.org/packages/Friflo.Engine.ECS.Boost
+}
+
+struct MoveEach : IEach<Position, Velocity>
+{
+    public void Execute(ref Position position, ref Velocity velocity) {
+        position.value += velocity.value;
+    }
+} 
+```
+
+<br/>
+
+
+## Enumerate Query Chunks
+
+**Optimization**: Replace a `query.ForEachEntity(( ... ) => lambda)` by two `foreach` loops.  
+This approach avoids the more expensive lambda calls.
+
+Also as described in the intro enumeration of a query result is fundamental for an ECS.  
+Components are returned as [Chunk](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Chunk_T_.md)'s and are suitable for
+[Vectorization - SIMD](https://en.wikipedia.org/wiki/Single_instruction,_multiple_data).
+
+```csharp
+public static void EnumerateQueryChunks()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 3; n++) {
+        store.CreateEntity(new MyComponent{ value = n + 42 });
+    }
+    var query = store.Query<MyComponent>();
+    foreach (var (components, entities) in query.Chunks)
+    {
+        for (int n = 0; n < entities.Length; n++) {
+            Console.WriteLine(components[n].value);                  // > 42  43  44
+        }
+    }
+    // Caution! This alternative to iterate components is much slower
+    foreach (var entity in query.Entities) {
+        Console.WriteLine(entity.GetComponent<MyComponent>().value); // > 42  43  44
+    }
+}
+```
+🔥 **Update** - Added example code for slower iteration alternative.  
+The alternative should be used only for small result set with less than 10 entities.
+
+<br/>
+
+
+## Parallel Query Job
+
+**Optimization**: Execute a `query` on multiple CPU cores in parallel.
+
+To minimize execution time for large queries a [QueryJob](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/QueryJob.md) can be used.  
+It provides the same functionality as the **foreach** loop in example above but runs on multiple cores in parallel. E.g.
+```csharp
+    foreach (var (components, entities) in query.Chunks) { ... }
+```
+To enable running a query job a [ParallelJobRunner](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ParallelJobRunner.md) is required.  
+The runner can be assigned to the `EntityStore` or directly to the `QueryJob`.  
+A `ParallelJobRunner` instance is thread-safe and can / should be used for multiple / all query jobs.
+
+```csharp
+public static void ParallelQueryJob()
+{
+    var runner  = new ParallelJobRunner(Environment.ProcessorCount);
+    var store   = new EntityStore { JobRunner = runner };
+    for (int n = 0; n < 10_000; n++) {
+        store.CreateEntity(new MyComponent());
+    }
+    var query = store.Query<MyComponent>();
+    var queryJob = query.ForEach((myComponents, entities) =>
+    {
+        // multi threaded query execution running on all available cores
+        for (int n = 0; n < entities.Length; n++) {
+            myComponents[n].value += 10;
+        }
+    });
+    queryJob.RunParallel();
+    runner.Dispose();
+}
+```
+In case of structural changes inside `ForEach((...) => {...})` use
+[CommandBuffer.Synced](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.Synced.md)
+to record the changes.  
+These changes are adding / removing components, tags or child entities and the creation / deletion of entities.
+
+Note: `CommandBuffer` is **_not_** thread safe. `CommandBuffer.Synced` **_is_** thread safe.  
+After `RunParallel()` returns these changes can be applied to the `EntityStore` by calling `CommandBuffer.Playback()`.
+
+**Re-use QueryJob**
+
+The `QueryJob` returned by `query.ForEach(...)` is intended to be re-used.  
+This ensures that subsequent calls to `queryJob.RunParallel()` do not perform allocations on GC heap.
+
+**Recommendation**  
+A parallel query achieves notable performance gains in case using only arithmetic computations like * / + - sin(), cos(), ... in the loop.  
+
+In case of using a `CommandBuffer` and and applying massive entity changes the single threaded version is typically faster.  
+The reason is that entity changes applied to a `CommandBuffer` requires heavy random memory access.  
+If doing this on multiple threads the CPU cores are competing with access to memory heap and CPU caches.
+
+<br/>
+
+
+## Query Vectorization / SIMD
+
+**Optimization**: Utilize SIMD of your CPU to execute a `query`.  
+SIMD architectures: SSE, AVX, AVX2, AVX-512, AdvSIMD, Neon, ...
+
+The most efficient way to speedup query execution is vectorization.  
+Vectorization is similar to loop unrolling - aka loop unwinding - but with hardware support.  
+Its efficiency is superior to multi threading as it requires only a single thread to achieve the same performance gain.  
+So other threads can still keep running without competing for CPU resources.  
+
+*Note:* Vectorization can be combined with multi threading to speedup execution even more.  
+In case of a system with high memory bandwidth the speedup is *speedup(SIMD) * speedup(multi threading)*.  
+If SIMD or multi threading alone already reaches this bandwidth bottleneck their combination provide no performance gain.
+
+The API provide a few methods to convert chunk components into [System.Runtime.Intrinsics - Vectors](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.intrinsics).  
+E.g. `AsSpan256<>` and `StepSpan256`. See all methods at the [Chunk - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Chunk_T_.md).  
+The `Span` retrieved from a  chunk component has padding components at the end to enable vectorization without a scalar remainder loop.
+
+The following examples shows how to increment all `MyComponent.value`'s by 1.  
+
+```csharp
+public static void QueryVectorization()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 10_000; n++) {
+        store.CreateEntity(new MyComponent());
+    }
+    var query = store.Query<MyComponent>();
+    foreach (var (component, entities) in query.Chunks)
+    {
+        // increment all MyComponent.value's. add = <1, 1, 1, 1, 1, 1, 1, 1>
+        var add     = Vector256.Create<int>(1);     // create int[8] vector - all values = 1
+        var values  = component.AsSpan256<int>();   // values.Length - multiple of 8
+        var step    = component.StepSpan256;        // step = 8
+        for (int n = 0; n < values.Length; n += step) {
+            var slice   = values.Slice(n, step);
+            var result  = Vector256.Create<int>(slice) + add; // 8 add ops in one CPU cycle
+            result.CopyTo(slice);
+        }
+    }
+}
+```
+<br/>
+
+
+================================================
+FILE: docs/query.md
+================================================
+
+Queries are a fundamental feature of an ECS.  
+
+The major strength of an ECS is efficient / performant query execution.  
+An Archetype based ECS store components in arrays. A query result provide direct access to these arrays - aka `Chunks`.  
+So the performance characteristic iterating a query result is the same as iterating an array.
+
+> **Info**  
+> Iterating arrays is the most efficient way to iterate large data sets by efficient use of the CPU L1 cache, its prefetcher and instruction pipelining.
+> - All data in **L1 cache lines** (typically 64 or 128 bytes) storing components is utilized.
+> - The **prefetcher** minimize caches misses as it detects the sequential array access which stores data in continuous memory.
+> - Efficient use of **instruction pipelining** as array iteration require minimal conditional branches.
+
+The second aspect for fast query execution in an Archetype based ECS is its *runtime complexity* required for filtering.  
+Components are stored in archetypes. Query execution requires access only to matching archetypes for filtering.  
+The runtime cost for non matching archetypes is **0**. This prevents *full table scan* or access to data which is not part of the query result.
+
+> **Info**  
+> The **runtime complexity** of query execution is **O(N)** with **N**: number of the result elements.
+
+<br/>
+
+# Query creation
+
+A query is created by specifying two aspects.
+
+- The **components** a query returns when executed. They are passed a generic arguments to a `store.Query<>()`.  
+  The query result contains only entities having all specified components.  
+  *Info:* The specified components corresponds to the rows listed in a SQL `SELECT` statement.
+
+- Add optionals [**query filters**](#query-filter) to reduce the query result only to entities matching the filters.  
+  *Info:* The filters corresponds to SQL `WHERE` clause used to filter records.
+
+The `ArchetypeQuery` returned by `store.Query<>()` is designed for reuse.  
+It can be stored and reused to avoid the setup and allocation required by a `Query<>()` call.
+
+```csharp
+public static void EntityQueries()
+{
+    var store   = new EntityStore();
+    store.CreateEntity(new EntityName("entity-1"));
+    store.CreateEntity(new EntityName("entity-2"), Tags.Get<MyTag1>());
+    store.CreateEntity(new EntityName("entity-3"), Tags.Get<MyTag1, MyTag2>());
+    
+    // --- query components
+    var queryNames = store.Query<EntityName>();
+    queryNames.ForEachEntity((ref EntityName name, Entity entity) => {
+        // ... 3 matches
+    });    
+    // --- query components with tags
+    var namesWithTags  = store.Query<EntityName>().AllTags(Tags.Get<MyTag1, MyTag2>());
+    namesWithTags.ForEachEntity((ref EntityName name, Entity entity) => {
+        // ... 1 match
+    });    
+    // --- use query.Entities in case an iteration requires no component access
+    foreach (var entity in queryNames.Entities) {
+        // ... 3 matches
+    }
+}
+```
+When iterating a query result its component values can be changed if needed.
+
+> **Important**  
+> Adding components or tags to entities or removing them while iterating causes a *structural change* and invalidate the query result.  
+> A *structural change* is also caused by creating or deleting entities.  
+> These type of operations require a [CommandBuffer](#commandbuffer) to defer *structural changes* and must be applied by `commandBuffer.Playback()` after the iteration finished.
+
+
+**Note**  
+As mentioned above by storing components in arrays aka `Chunks` additional [Query Optimizations](query-optimization.md) can by applied if needed.
+
+<br/>
+
+
+# Query Filter
+
+To reduced the number of results returned by a query additional filters can by added to a `Query<>()`.  
+These filter can be used include or exclude entities with specific components or tags in the result.
+
+**Tag filter examples:**  
+To return only entities having both tags `MyTag1` *AND* `MyTag2` the query would look like.
+```csharp
+query = store.Query<EntityName>().AllTags(Tags.Get<MyTag1, MyTag2>());
+```
+
+To return entities having either the tag `MyTag1` *OR* `MyTag2` the query filter is.
+```csharp
+query = store.Query<EntityName>().AnyTags(Tags.Get<MyTag1, MyTag2>());
+```
+
+A filter can also be used to exclude specific entities from a query result.  
+To exclude entities from the result having the tag `MyTag3` the filter is.
+```csharp
+query = store.Query<EntityName>().WithoutAnyTags(Tags.Get<MyTag3>());
+```
+
+Multiple query filters can be combined by chaining.
+```csharp
+query = store.Query<EntityName>()
+            .AllTags(Tags.Get<MyTag1>())
+            .WithoutAnyTags(Tags.Get<MyTag3>());
+```
+
+**Component filter example:**  
+To return only entities having  the component `MyComponent` the query would look like.
+```csharp
+query = store.Query<EntityName>().AllComponents(ComponentTypes.Get<MyComponent>()
+```
+
+See all available filters at the [QueryFilter - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/QueryFilter.md)
+
+> *Notes*
+> - The `QueryFilter` can be changed after query creation until calling `FreezeFilter()`.
+> - A single `QueryFilter` instance can be shared by multiple queries if needed.
+
+<br/>
+
+
+# StructuralChangeException
+
+The `StructuralChangeException` is introduced **v3.1.0** and will be thrown when performing **structural changes** within a query loop.
+A structural changes is:
+- Add / Remove Components
+- Add / Remove Tags
+
+Performing structural changes within a query may result in unexpected entity states without any notice.  
+This behavior applies to all ECS implementations out there. C#, C/C++, ...  
+
+The result of this behavior are bugs which hard to find.  
+The query causing the issue and the code point detecting the issue are often not colocated.  
+To prevent this problem a `StructuralChangeException` is now thrown instantaneously.
+
+*Explanation*  
+This exception is similar to the behavior in C# when adding an element to a `List<>` within a loop iterating the list. E.g.
+```cs
+    var list = new List<int> { 1, 2, 3 };
+    foreach (var item in list) {
+        // throws InvalidOperationException : Collection was modified; enumeration operation may not execute.
+        list.Add(42);
+    }
+```
+
+The counterpart of this behavior in this ECS is throwing a `StructuralChangeException` when structural changes are performed within a query loop.
+
+## Example: Query<>()
+
+The following use of a `Query<>()` demonstrates the issue and a solution to fix this.
+```cs
+    var store = new EntityStore();
+    store.CreateEntity(new Position());
+
+    var query = store.Query<Position>();
+    query.ForEachEntity((ref Position position, Entity entity) =>
+    {
+        // throws StructuralChangeException: within query loop. See: https://friflo.gitbook.io/friflo.engine.ecs/documentation/query#structuralchangeexception
+        entity.AddComponent(new EntityName("test"));
+    });
+    
+    // Solution: Using a CommandBuffer 
+    var buffer = store.GetCommandBuffer();
+    query.ForEachEntity((ref Position position, Entity entity) => {
+        buffer.AddComponent(entity.Id, new EntityName("test"));
+    });
+    buffer.Playback();
+```
+
+## Example: QuerySystem<>
+
+In case of using systems the issue and its solution is shown the by snippet below.
+```cs
+public static void QuerySystemException() {
+    var store = new EntityStore();
+    store.CreateEntity(new Position());
+
+    var root = new SystemRoot(store) {
+        new QueryPositionSystem()
+    };
+    root.Update(default); 
+}
+
+class QueryPositionSystem : QuerySystem<Position>
+{
+    protected override void OnUpdate() {
+        Query.ForEachEntity((ref Position component1, Entity entity) => {
+            // throws StructuralChangeException: within query loop. See: https://friflo.gitbook.io/friflo.engine.ecs/documentation/query#structuralchangeexception
+            entity.AddComponent(new EntityName("test"));
+        });
+        
+        // Solution: Using the system CommandBuffer 
+        var buffer = CommandBuffer;
+        Query.ForEachEntity((ref Position component1, Entity entity) => {
+            buffer.AddComponent(entity.Id, new EntityName("test"));
+        });
+        // changes made via CommandBuffer are applied by parent group
+    }
+}
+```
+
+## Projects prior v3.1.0
+
+Projects prior v3.1.0 did not throw `StructuralChangeException`'s.  
+In case updating existing projects prior to **v3.1.0** and now observing `StructuralChangeException`'s
+the old behavior can be retained for specific queries to enable incremental migration with:
+```cs
+    query.ThrowOnStructuralChange = false;
+```
+After fixing a query loop the `ThrowOnStructuralChange = false` workaround should be removed!
+
+In case updating a project without getting `StructuralChangeException`'s  
+Congratulations - you read the Query documentation carefully!
+
+<br/>
+
+
+# CommandBuffer
+
+A `CommandBuffer` is used to record changes on multiple entities. E.g. `AddComponent()`.  
+These changes are applied to entities when calling `Playback()`.    
+Recording commands with a `CommandBuffer` instance can be done on **any** thread.  
+`Playback()` must be called on the **main** thread.  
+Available commands are in the [CommandBuffer - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.md).  
+
+This enables recording entity changes in multi threaded application using entity systems / queries.  
+In this case enumerations of query results run on multiple worker threads.  
+Within these enumerations entity changes are recorded with a `CommandBuffer`.  
+After a query thread has finished these changes are executed with `Playback()` on the **main** thread.
+
+```csharp
+public static void CommandBuffer()
+{
+    var store   = new EntityStore();
+    var entity1 = store.CreateEntity(new Position());
+    var entity2 = store.CreateEntity();
+    
+    CommandBuffer cb = store.GetCommandBuffer();
+    var newEntity = cb.CreateEntity();
+    cb.DeleteEntity  (entity2.Id);
+    cb.AddComponent  (newEntity, new EntityName("new entity"));
+    cb.RemoveComponent<Position>(entity1.Id);        
+    cb.AddComponent  (entity1.Id, new EntityName("changed entity"));
+    cb.AddTag<MyTag1>(entity1.Id);
+    
+    cb.Playback();
+    
+    var entity3 = store.GetEntityById(newEntity);
+    Console.WriteLine(entity1);     // > id: 1  "changed entity"  [EntityName, #MyTag1]
+    Console.WriteLine(entity2);     // > id: 2  (detached)
+    Console.WriteLine(entity3);     // > id: 3  "new entity"  [EntityName]
+}
+```
+
+
+================================================
+FILE: docs/relations.md
+================================================
+A relation enables adding multiple *"components"* of the same type to an entity.  
+
+> *Info*  
+> Relations are not components but both have similar interfaces too add, remove or access them.  
+> Relations are not stored within archetypes to avoid archetype fragmentation.
+
+A typical limitation of an archetype-based ECS is that an entity can only contain one component of a certain type.  
+When adding a component of a specific type to an entity already present the component is updated.  
+This is the common behavior implemented by most ECS implementations like **EnTT**, **flecs**, **BEVY**, **fenn**ecs, ... .  
+
+**Terminology**  
+A relation in mathematical context describes a connection between the elements of two sets: *Set-1* & *Set-2*.  
+In other words - a relation is a pair (element of *Set-1*, element of *Set-2*).
+
+In friflo ECS a relation is a type implementing either `IRelation<>` or `ILinkRelation`.  
+An entity containing a relation creates a relation between this entity and the relation key.  
+So *Set-1* are always **all entities** and *Set-2* are all possible **relation keys**.  
+
+- A **relation** implements `IRelation<>` and is a pair (entity, relation key)
+- A **relationship** implements `ILinkRelation` and is a pair (entity, linked entity)
+
+## Relation
+
+Multiple relations can be added to a single entity and must implement
+[`IRelation<>`](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/IRelation_TKey_.md).  
+To distinguish between different relations, a relation type must implement `GetRelationKey()`.  
+Any type can be used as relation key type. E.g. enum, string, int, long, Guid, DateTime, ... .
+
+Relations are added, removed and queried with
+```cs
+    entity.AddRelation(new InventoryItem { type = ItemType.Coin });
+    entity.AddRelation(new InventoryItem { type = ItemType.Axe  });
+    entity.RemoveRelation <InventoryItem,ItemType>(ItemType.Coin);
+    entity.GetRelations   <InventoryItem>();                        // O(1)
+    entity.GetRelation    <InventoryItem,ItemType>(ItemType.Axe);   // O(N)
+    // N: number of relations on a single entity
+```
+
+The following example illustrates the state changes of a specific entity regarding its relations.  
+It uses an `enum` as relation key type.
+
+```cs
+enum ItemType {
+    Coin    = 1,
+    Axe     = 2,
+}
+
+struct InventoryItem : IRelation<ItemType> { // relation key type: ItemType
+    public  ItemType    type;
+    public  int         count;
+    public  ItemType    GetRelationKey() => type;     // unique relation key
+}
+
+public static void Relations()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add multiple relations of the same component type
+    entity.AddRelation(new InventoryItem { type = ItemType.Coin, count = 42 });
+    entity.AddRelation(new InventoryItem { type = ItemType.Axe,  count =  3 });
+    
+    // Get all relations added to an entity.   O(1)
+    entity.GetRelations  <InventoryItem>();                       // { Coin, Axe }
+    
+    // Get a specific relation from an entity. O(N)
+    entity.GetRelation   <InventoryItem,ItemType>(ItemType.Coin); // {type=Coin, count=42}
+    
+    // Remove a specific relation from an entity
+    entity.RemoveRelation<InventoryItem,ItemType>(ItemType.Axe);
+    entity.GetRelations  <InventoryItem>();                       // { Coin }
+}
+```
+
+The relations of an `Entity` can be modified within a `foreach` loop by accessing the elements by `ref`.
+```cs
+    var relations = entity.GetRelations<InventoryItem>();
+    foreach(ref var relation in relations) {
+        relation.count += 1;
+    }
+```
+> **Important**  
+> Within loop iteration relations must not be added or removed.  
+> Doing this invalidates the iteration result.
+
+Retrieving all entity relations is shown by the example below.
+```cs
+public static void AllRelations()
+{
+    var store   = new EntityStore();
+    var entity1 = store.CreateEntity();
+    var entity2 = store.CreateEntity();
+    
+    // add relations to multiple entities
+    entity1.AddRelation(new InventoryItem { type = ItemType.Coin, count = 10 });
+    entity2.AddRelation(new InventoryItem { type = ItemType.Coin, count = 20 });
+    entity2.AddRelation(new InventoryItem { type = ItemType.Axe,  count =  1 });
+    
+    var allRelations = store.EntityRelations<InventoryItem>();
+    
+    // all entities with relations
+    var uniqueEntities = allRelations.Entities;     // count: 2
+    
+    // all entity relation pairs
+    var (entities, relations) = allRelations.Pairs; // count: 3
+}
+```
+
+
+**Note** - Breaking changes since `3.0.0-preview.16`
+
+1. To avoid mixing up relations with components accidentally `IRelation` does not extends `IComponent` anymore.
+2. Renamed public API's  
+   `IRelationComponent<>` -> `IRelation<>`  
+   `RelationComponents<>` -> `Relations<>`
+
+<br/>
+
+
+## Serialization
+
+Serialization of relations as JSON is supported since `3.0.0-preview.17` or higher.  
+Its encoding similar to the serialization of components.  
+In contrast to components relations are serialized as an array of components as a single entity can have multiple relations.
+
+```json
+{
+    "id": 42,
+    "components": {
+        "relations": [{"value":42},{"value":43}],
+        "component": {"value":42}
+    }
+}
+```
+<br/>
+
+## Benchmark - Relations
+
+The number of link relations / relations per entity should not exceed 100.  
+The reason is that inserting and removing a relation is executed in O(N).  
+N: number of relations per entity.
+
+*Benchmark* [see Tests](https://github.com/friflo/Friflo.Engine.ECS/blob/main/src/Tests/ECS/Relations/Test_Relations_Query.cs)  
+Add 1.000.000 int relations. Type:
+```cs
+internal struct IntRelation : IRelation<int> {
+    public          int     value;
+    public          int     GetRelationKey()    => value;
+}
+```
+| relationsPerEntity |        duration ms |           entities |
+| ------------------:| ------------------:| ------------------:|
+|                  1 |              60.17 |            1000000 |
+|                  2 |              64.11 |             500000 |
+|                  4 |              62.68 |             250000 |
+|                  8 |              66.66 |             125000 |
+|                 16 |              67.71 |              62500 |
+|                 32 |              90.53 |              31250 |
+|                 64 |             150.14 |              15625 |
+|                128 |             154.39 |               7813 |
+|                256 |             254.26 |               3907 |
+|                512 |             416.20 |               1954 |
+|               1024 |             772.39 |                977 |
+|               2048 |            1504.50 |                489 |
+|               4096 |            2993.34 |                245 |
+|               8192 |            5867.59 |                123 |
+
+
+================================================
+FILE: docs/relationships.md
+================================================
+An entity relationship is a *directed* link between two entities.
+
+Typical use case for entity relationships in a game are:
+- Attack systems
+- Path finding / Route tracing
+- Model social networks. E.g friendship, alliances or rivalries
+- Inventory Systems
+- Build any type of a [directed graph](https://en.wikipedia.org/wiki/Directed_graph)
+  using entities as *nodes* and links or relations as *edges*.
+
+Entity relationships are modeled as components or relations.  
+*Directed link* means that a link points from a **source** entity to a **target** entity.  
+The entity containing a link component / relation is the **source** entity.
+
+There are two interfaces used to define entity relationships with entity links:
+
+1. [ILinkComponent](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ILinkComponent.md) -
+   An entity can have only one link component per type at a time.
+
+2. [ILinkRelation](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ILinkRelation.md) -
+   An entity can have multiple link relations - one per **target** entity.
+
+Now you might ask why having specialized component types for entity links.  
+You can simply add an `Entity` field to a component type and you are done.  
+This is absolutely correct but the specialized types provide the following features.
+
+**Features of entity links**
+
+- Get link component of an entity with `entity.GetComponent<AttackComponent>()` in O(1).
+
+- Get link relations of an entity with `entity.GetRelations<AttackRelation>()` in O(1).
+
+- Get entities including outgoing links referencing a specific **target** entity with  
+  `target.GetIncomingLinks<AttackComponent>()` in O(1).  This make links **bidirectional**.
+
+- Automatically removing links from all entities having a link to a **target** entity that is deleted.
+
+- Get all entities in an EntityStore linked by a specific link component using  
+  `store.LinkComponentIndex<AttackComponent>().Values` in O(1).
+
+- Add multiple links to a single entity using [Link Relations](#link-relation).
+
+- Show and navigate all incoming entity links in a debugger
+
+<br/>
+
+<img src="../images/entity-debugger-incoming-links.png" width="600" height="290"></img>  
+*Screenshot:* Show and navigate all incoming entity links in a debugger at `Info.IncomingLinks`
+
+
+**Comparison to implementations in other ECS projects.**  
+
+Entity relationships in **flecs** and **BEVY** are modeled as component/entity pairs added to entities.  
+The main differences are:
+
+- In **flecs** links between entities can be created adhoc.  
+  This ECS requires to define a specific component type to create links between entities.  
+  This simplifies code navigation and establish a clear overview what types of links are used in a project.
+
+- The API to create and query relations in **flecs** is very compact but not very intuitive - imho.  
+  It is completely different from common component handling.
+  See [flecs ⋅ Relationships](https://github.com/SanderMertens/flecs/blob/master/docs/Relationships.md)
+
+- Adding, removing or updating a `ILinkRelation` does not cause [archetype fragmentation](https://www.flecs.dev/flecs/md_docs_2Relationships.html#fragmentation).  
+  In **flecs** every relationship between two entities creates an individual archetype only containing a single entity / component.  
+  So each entity relationship allocates ~ 1000 bytes required by the archetype stored in the heap for each link.  
+  The more significant performance penalty is the side effect in queries. Many archetypes need to be iterated if they are query matches.
+
+- Adding, removing or updating a `ILinkComponent` cause archetype fragmentation.  
+  `ILinkComponent`'s are components including their behavior.
+
+- Changing an entity link does not cause a structural change.  
+  In **flecs** a new archetype needs to be created and the old archetype gets empty.  
+
+Big shout out to [**fenn**ecs](https://github.com/outfox/fennecs) and [**flecs**](https://github.com/SanderMertens/flecs)
+for the challenge to improve the feature set and performance of this project!
+
+<br/>
+
+
+## Link Component
+
+A link component enables adding a link to another **target** entity.  
+An entity can have only one link component per type at a time.  
+Link components are added, removed and queried like common components with
+```cs
+    entity.AddComponent(new AttackComponent { target = entity2 });
+    entity.GetComponent    <AttackComponent>();
+    entity.RemoveComponent <AttackComponent>();
+    entity.HasComponent    <AttackComponent>();
+```
+
+The following example illustrate the state changes by small text graphs on the right.  
+Link components are represented by `→` icon.  
+This example show the graph changes when adding link components or deleting entities.
+
+```cs
+struct AttackComponent : ILinkComponent {
+    public  Entity  target;
+    public  Entity  GetIndexedValue() => target;
+}
+
+public static void LinkComponents()
+{
+    var store   = new EntityStore();
+
+    var entity1 = store.CreateEntity(1);                            // link components
+    var entity2 = store.CreateEntity(2);                            // symbolized as →
+    var entity3 = store.CreateEntity(3);                            //   1     2     3
+    
+    // add a link component to entity (2) referencing entity (1)
+    entity2.AddComponent(new AttackComponent { target = entity1 }); //   1  ←  2     3
+    // get all incoming links of given type.    O(1)
+    entity1.GetIncomingLinks<AttackComponent>();        // { 2 }
+
+    // update link component of entity (2). It links now entity (3)
+    entity2.AddComponent(new AttackComponent { target = entity3 }); //   1     2  →  3
+    entity1.GetIncomingLinks<AttackComponent>();        // { }
+    entity3.GetIncomingLinks<AttackComponent>();        // { 2 }
+
+    // deleting a linked entity (3) removes all link components referencing it
+    entity3.DeleteEntity();                                         //   1     2
+    entity2.HasComponent    <AttackComponent>();        // false
+}
+```
+
+> **Important**  
+> When changing the indexed component value `entity.AddComponent<>()` must be used to enable the store updating the index.  
+> Changing the indexed component with `ref` access don't update the index.  
+> E.g. with `entity.GetComponent<>()` or within a `Query()` using the `ref` parameter of a component.
+```cs
+store.AddComponent(new AttackComponent{ target = entity1 }); // OK
+store.GetComponent<AttackComponent>().target = entity1;      // No index update
+```
+
+<br/>
+
+
+
+## Link Relation
+
+A link relation enables adding multiple links to a single entity referencing other **target** entities.  
+There can be only one link relation per **target** entity.  
+Link relations are added, removed and queried with
+```cs
+    entity.AddRelation(new AttackRelation { target = entity1 });
+    entity.AddRelation(new AttackRelation { target = entity2 });
+    entity.RemoveRelation <AttackRelation>(entity1);
+    entity.GetRelations   <AttackRelation>();               // O(1)
+    entity.GetRelation    <AttackRelation,Entity>(entity2); // O(N)
+    // N: number of relations on a single entity
+```
+
+Methods to mutate and query link relation are at
+[RelationExtensions](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/RelationExtensions.md).
+
+The following example illustrate the state changes by small text graphs on the right.  
+Link relations are represented by `→` icon.  
+This example show the graph changes when adding link relations or deleting entities.
+
+```cs
+struct AttackRelation : ILinkRelation {
+    public  Entity  target;
+    public  Entity  GetRelationKey() => target;
+}
+
+public static void LinkRelations()
+{
+    var store   = new EntityStore();
+    
+    var entity1 = store.CreateEntity(1);                          // link relations
+    var entity2 = store.CreateEntity(2);                          // symbolized as →
+    var entity3 = store.CreateEntity(3);                          //   1     2     3
+    
+    // add a link relation to entity (2) referencing entity (1)
+    entity2.AddRelation(new AttackRelation { target = entity1 }); //   1  ←  2     3
+    // get all links added to the entity. O(1)
+    entity2.GetRelations    <AttackRelation>();     // { 1 }
+    // get all incoming links. O(1)
+    entity1.GetIncomingLinks<AttackRelation>();     // { 2 }
+    
+    // add another one. An entity can have multiple link relations
+    entity2.AddRelation(new AttackRelation { target = entity3 }); //   1  ←  2  →  3
+    entity2.GetRelations    <AttackRelation>();     // { 1, 3 }
+    entity3.GetIncomingLinks<AttackRelation>();     // { 2 }
+    
+    // deleting a linked entity (1) removes all link relations referencing it
+    entity1.DeleteEntity();                                       //         2  →  3
+    entity2.GetRelations    <AttackRelation>();     // { 3 }
+    
+    // deleting entity (2) is reflected by incoming links query
+    entity2.DeleteEntity();                                       //               3
+    entity3.GetIncomingLinks<AttackRelation>();     // { }
+}
+```
+
+
+================================================
+FILE: docs/systems.md
+================================================
+Systems in an ECS are typically queries.  
+So you can still use the `world.Query<Position, Velocity>()` shown in the "Hello World" example.  
+
+Using Systems is optional but they have some significant advantages.
+
+**System features**
+
+- Enable chaining multiple decoupled [QuerySystem](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/QuerySystem.md) classes in a
+  [SystemGroup](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/SystemGroup.md).  
+  Each group provide a [CommandBuffer](https://friflo.gitbook.io/friflo.engine.ecs/examples/optimization#commandbuffer).
+
+- A system can have state - fields or properties - which can be used as parameters in `OnUpdate()`.  
+  The system state can be serialized to JSON.
+
+- Systems can be enabled/disabled or removed.  
+  The order of systems in a group can be changed.
+
+- Systems have performance monitoring build-in to measure execution times and memory allocations.  
+  If enabled systems detected as bottleneck can be optimized.  
+  A perf log (see example below) provide a clear overview of all systems their amount of entities and impact on performance.
+
+- Multiple worlds can be added to a single  [SystemRoot](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/SystemRoot.md) instance.  
+  `root.Update()` will execute every system on all worlds.
+
+
+# Example
+
+The example shows the setup of a small system hierarchy.  
+Multiple systems can be added to a system hierarchy.
+
+```csharp
+public static void HelloSystem()
+{
+    var world = new EntityStore();
+    for (int n = 0; n < 10; n++) {
+        world.CreateEntity(new Position(n, 0, 0), new Velocity(), new Scale3());
+    }
+    var root = new SystemRoot(world) {
+        new MoveSystem(),
+    //  new PulseSystem(),
+    //  new ... multiple systems can be added. The execution order still remains clear.
+    };
+    root.Update(default);
+}
+        
+class MoveSystem : QuerySystem<Position, Velocity>
+{
+    protected override void OnUpdate() {
+        Query.ForEachEntity((ref Position position, ref Velocity velocity, Entity entity) => {
+            position.value += velocity.value;
+        });
+    }
+}
+```
+
+A valuable strength of an ECS is establishing a clear and decoupled code structure.  
+Adding the `PulseSystem` below to the `SystemRoot` above is trivial.  
+This system uses a `foreach (var entity in Query.Entities)` as an alternative to `Query.ForEachEntity((...) => {...})`  
+to iterate the query result.
+
+The example also shows how to set a `Filter` in a system constructor to limit the query result to entities matching this `Filter`.  
+See all available filters at the [QueryFilter - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/QueryFilter.md).
+
+
+```csharp
+struct Pulsating : ITag { }
+
+class PulseSystem : QuerySystem<Scale3>
+{
+    float frequency = 4f;
+    
+    public PulseSystem() => Filter.AnyTags(Tags.Get<Pulsating>());
+    
+    protected override void OnUpdate() {
+        foreach (var entity in Query.Entities) {
+            ref var scale = ref entity.GetComponent<Scale3>().value;
+            scale = Vector3.One * (1 + 0.2f * MathF.Sin(frequency * Tick.time));
+        }
+    }
+}
+```
+
+The system hierarchy can be modified at runtime.  
+New systems can be added, inserted or removed.
+
+```cs
+    var root = new SystemRoot();
+    var mySystem1 = new MySystem1();
+    var mySystem2 = new MySystem2();
+    root.Add(mySystem1);
+    root.Insert(1, mySystem2);
+    root.Remove(mySystem1);
+```
+
+To prevent running a system when executing `Update()` without changing the hierarchy
+a system can be disabled with
+```cs
+    system.Enabled = false;  
+```
+
+<br/>
+
+# System monitoring
+
+System performance monitoring is disabled by default.  
+To enable monitoring call:
+
+```csharp
+root.SetMonitorPerf(true);
+```
+
+When enabled system monitoring captures
+- Number of system executions.
+- System execution duration in ms.
+- Memory heap allocations per system in bytes.
+- The number of entities matching a query system.
+
+
+## Realtime monitoring
+
+In a game editor like Unity system monitoring is available in the **ECS System Set** component.
+<details>
+<summary>Screenshot: <b>ECS System Set</b> component in Play mode</summary>
+<img src="https://raw.githubusercontent.com/friflo/Friflo.Engine.ECS/main/docs/images/SystemSet-Unity.png" width="324" height="ddd"/>
+</details>
+
+
+## Log monitoring
+
+The performance statistics available at [SystemPerf](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/SystemPerf.md).  
+To get performance statistics on console use:
+
+```csharp
+root.Update(default);
+Console.WriteLine(root.GetPerfLog());
+```
+
+The log result will look like:
+```js
+stores: 1                  on   last ms    sum ms   updates  last mem   sum mem  entities
+---------------------      --  --------  --------  --------  --------  --------  --------
+Systems [2]                 +     0.076     3.322        10       128      1392
+| ScaleSystem               +     0.038     2.088        10        64       696     10000
+| PositionSystem            +     0.038     1.222        10        64       696     10000
+```
+```
+on                  + enabled  - disabled
+last ms, sum ms     last/sum system execution time in ms
+updates             number of executions
+last mem, sum mem   last/sum allocated bytes
+entities            number of entities matching a QuerySystem
+```
+
+<br/>
+
+# SystemRoot
+
+The `SystemRoot` is a container of systems forming a hierarchy of systems.  
+These systems are executed in their specified order.  
+
+Typically a `SystemRoot` operates on **single** `EntityStore` passed to its constructor.  
+A system hierarchy can also operate on multiple `EntityStore`'s.  
+Additional stores are added with `root.AddStore()`.  
+
+If needed a system hierarchy can be setup without any `EntityStore`.  
+This enables creating the hierarchy without the need of an `EntityStore` at initialization phase.
+
+<br/>
+
+
+# Update Execution
+
+Execution of systems start always with the `SystemRoot`. *Info* - a `SystemRoot` is a `SystemGroup`.  
+Its child systems are executed when calling `root.Update()`.  
+The child systems of a `SystemGroup` are executed in the order added to the group.  
+```cs
+    var root = new SystemRoot(store) {
+        new MoveSystem(),
+        new PulseSystem()
+    };
+    root.Update(default);
+```
+
+Each `QuerySystem` can **override** the following methods.
+```cs
+    protected   override void   OnUpdateGroupBegin() { } // called once per Update()
+    protected   override void   OnUpdate()           { } // called for every store
+    protected   override void   OnUpdateGroupEnd()   { } // called once per Update()
+```
+
+The execution of these methods of the group children is shown in the pseudo below.  
+Each group has a single `CommandBuffer` per `EntityStore`.  
+`CommandBuffer.Playback()` is called after execution of all `OnUpdate()` methods.
+
+Execution order using a **single** `EntityStore`.
+```cs
+    foreach (var child in children) child.OnUpdateGroupBegin();
+
+    foreach (var child in children) child.OnUpdate();
+
+    store.CommandBuffer.Playback();
+
+    foreach (var child in children) child.OnUpdateGroupEnd();
+```
+
+Execution order when using **multiple** `EntityStore`'s.
+```cs
+    foreach (var child in children) child.OnUpdateGroupBegin();
+
+    foreach (var store in stores) {
+        foreach (var child in children) child.OnUpdate();
+    }
+    foreach (var store in stores) {
+        store.CommandBuffer.Playback();
+    }
+    foreach (var child in children) child.OnUpdateGroupEnd();
+```
+
+<br/>
+
+
+# Customize Systems
+
+In cases a system requires code which goes beyond common `Query` execution a system can be customized.  
+Therefor a system can override `OnAddStore()`
+```cs
+protected override void OnAddStore(EntityStore store)
+```
+
+Use cases for custom systems are:
+- Handle user input.
+- Moving the Camera. E.g. based on user input.
+- Execute multiple / nested queries in a single system.  
+  E.g. to detect collisions between two different entity sets and iterating both sets in nested loops.
+- Need to make structural changes via the parent group `CommandBuffer`.
+- Want direct access to an `EntityStore`.
+
+## Extend `QuerySystem`
+
+Example show how to extend a `QuerySystem` and execute a `customQuery`.  
+A `QuerySystem` enable access to the `CommandBuffer`.
+
+```cs
+public static void CustomizeQuerySystem()
+{
+    var world = new EntityStore();
+    world.CreateEntity(new Position(0, 0, 0));
+    var root = new SystemRoot(world) {
+        new CustomQuerySystem()
+    };
+    root.Update(default);
+}
+
+// The example shows how to create a custom QuerySystem that:
+// - creates a customQuery and
+// - make structural changes via the parent group CommandBuffer.
+class CustomQuerySystem : QuerySystem
+{
+    private ArchetypeQuery<Position> customQuery;
+    
+    protected override void OnAddStore(EntityStore store) {
+        customQuery = store.Query<Position>();
+    }
+    
+    protected override void OnUpdate() {
+        var buffer = CommandBuffer;
+        // Executes the customQuery instead of the base class Query.
+        customQuery.ForEachEntity((ref Position component1, Entity entity) => {
+            buffer.AddComponent(entity.Id, new Velocity());
+        });
+    }
+}
+```
+
+## Extend `BaseSystem`
+
+Example shows how to extend a `BaseSystem` to call arbitrary methods on the `EntityStore`.  
+In this case to deal with `UniqueEntity`'s.  
+*Note:* A `BaseSystem` has no access to the `CommandBuffer`.
+
+```cs
+public static void CustomizeBaseSystem()
+{
+    var world = new EntityStore();
+    world.CreateEntity(new UniqueEntity("Camera"), new Position(0, 0, 0));
+    var root = new SystemRoot(world) {
+        new CameraSystem()
+    };
+    root.Update(default);
+}
+
+// Example of a system that does not require a Query.
+// E.g. find and access a UniqueEntity as shown below. 
+class CameraSystem : BaseSystem
+{
+    private Entity camera;
+    
+    protected override void OnAddStore(EntityStore store) {
+        camera = store.GetUniqueEntity("Camera");
+    }
+    
+    protected override void OnUpdateGroup() {
+        ref var position = ref camera.GetComponent<Position>();
+        // Update camera position based on user input
+    }
+}
+```
+
+
+================================================
+FILE: examples/Component-Types.md
+================================================
+
+*Note:* This Wiki page is work in progress...
+
+The common component type applicable for most use cases is
+[IComponent](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/IComponent.md).  
+See component example in [Wiki ⋅ Examples General](../examples/General.md#component)
+
+For specific use cases there is a set of component interfaces providing additional features.  
+
+| Use case                                      | Component interface type                  | Description
+| --------------------------------------------- | ----------------------------------------- | --------------------------------------------
+| [Entity Relationships](#entity-relationships) | [Link Component](#link-component)         | A single link on an entity referencing another entity.
+|                                               | [Link Relation](#link-relation)           | Multiple links on an entity referencing other entities.
+| [Relations](#relations)                       | [Relation](#relation)                     | Add multiple components of the same type to an entity.
+| [Search & Range queries](#search)             | [Indexed Component](#indexed-component)   | Full text search of component fields executed in O(1).<br/>Range queries on component fields having a sort order.
+
+
+Component types examples using **Friflo.Engine.ECS** are part of the unit tests see:
+[Tests/ECS/Examples](https://github.com/friflo/Friflo.Engine.ECS/tree/main/src/Tests/ECS/Examples)
+
+<br/>
+
+
+# Entity Relationships
+
+An entity relationship is a *directed* link between two entities.
+
+Typical use case for entity relationships in a game are:
+- Attack systems
+- Path finding / Route tracing
+- Model social networks. E.g friendship, alliances or rivalries
+- Inventory Systems
+- Build any type of a [directed graph](https://en.wikipedia.org/wiki/Directed_graph)
+  using entities as *nodes* and links or relations as *edges*.
+
+In this ECS relationships are modeled as components.  
+*Directed link* means that a link points from a **source** entity to a **target** entity.  
+The entity containing a link component / relation is the **source** entity.
+
+There are two interfaces used to define components with entity links:
+
+1. [ILinkComponent](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ILinkComponent.md) -
+   An entity can have only one link component at a time.
+
+2. [ILinkRelation](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ILinkRelation.md) -
+   An entity can have multiple link relations - one per **target** entity.
+
+Now you might ask why having specialized component types for entity links.  
+You can simply add an `Entity` field to a component type and you are done.  
+This is absolutely correct but the specialized types provide the following features.
+
+**Features of entity links**
+
+- Get link component of an entity with `entity.GetComponent<AttackComponent>()` in O(1).
+
+- Get link relations of an entity with `entity.GetRelations<AttackRelation>()` in O(1).
+
+- Get entities including outgoing links referencing a specific **target** entity with  
+  `target.GetIncomingLinks<AttackComponent>()` in O(1).  This make links **bidirectional**.
+
+- Automatically removing links from all entities having a link to a **target** entity that is deleted.
+
+- Get all entities in an EntityStore linked by a specific link component using  
+  `store.LinkComponentIndex<AttackComponent>().Values` in O(1).
+
+- Add multiple links to a single entity using [Link Relations](#link-relation).
+
+- Show and navigate all incoming entity links in a debugger
+
+<br/>
+
+<img src="../images/entity-debugger-incoming-links.png" width="600" height="290"></img>  
+*Screenshot:* Show and navigate all incoming entity links in a debugger at `Info.IncomingLinks`
+
+
+**Comparison to implementations in other ECS projects.**  
+
+Entity relationships in **flecs** and **BEVY** are modeled as component/entity pairs added to entities.  
+The main differences are:
+
+- In **flecs** links between entities can be created adhoc.  
+  This ECS requires to define a specific component type to create links between entities.  
+  This simplifies code navigation and establish a clear overview what types of links are used in a project.
+
+- The API to create and query relations in **flecs** is very compact but not very intuitive - imho.  
+  It is completely different from common component handling.
+  See [flecs ⋅ Relationships](https://github.com/SanderMertens/flecs/blob/master/docs/Relationships.md)
+
+- Adding, removing or updating a link does not cause [archetype fragmentation](https://www.flecs.dev/flecs/md_docs_2Relationships.html#fragmentation).  
+  In **flecs** every relationship between two entities creates an individual archetype only containing a single entity / component.  
+  So each entity relationship allocates ~ 1000 bytes required by the archetype stored in the heap for each link.  
+  The more significant performance penalty is the side effect in queries. Many archetypes need to be iterated if they are query matches.
+
+- Changing an entity link does not cause a structural change.  
+  In **flecs** a new archetype needs to be created and the old archetype gets empty.  
+
+Big shout out to [**fenn**ecs](https://github.com/outfox/fennecs) and [**flecs**](https://github.com/SanderMertens/flecs)
+for the challenge to improve the feature set and performance of this project!
+
+<br/>
+
+
+## Link Component
+
+A link component enables adding a link to another **target** entity.  
+An entity can have only one link component at a time.  
+Link components are added, removed and queried like common components with
+```cs
+    entity.AddComponent(new AttackComponent { target = entity2 });
+    entity.GetComponent    <AttackComponent>();
+    entity.RemoveComponent <AttackComponent>();
+    entity.HasComponent    <AttackComponent>();
+```
+
+The following example illustrate the state changes by small text graphs on the right.  
+Link components are represented by `→` icon.  
+This example show the graph changes when adding link components or deleting entities.
+
+```cs
+struct AttackComponent : ILinkComponent {
+    public  Entity  target;
+    public  Entity  GetIndexedValue() => target;
+}
+
+public static void LinkComponents()
+{
+    var store   = new EntityStore();
+
+    var entity1 = store.CreateEntity(1);                            // link components
+    var entity2 = store.CreateEntity(2);                            // symbolized as →
+    var entity3 = store.CreateEntity(3);                            //   1     2     3
+    
+    // add a link component to entity (2) referencing entity (1)
+    entity2.AddComponent(new AttackComponent { target = entity1 }); //   1  ←  2     3
+    // get all incoming links of given type.    O(1)
+    entity1.GetIncomingLinks<AttackComponent>();        // { 2 }
+
+    // update link component of entity (2). It links now entity (3)
+    entity2.AddComponent(new AttackComponent { target = entity3 }); //   1     2  →  3
+    entity1.GetIncomingLinks<AttackComponent>();        // { }
+    entity3.GetIncomingLinks<AttackComponent>();        // { 2 }
+
+    // deleting a linked entity (3) removes all link components referencing it
+    entity3.DeleteEntity();                                         //   1     2
+    entity2.HasComponent    <AttackComponent>();        // false
+}
+```
+<br/>
+
+
+
+## Link Relation
+
+A link relation enables adding multiple links to a single entity referencing other **target** entities.  
+There can be only one link relation per **target** entity.  
+Link relations are added, removed and queried with
+```cs
+    entity.AddRelation(new AttackRelation { target = entity1 });
+    entity.AddRelation(new AttackRelation { target = entity2 });
+    entity.RemoveRelation <AttackRelation>(entity1);
+    entity.GetRelations   <AttackRelation>();               // O(1)
+    entity.GetRelation    <AttackRelation,Entity>(entity2); // O(N)
+    // N: number of relations on a single entity
+```
+
+Methods to mutate and query link relation are at
+[RelationExtensions](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/RelationExtensions.md).
+
+The following example illustrate the state changes by small text graphs on the right.  
+Link relations are represented by `→` icon.  
+This example show the graph changes when adding link relations or deleting entities.
+
+```cs
+struct AttackRelation : ILinkRelation {
+    public  Entity  target;
+    public  Entity  GetRelationKey() => target;
+}
+
+public static void LinkRelations()
+{
+    var store   = new EntityStore();
+    
+    var entity1 = store.CreateEntity(1);                          // link relations
+    var entity2 = store.CreateEntity(2);                          // symbolized as →
+    var entity3 = store.CreateEntity(3);                          //   1     2     3
+    
+    // add a link relation to entity (2) referencing entity (1)
+    entity2.AddRelation(new AttackRelation { target = entity1 }); //   1  ←  2     3
+    // get all links added to the entity. O(1)
+    entity2.GetRelations    <AttackRelation>();     // { 1 }
+    // get all incoming links. O(1)
+    entity1.GetIncomingLinks<AttackRelation>();     // { 2 }
+    
+    // add another one. An entity can have multiple link relations
+    entity2.AddRelation(new AttackRelation { target = entity3 }); //   1  ←  2  →  3
+    entity2.GetRelations    <AttackRelation>();     // { 1, 3 }
+    entity3.GetIncomingLinks<AttackRelation>();     // { 2 }
+    
+    // deleting a linked entity (1) removes all link relations referencing it
+    entity1.DeleteEntity();                                       //         2  →  3
+    entity2.GetRelations    <AttackRelation>();     // { 3 }
+    
+    // deleting entity (2) is reflected by incoming links query
+    entity2.DeleteEntity();                                       //               3
+    entity3.GetIncomingLinks<AttackRelation>();     // { }
+}
+```
+
+<br/>
+
+
+# Relations
+
+> [!IMPORTANT]
+> Breaking changes with `3.0.0-preview.16`
+>
+> 1. To avoid mixing up relations with components accidentally `IRelation` does not extends `IComponent` anymore.
+> 2. Renamed public API's  
+     `IRelationComponent<>` -> `IRelation<>`  
+     `RelationComponents<>` -> `Relations<>`
+
+
+
+A relation enables adding multiple components of the same type to an entity.
+
+A typical limitation of an archetype-based ECS is that an entity can only contain one component of a certain type.  
+When adding a component of a specific type to an entity already present the component is updated.  
+This is the common behavior implemented by most ECS implementations like **EnTT**, **flecs**, **BEVY**, **fenn**ecs, ... .  
+An alternative approach is allowing undefined behavior like **Arch** resulting in memory corruption, access violation, ... .
+
+A relation in mathematical context describes a connection between elements of two sets.  
+Transferred to this ECS: The first set are **all entities** the second set are all possible **relation keys**.
+
+## Relation
+
+A relation that can be added to an entity multiple times must implement
+[`IRelation<>`](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/IRelation_TKey_.md).  
+To distinguish between different relations, a relation type must implement `GetRelationKey()`.  
+Any type can be used as relation key type. E.g. enum, string, int, long, Guid, DateTime, ... .
+
+Relations are added, removed and queried with
+```cs
+    entity.AddRelation(new InventoryItem { type = ItemType.Coin });
+    entity.AddRelation(new InventoryItem { type = ItemType.Axe  });
+    entity.RemoveRelation <InventoryItem,ItemType>(ItemType.Coin);
+    entity.GetRelations   <InventoryItem>();                        // O(1)
+    entity.GetRelation    <InventoryItem,ItemType>(ItemType.Axe);   // O(N)
+    // N: number of relations on a single entity
+```
+
+The following example illustrates the state changes of a specific entity regarding its relations.  
+It uses an `enum` as relation key type.
+
+```cs
+enum ItemType {
+    Coin    = 1,
+    Axe     = 2,
+}
+
+struct InventoryItem : IRelation<ItemType> { // relation key type: ItemType
+    public  ItemType    type;
+    public  int         count;
+    public  ItemType    GetRelationKey() => type;     // unique relation key
+}
+
+public static void Relations()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add multiple relations of the same component type
+    entity.AddRelation(new InventoryItem { type = ItemType.Coin, count = 42 });
+    entity.AddRelation(new InventoryItem { type = ItemType.Axe,  count =  3 });
+    
+    // Get all relations added to an entity.   O(1)
+    entity.GetRelations  <InventoryItem>();                       // { Coin, Axe }
+    
+    // Get a specific relation from an entity. O(1)
+    entity.GetRelation   <InventoryItem,ItemType>(ItemType.Coin); // {type=Coin, count=42}
+    
+    // Remove a specific relation from an entity
+    entity.RemoveRelation<InventoryItem,ItemType>(ItemType.Axe);
+    entity.GetRelations  <InventoryItem>();                       // { Coin }
+}
+```
+
+## Serialization
+
+Serialization of relations as JSON is supported since `3.0.0-preview.17` or higher.  
+Its encoding similar to the serialization of components.  
+In contrast to components relations are serialized as an array of components as a single entity can have multiple relations.
+
+```json
+{
+    "id": 42,
+    "components": {
+        "relations": [{"value":42},{"value":43}],
+        "component": {"value":42}
+    }
+}
+```
+
+
+
+<br/>
+
+
+# Search
+
+This ECS enables efficient search of indexed component fields.  
+This enables **full-text search** by using `string` as the indexed component type like in the example below.  
+Any type can be used as indexed component type. E.g. int, long, float, Guid, DateTime, enum, ... .  
+A search / query for a specific value executes in O(1).
+
+
+## Indexed Component
+
+An [IIndexedComponent<>](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/IIndexedComponent_TValue_.md)
+provide the same functionality and behavior as normal components implementing `IComponent`.  
+Indexing is implement using an [inverted index ⋅ Wikipedia](https://en.wikipedia.org/wiki/Inverted_index).  
+Adding, removing or updating an indexed component updates the index.  
+These operations are executed in O(1) but significant slower than the non indexed counterparts ~10x.  
+*Performance:* Indexing 1000 different component values ~60 μs.
+
+**Range query**
+
+In case the indexed component type implements `IComparable<>` like int, string, DateTime, ... range queries can be executed.  
+A range query returns all entities with a component value in the specified range. See example code.
+
+Methods to query indexed components are at [IndexExtensions](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/IndexExtensions.md).
+
+```cs
+struct Player : IIndexedComponent<string>       // indexed field type: string
+{
+    public  string  name;
+    public  string  GetIndexedValue() => name;  // indexed field
+}
+
+public static void IndexedComponents()
+{
+    var store   = new EntityStore();
+    var index   = store.ComponentIndex<Player,string>();
+    for (int n = 0; n < 1000; n++) {
+        var entity = store.CreateEntity();
+        entity.AddComponent(new Player { name = $"Player-{n,0:000}"});
+    }
+    // get all entities where Player.name == "Player-001". O(1)
+    var entities = index["Player-001"];                                    // Count: 1
+    
+    // return same result as lookup using a Query(). O(1)
+    store.Query().HasValue    <Player,string>("Player-001");               // Count: 1
+    
+    // return all entities with a Player.name in the given range.
+    // O(N ⋅ log N) - N: all unique player names
+    store.Query().ValueInRange<Player,string>("Player-000", "Player-099"); // Count: 100
+    
+    // get all unique Player.name's. O(1)
+    var values = index.Values;                                             // Count: 1000
+}
+```
+
+<br/>
+
+
+# Performance
+
+All specialized component types are optimized for performance and low memory footprint.  
+Read and write access to those components are executed without boxing.  
+Each component type requires a single dictionary and up to a dozen arrays, regardless of the number of components stored.    
+E.g. one, one thousand or one million  components.  
+This make these component types as friendly for garbage collection as general components.  
+If the array buffers are large enough, there are no further memory allocations.
+
+## Benchmark - Relations
+
+The number of link relations / relations per entity should not exceed 100.  
+The reason is that inserting and removing a relation is executed in O(N).  
+N: number of relations per entity.
+
+*Benchmark* [see Tests](https://github.com/friflo/Friflo.Engine.ECS/blob/main/src/Tests/ECS/Relations/Test_Relations_Query.cs)  
+Add 1.000.000 int relations. Type:
+```cs
+internal struct IntRelation : IRelation<int> {
+    public          int     value;
+    public          int     GetRelationKey()    => value;
+}
+```
+| relationsPerEntity |        duration ms |           entities |
+| ------------------:| ------------------:| ------------------:|
+|                  1 |              60.17 |            1000000 |
+|                  2 |              64.11 |             500000 |
+|                  4 |              62.68 |             250000 |
+|                  8 |              66.66 |             125000 |
+|                 16 |              67.71 |              62500 |
+|                 32 |              90.53 |              31250 |
+|                 64 |             150.14 |              15625 |
+|                128 |             154.39 |               7813 |
+|                256 |             254.26 |               3907 |
+|                512 |             416.20 |               1954 |
+|               1024 |             772.39 |                977 |
+|               2048 |            1504.50 |                489 |
+|               4096 |            2993.34 |                245 |
+|               8192 |            5867.59 |                123 |
+
+
+## Benchmark - Indexing
+
+The number of components having the same key value should not exceed 100.  
+The reason is that inserting and removing a component to / from the index is executed in O(N).  
+N: number of components having the same key value (duplicates).
+
+*Benchmark* [see Tests](https://github.com/friflo/Friflo.Engine.ECS/blob/main/src/Tests/ECS/Index/Test_Index.cs)  
+Add 1.000.000 indexed int components. Each to an individual entity. Type:
+```cs
+public struct IndexedInt : IIndexedComponent<int> {
+    public          int         value;
+    public          int         GetIndexedValue()   => value;
+}
+```
+|     duplicateCount |        duration ms |           entities |
+| ------------------:| ------------------:| ------------------:|
+|                  1 |             119.68 |            1000000 |
+|                  2 |              91.73 |            1000000 |
+|                  4 |              96.08 |            1000000 |
+|                  8 |              97.06 |            1000000 |
+|                 16 |             103.75 |            1000000 |
+|                 32 |             150.19 |            1000000 |
+|                 64 |              98.52 |            1000000 |
+|                128 |             106.64 |            1000000 |
+|                256 |             111.62 |            1000000 |
+|                512 |             123.53 |            1000000 |
+|               1024 |             137.13 |            1000000 |
+|               2048 |             254.83 |            1000000 |
+|               4096 |             234.58 |            1000000 |
+|               8192 |             433.60 |            1000000 |
+|              16384 |             817.92 |            1000000 |
+|              32768 |            1662.16 |            1000000 |
+
+
+
+
+================================================
+FILE: examples/General.md
+================================================
+
+Examples using **Friflo.Engine.ECS** are part of the unit tests see:
+[Tests/ECS/Examples](https://github.com/friflo/Friflo.Engine.ECS/tree/main/src/Tests/ECS/Examples)
+
+When testing the examples use a debugger to check entity state changes while stepping throw the code.
+
+<img src="../images/entity-debugger.png" width="630" height="370"></img>  
+*Screenshot:* Entity state - enables browsing the entire store hierarchy.
+
+Examples showing typical use cases of the [Entity API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Entity.md)
+
+<br/>
+
+
+## EntityStore
+
+An `EntityStore` is a container for entities running as an in-memory database.  
+It is highly optimized for efficient storage fast queries and event handling.  
+In other ECS implementations this type is typically called *World*.
+
+The store enables to
+- create entities
+- modify entities - add / remove components, tags, scripts and child entities
+- query entities with a specific set of components or tags
+- subscribe events like adding / removing components, tags, scripts and child entities
+
+Multiple stores can be used in parallel and act completely independent from each other.  
+The example shows how to create a store. Mainly every example will start with this line.
+
+```csharp
+public static void CreateStore()
+{
+    var store = new EntityStore();
+}
+```
+<br/>
+
+
+## Entity
+
+An `Entity` has an identity - `Id` - and acts as a container for components, tags, script and child entities.  
+Entities are related to a single `EntityStore` and created with `CreateEntity()`.
+
+```csharp
+public static void CreateEntity()
+{
+    var store = new EntityStore();
+    store.CreateEntity();
+    store.CreateEntity();
+    
+    foreach (var entity in store.Entities) {
+        Console.WriteLine($"entity {entity}");
+    }
+    // > entity id: 1  []       Info:  [] entity has no components
+    // > entity id: 2  []
+}
+```
+
+Entities can be deleted with `DeleteEntity()`.  
+Variables of type `Entity` mimic the behavior of reference types.  
+Using an entity method on a deleted entity throws a `NullReferenceException`.  
+To handled this case use `entity.IsNull`.
+
+```csharp
+public static void DeleteEntity()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.DeleteEntity();
+    var isDeleted = entity.IsNull;
+    Console.WriteLine($"deleted: {isDeleted}");     // > deleted: True
+}
+```
+
+Entities can be disabled.  
+Disabled entities are excluded from query results by default.  
+To include disabled entities in a query result use `query.WithDisabled()`.
+
+```csharp
+public static void DisableEntity()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.Enabled = false;
+    Console.WriteLine(entity);                      // > id: 1  [#Disabled]
+    
+    var query    = store.Query();
+    Console.WriteLine($"default - {query}");        // > default - Query: []  Count: 0
+    
+    var disabled = store.Query().WithDisabled();
+    Console.WriteLine($"disabled - {disabled}");    // > disabled - Query: []  Count: 1
+}
+```
+<br/>
+
+
+## Component
+
+`Components` are `struct`s used to store data on entities.  
+Multiple components with different types can be added / removed to / from an entity.  
+If adding a component using a type already stored in the entity its value gets updated. 
+
+```csharp
+[ComponentKey("my-component")]
+public struct MyComponent : IComponent {
+    public int value;
+}
+
+public static void AddComponents()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add components
+    entity.AddComponent(new EntityName("Hello World!"));// EntityName is build-in
+    entity.AddComponent(new MyComponent { value = 42 });
+    Console.WriteLine($"entity: {entity}");             // > entity: id: 1  "Hello World!"  [EntityName, Position]
+    
+    // get component
+    Console.WriteLine($"name: {entity.Name.value}");    // > name: Hello World!
+    var value = entity.GetComponent<MyComponent>().value;
+    Console.WriteLine($"MyComponent: {value}");         // > MyComponent: 42
+    
+    // Serialize entity to JSON
+    Console.WriteLine(entity.DebugJSON);
+}
+```
+
+Result of `entity.DebugJSON`:
+```json
+{
+    "id": 1,
+    "components": {
+        "name": {"value":"Hello World!"},
+        "my-component": {"value":42}
+    }
+}
+```
+<br/>
+
+
+## Unique entity
+
+Add a `UniqueEntity` component to an entity to mark it as a *"singleton"* with a unique `string` id.  
+The entity can than be retrieved with `EntityStore.GetUniqueEntity()` to reduce code coupling.  
+It enables access to a unique entity without the need to pass an entity by external code.   
+
+```csharp
+public static void GetUniqueEntity()
+{
+    var store   = new EntityStore();
+    store.CreateEntity(new UniqueEntity("Player"));     // UniqueEntity is build-in
+    
+    var player  = store.GetUniqueEntity("Player");
+    Console.WriteLine($"entity: {player}");             // > entity: id: 1  [UniqueEntity]
+}
+```
+<br/>
+
+
+## Tag
+
+`Tags` are `struct`s similar to components - except they store no data.  
+They can be utilized in queries similar as components to restrict the amount of entities returned by a query.  
+If adding a tag using a type already attached to the entity the entity remains unchanged.
+
+```csharp
+public struct MyTag1 : ITag { }
+public struct MyTag2 : ITag { }
+
+public static void AddTags()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add tags
+    entity.AddTag<MyTag1>();
+    entity.AddTag<MyTag2>();
+    Console.WriteLine($"entity: {entity}");     // > entity: id: 1  [#MyTag1, #MyTag2]
+    
+    // get tag
+    var tag1 = entity.Tags.Has<MyTag1>();
+    Console.WriteLine($"tag1: {tag1}");         // > tag1: True
+}
+```
+<br/>
+
+
+## Query entities
+
+As described in the intro queries are a fundamental feature of an ECS.  
+**Friflo.Engine.ECS** support queries by any combination of component types and tags.
+
+See [ArchetypeQuery - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ArchetypeQuery.md)
+for available query filters to reduce the number of entities / components returned by a query.  
+
+`ArchetypeQuery` and all its generic variants returned by `store.Query()` are designed for reuse.  
+So their references can be stored and used when needed to avoid unnecessary allocations.
+
+```csharp
+public static void EntityQueries()
+{
+    var store   = new EntityStore();
+    store.CreateEntity(new EntityName("entity-1"));
+    store.CreateEntity(new EntityName("entity-2"), Tags.Get<MyTag1>());
+    store.CreateEntity(new EntityName("entity-3"), Tags.Get<MyTag1, MyTag2>());
+    
+    // --- query components
+    var queryNames = store.Query<EntityName>();
+    queryNames.ForEachEntity((ref EntityName name, Entity entity) => {
+        // ... 3 matches
+    });    
+    // --- query components with tags
+    var namesWithTags  = store.Query<EntityName>().AllTags(Tags.Get<MyTag1, MyTag2>());
+    namesWithTags.ForEachEntity((ref EntityName name, Entity entity) => {
+        // ... 1 match
+    });    
+    // --- use query.Entities in case an iteration requires no component access
+    foreach (var entity in queryNames.Entities) {
+        // ... 3 matches
+    }
+}
+```
+
+Some optional filter snippets used to shrink the result set returned by a query.
+
+```csharp
+    .WithDisabled();                                // query result contains also disabled entities
+    .AllTags(Tags.Get<MyTag1>());                   // query result contains only entities having all given tags
+    .WithoutAnyTags(Tags.Get<MyTag1, MyTag2>());    // entities having any of the given tags are excluded from query result
+    .AllComponents(ComponentTypes.Get<Position>);   // query result contains only entities having all given components
+```
+<br/>
+
+
+
+## Archetype
+
+An `Archetype` defines a specific set of components and tags for its entities.  
+At the same time it is also a container of entities with exactly this combination of components and tags.  
+
+The following comparison shows the difference in modeling types in **ECS** vs **OOP**.  
+
+<table>
+<tr>
+<th>ECS - Composition</th>
+<th>OOP - Polymorphism</th>
+</tr>
+<tr>
+  <td><i>Inheritance</i><br/>
+      ECS does not utilize inheritance.<br/>
+      It prefers composition over inheritance.
+  </td>
+  <td><br/>
+      Common OPP is based on inheritance.<br/>
+      Likely result: A god base class responsible for everything. 😊
+  </td>  
+</tr>
+<tr>
+  <td><i>Code coupling</i><br/>
+      Data lives in components - behavior in systems.<br/>
+      New behaviors does not affect existing code.
+  </td>
+  <td><br/>
+      Data and behavior are both in classes.<br/>
+      New behaviors may add dependencies or side effects.
+  </td>  
+</tr>
+<tr>
+  <td><i>Storage</i><br/>
+      An Archetype is also a container of entities.
+  </td>
+  <td><br/>
+      Organizing containers is part of application code.
+  </td>
+</tr>
+<tr>
+  <td><i>Changing a type</i><br/>
+      Supported by adding/removing tags or components.
+  </td>
+  <td><br/>
+      Type is fixed an cannot be changed.
+  </td>
+</tr>
+<tr>
+  <td><i>Component access / visibility</i><br/>
+    Having a reference to an EntityStore enables<br/>
+    unrestricted reading and changing of components.
+  </td>
+  <td><br/>
+    Is controlled by access modifiers:<br/>
+    public, protected, internal and private.
+  </td>
+</tr>
+
+<tr>
+  <td colspan="2" align="center"><b>Example</b>
+  </td>
+</tr>
+
+<tr>
+<td style="padding:0px;">
+
+```csharp
+// No base class Animal in ECS
+struct Dog : ITag { }
+struct Cat : ITag { }
+
+
+var store = new EntityStore();
+
+var dogType = store.GetArchetype(Tags.Get<Dog>());
+var catType = store.GetArchetype(Tags.Get<Cat>());
+WriteLine(dogType.Name);            // [#Dog]
+
+dogType.CreateEntity();
+catType.CreateEntity();
+
+var dogs = store.Query().AnyTags(Tags.Get<Dog>());
+var all  = store.Query().AnyTags(Tags.Get<Dog, Cat>());
+
+WriteLine($"dogs: {dogs.Count}");   // dogs: 1
+WriteLine($"all: {all.Count}");     // all: 2
+```
+
+</td>
+<td style="padding:0px;">
+
+```csharp
+class Animal { }
+class Dog : Animal { }
+class Cat : Animal { }
+
+
+var animals = new List<Animal>();
+
+var dogType = typeof(Dog);
+var catType = typeof(Cat);
+WriteLine(dogType.Name);            // Dog
+
+animals.Add(new Dog());
+animals.Add(new Cat());
+
+var dogs = animals.Where(a => a is Dog);
+var all  = animals.Where(a => a is Dog or Cat);
+
+WriteLine($"dogs: {dogs.Count()}"); // dogs: 1
+WriteLine($"all: {all.Count()}");   // all: 2
+```
+
+</td>
+</tr>
+
+<tr>
+  <td colspan="2" align="center"><b>Performance</b>
+  </td>
+</tr>
+<tr>
+  <td><i>Runtime complexity O() of queries for specific types</i><br/>
+      O(size of result set)
+  </td>
+  <td><br/>
+      O(size of all objects)
+  </td>
+</tr>
+<tr>
+  <td><i>Memory layout</i><br/>
+      Continuous memory in heap - high hit rate of L1 cache.
+  </td>
+  <td><br/>
+      Randomly placed in heap - high rate of L1 cache misses.
+  </td>
+</tr>
+<tr>
+  <td><i>Instruction pipelining</i><br/>
+      Minimize conditional branches in update loops.<br/>
+      Process multiple components at once using SIMD.
+  </td>
+  <td><br/><br/>
+      Virtual method calls prevent branch prediction.
+  </td>
+</tr>
+
+</table>
+<br/>
+
+
+## Script
+
+`Script`s are similar to components and can be added / removed to / from entities.  
+`Script`s are classes and can also be used to store data.  
+Additional to components they enable adding behavior in the common OOP style.
+
+In case dealing only with a few thousands of entities `Script`s are fine.  
+If dealing with a multiple of 10.000 components should be used for efficiency / performance.
+
+```csharp
+public class MyScript : Script { public int data; }
+
+public static void AddScript()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // add script
+    entity.AddScript(new MyScript{ data = 123 });
+    Console.WriteLine($"entity: {entity}");             // > entity: id: 1  [*MyScript]
+    
+    // get script
+    var myScript = entity.GetScript<MyScript>();
+    Console.WriteLine($"data: {myScript.data}");        // > data: 123
+}
+```
+<br/>
+
+
+## Child entities
+
+A typical use case in Games or Editor is to build up a hierarchy of entities.  
+To add an entity as a child to another entity use `Entity.AddChild()`.  
+In case the added child already has a parent it gest removed from the old parent.  
+The children of the added (moved) entity remain being its children.  
+If removing a child from its parent all its children are removed from the hierarchy.
+
+```csharp
+public static void AddChildEntities()
+{
+    var store   = new EntityStore();
+    var root    = store.CreateEntity();
+    var child1  = store.CreateEntity();
+    var child2  = store.CreateEntity();
+    
+    // add child entities
+    root.AddChild(child1);
+    root.AddChild(child2);
+    
+    Console.WriteLine($"entities: {root.ChildEntities}"); // > entities: Count: 2
+}
+```
+<br/>
+
+
+## Event
+
+If changing an entity by adding or removing components, tags, scripts or child entities events are emitted.  
+An application can subscribe to these events like shown in the example.  
+Emitting these type of events increase code decoupling.  
+Without events these modifications need to be notified by direct method calls.  
+The *build-in* events can be subscribed on `EntityStore` and on `Entity` level like shown in the example below.  
+
+```csharp
+public static void AddEventHandlers()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.OnComponentChanged     += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Component: [MyComponent]
+    entity.OnTagsChanged          += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Tags: [#MyTag1]
+    entity.OnScriptChanged        += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Script: [*MyScript]
+    entity.OnChildEntitiesChanged += ev => { Console.WriteLine(ev); }; // > entity: 1 - event > Add Child[0] = 2
+
+    entity.AddComponent(new MyComponent());
+    entity.AddTag<MyTag1>();
+    entity.AddScript(new MyScript());
+    entity.AddChild(store.CreateEntity());
+}
+```
+<br/>
+
+
+## Signal
+
+`Signal`s are similar to events. They are used to send and receive custom events on entity level in an application.  
+They have the same characteristics as events described in the section above.  
+The use of `Signal`'s is intended for scenarios when something happens occasionally.  
+This avoids the need to check a state every frame.
+
+```csharp
+public readonly struct MySignal { } 
+
+public static void AddSignalHandler()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    entity.AddSignalHandler<MySignal>(signal => { Console.WriteLine(signal); }); // > entity: 1 - signal > MySignal    
+    entity.EmitSignal(new MySignal());
+}
+```
+<br/>
+
+
+## JSON Serialization
+
+The entities stored in an EntityStore can be serialized as JSON using an
+[EntitySerializer](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntitySerializer.md).  
+
+
+> **Note**  
+> Currently serialization / deserialization only support struct fields - properties not.
+> See [Issue #28](https://github.com/friflo/Friflo.Engine.ECS/issues/28).  
+> Component and relation types are required to be struct's.
+
+Writing the entities of a store to a JSON file is done with `WriteStore()`.  
+Reading the entities of a JSON file into a store with `ReadIntoStore()`.
+
+```csharp
+public static void JsonSerialization()
+{
+    var store = new EntityStore();
+    store.CreateEntity(new EntityName("hello JSON"));
+    store.CreateEntity(new Position(1, 2, 3));
+
+    // --- Write store entities as JSON array
+    var serializer = new EntitySerializer();
+    var writeStream = new FileStream("entity-store.json", FileMode.Create);
+    serializer.WriteStore(store, writeStream);
+    writeStream.Close();
+    
+    // --- Read JSON array into new store
+    var targetStore = new EntityStore();
+    serializer.ReadIntoStore(targetStore, new FileStream("entity-store.json", FileMode.Open));
+    
+    Console.WriteLine($"entities: {targetStore.Count}"); // > entities: 2
+}
+```
+
+The JSON content of the file `"entity-store.json"` created with `serializer.WriteStore()`
+```json
+[{
+    "id": 1,
+    "components": {
+        "name": {"value":"hello JSON"}
+    }
+},{
+    "id": 2,
+    "components": {
+        "pos": {"x":1,"y":2,"z":3}
+    }
+}]
+```
+<br/>
+
+
+## Native AOT
+
+**Friflo.Engine.ECS** supports [Native AOT deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot).
+
+*Note*: JSON serialization is currently not support by Native AOT.
+
+Using **Friflo.Engine.ECS** does not require a source generator - aka Roslyn Analyzer.  
+A source generator could be used to register component types automatically.
+
+Because of this component types used by an application must be registered on startup as shown below.
+
+```cs
+var aot = new NativeAOT();
+aot.RegisterComponent<MyComponent>();
+aot.RegisterTag      <MyTag1>();
+aot.RegisterScript   <MyScript>();
+var schema = aot.CreateSchema();
+```
+
+In case using an unregistered component a `TypeInitializationException` will be thrown. E.g.
+```cs
+ entity.AddComponent(new UnregisteredComponent());
+```
+
+On console to the exception log looks like
+```
+A type initializer threw an exception. To determine which type, inspect the InnerException's StackTrace property.
+Stack Trace:
+   at System.Runtime.CompilerServices.ClassConstructorRunner.EnsureClassConstructorRun(StaticClassConstructionContext*) + 0x14f
+   at System.Runtime.CompilerServices.ClassConstructorRunner.CheckStaticClassConstructionReturnNonGCStaticBase(StaticClassConstructionContext*, IntPtr) + 0x1c
+   at Friflo.Engine.ECS.Entity.AddComponent[T](T&) + 0x4e
+   at MyApplication.UseUnregisteredComponent() + 0x7c
+```
+<br/>
+
+
+## Unity update script
+
+A query can be used within a MonoBehaviour script to update the position of moving objects.  
+Example for a move system in Unity.
+
+```csharp
+public class MoveEntitySystem : MonoBehaviour
+{
+    private ArchetypeQuery<Position> query;
+
+    void Start()
+    {
+        int entityCount = 1_000;
+        var store = new EntityStore();
+        // create entities with a Position component
+        for (int n = 0; n < entityCount; n++) {
+            store.Batch()
+                .Add(new Position(n, 0, 0))
+                .CreateEntity();    
+        }
+        query = store.Query<Position>();
+    }
+
+    void Update()
+    {
+        foreach (var (positions, entities) in query.Chunks)
+        {
+            // Update entity positions on each frame
+            foreach (ref var position in positions.Span) {
+                position.y++;
+            }
+        }
+    }
+}
+```
+
+
+
+================================================
+FILE: examples/Optimization.md
+================================================
+
+Examples in this section are targeting for performance optimization.  
+The same functionality can be realized by using the features described in the general examples.  
+Performance optimizations are achieved by SIMD, multi threading / parallelization, batching or bulk operations.
+
+Optimization examples are part of the unit tests see:
+[Tests/ECS/Examples](https://github.com/friflo/Friflo.Engine.ECS/tree/main/src/Tests/ECS/Examples)
+
+<br/>
+
+
+# Entity Queries
+
+## Boosted Query
+
+🔥 **Update** - Introduced new query approach using [Friflo.Engine.ECS.Boost](https://www.nuget.org/packages/Friflo.Engine.ECS.Boost#readme-body-tab).
+
+**Optimization**: Use `query.Each()` and a struct implementing `Execute(...)` for maximum query performance.  
+
+This query approach is the most performant approach - except Query vectorization / SIMD.  
+A unique feature of **Friflo.Engine.ECS** - it uses no **unsafe code**. This enables running the dll in trusted environments.  
+For maximum performance unsafe code is required to elide bounds checks.  
+
+Instead of processing components of a query with `query.ForEachEntity(...)`  
+the `MoveEach` struct below process components in its `Execute()` method.  
+The processing of all query components is performed by `query.Each(new MoveEach())`.
+
+The performance gain compared with `query.ForEachEntity(...)` is ~3x.  
+The method `query.Each()` requires adding the dependency [Friflo.Engine.ECS.Boost](https://www.nuget.org/packages/Friflo.Engine.ECS.Boost#readme-body-tab).
+
+```cs
+public struct Velocity : IComponent { public Vector3 value; }
+
+public static void BoostedQuery()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 100; n++) {
+        store.CreateEntity(new Position(), new Velocity());
+    }
+    var query = store.Query<Position, Velocity>();
+    query.Each(new MoveEach()); // requires https://www.nuget.org/packages/Friflo.Engine.ECS.Boost
+}
+
+struct MoveEach : IEach<Position, Velocity>
+{
+    public void Execute(ref Position position, ref Velocity velocity) {
+        position.value += velocity.value;
+    }
+} 
+```
+
+<br/>
+
+
+## Enumerate Query Chunks
+
+**Optimization**: Replace a `query.ForEachEntity(( ... ) => lambda)` by two `foreach` loops.  
+This approach avoids the more expensive lambda calls.
+
+Also as described in the intro enumeration of a query result is fundamental for an ECS.  
+Components are returned as [Chunk](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Chunk_T_.md)'s and are suitable for
+[Vectorization - SIMD](https://en.wikipedia.org/wiki/Single_instruction,_multiple_data).
+
+```csharp
+public static void EnumerateQueryChunks()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 3; n++) {
+        store.CreateEntity(new MyComponent{ value = n + 42 });
+    }
+    var query = store.Query<MyComponent>();
+    foreach (var (components, entities) in query.Chunks)
+    {
+        for (int n = 0; n < entities.Length; n++) {
+            Console.WriteLine(components[n].value);                  // > 42  43  44
+        }
+    }
+    // Caution! This alternative to iterate components is much slower
+    foreach (var entity in query.Entities) {
+        Console.WriteLine(entity.GetComponent<MyComponent>().value); // > 42  43  44
+    }
+}
+```
+🔥 **Update** - Added example code for slower iteration alternative.  
+The alternative should be used only for small result set with less than 10 entities.
+
+<br/>
+
+
+## Parallel Query Job
+
+**Optimization**: Execute a `query` on multiple CPU cores in parallel.
+
+To minimize execution time for large queries a [QueryJob](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/QueryJob.md) can be used.  
+It provides the same functionality as the **foreach** loop in example above but runs on multiple cores in parallel. E.g.
+```csharp
+    foreach (var (components, entities) in query.Chunks) { ... }
+```
+To enable running a query job a [ParallelJobRunner](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ParallelJobRunner.md) is required.  
+The runner can be assigned to the `EntityStore` or directly to the `QueryJob`.  
+A `ParallelJobRunner` instance is thread-safe and can / should be used for multiple / all query jobs.
+
+```csharp
+public static void ParallelQueryJob()
+{
+    var runner  = new ParallelJobRunner(Environment.ProcessorCount);
+    var store   = new EntityStore { JobRunner = runner };
+    for (int n = 0; n < 10_000; n++) {
+        store.CreateEntity(new MyComponent());
+    }
+    var query = store.Query<MyComponent>();
+    var queryJob = query.ForEach((myComponents, entities) =>
+    {
+        // multi threaded query execution running on all available cores
+        for (int n = 0; n < entities.Length; n++) {
+            myComponents[n].value += 10;
+        }
+    });
+    queryJob.RunParallel();
+    runner.Dispose();
+}
+```
+In case of structural changes inside `ForEach((...) => {...})` use
+[CommandBuffer.Synced](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.Synced.md)
+to record the changes.  
+These changes are adding / removing components, tags or child entities and the creation / deletion of entities.
+
+Note: `CommandBuffer` is **_not_** thread safe. `CommandBuffer.Synced` **_is_** thread safe.  
+After `RunParallel()` returns these changes can be applied to the `EntityStore` by calling `CommandBuffer.Playback()`.
+
+**Recommendation**  
+A parallel query achieves notable performance gains in case using only arithmetic computations like * / + - sin(), cos(), ... in the loop.  
+
+In case of using a `CommandBuffer` and and applying massive entity changes the single threaded version is typically faster.  
+The reason is that entity changes applied to a `CommandBuffer` requires heavy random memory access.  
+If doing this on multiple threads the CPU cores are competing with access to memory heap and CPU caches.
+
+<br/>
+
+
+## Query Vectorization - SIMD
+
+**Optimization**: Utilize SIMD of your CPU to execute a `query`.  
+SIMD architectures: SSE, AVX, AVX2, AVX-512, AdvSIMD, Neon, ...
+
+The most efficient way to speedup query execution is vectorization.  
+Vectorization is similar to loop unrolling - aka loop unwinding - but with hardware support.  
+Its efficiency is superior to multi threading as it requires only a single thread to achieve the same performance gain.  
+So other threads can still keep running without competing for CPU resources.  
+
+*Note:* Vectorization can be combined with multi threading to speedup execution even more.  
+In case of a system with high memory bandwidth the speedup is *speedup(SIMD) * speedup(multi threading)*.  
+If SIMD or multi threading alone already reaches this bandwidth bottleneck their combination provide no performance gain.
+
+The API provide a few methods to convert chunk components into [System.Runtime.Intrinsics - Vectors](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.intrinsics).  
+E.g. `AsSpan256<>` and `StepSpan256`. See all methods at the [Chunk - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Chunk_T_.md).  
+The `Span` retrieved from a  chunk component has padding components at the end to enable vectorization without a scalar remainder loop.
+
+The following examples shows how to increment all `MyComponent.value`'s by 1.  
+
+```csharp
+public static void QueryVectorization()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 10_000; n++) {
+        store.CreateEntity(new MyComponent());
+    }
+    var query = store.Query<MyComponent>();
+    foreach (var (component, entities) in query.Chunks)
+    {
+        // increment all MyComponent.value's. add = <1, 1, 1, 1, 1, 1, 1, 1>
+        var add     = Vector256.Create<int>(1);     // create int[8] vector - all values = 1
+        var values  = component.AsSpan256<int>();   // values.Length - multiple of 8
+        var step    = component.StepSpan256;        // step = 8
+        for (int n = 0; n < values.Length; n += step) {
+            var slice   = values.Slice(n, step);
+            var result  = Vector256.Create<int>(slice) + add; // 8 add ops in one CPU cycle
+            result.CopyTo(slice);
+        }
+    }
+}
+```
+<br/>
+
+
+## EventFilter
+
+**Optimization**: Process multiple entity events in a loop instead of individual event handlers.
+
+An alternative to process entity changes - see section
+[Event](../examples/General.md#event) - are `EventFilter`'s.  
+`EventFilter`'s can be used on its own or within a query like in the example below.  
+All events that need to be filtered - like added/removed components/tags - can be added to the `EventFilter`.  
+E.g. `ComponentAdded<Position>()` or `TagAdded<MyTag1>`.  
+
+```csharp
+public static void FilterEntityEvents()
+{
+    var store   = new EntityStore();
+    store.EventRecorder.Enabled = true; // required for EventFilter
+    
+    store.CreateEntity(new Position(), Tags.Get<MyTag1>());
+    
+    var query = store.Query();
+    query.EventFilter.ComponentAdded<Position>();
+    query.EventFilter.TagAdded<MyTag1>();
+    
+    foreach (var entity in store.Entities)
+    {
+        bool hasEvent = query.HasEvent(entity.Id);
+        Console.WriteLine($"{entity} - hasEvent: {hasEvent}");
+    }
+    // > id: 1  [] - hasEvent: False
+    // > id: 2  [Position] - hasEvent: True
+    // > id: 3  [#MyTag1] - hasEvent: True
+}
+```
+<br/>
+
+
+# Batching
+
+## Batch - Create Entity
+
+🔥 **Update** - New example to use simpler / more performant approach to create entities.
+
+**Optimization**  
+Minimize structural changes when creating entities.
+
+Entities can be created with multiple components and tags in a single step.  
+This can be done by one of the EntityStoreExtensions
+[CreateEntity<T1, ... , Tn>](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStoreExtensions.md) overloads.
+
+```csharp
+public static void CreateEntityOperation()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 10; n++) {
+        store.CreateEntity(new EntityName("test"), new Position(), Tags.Get<MyTag1>());
+    }
+    var taggedEntities = store.Query().AllTags(Tags.Get<MyTag1>());
+    Console.WriteLine(taggedEntities);      // > Query: [#MyTag1]  Count: 10
+}
+```
+<br/>
+
+
+## Bulk - Create entities
+
+🔥 **Update** - New example for bulk creation of entities.
+
+**Optimization**  
+Create multiple entities with the same set of components / tags in a single step.
+
+Entities can be created one by one with `store.CreateEntity()`.  
+To create multiple entities with the same set of components and tags use  
+[archetype.CreateEntities(int count)](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Archetype.CreateEntities(int).md).
+
+```csharp
+public static void CreateEntities()
+{
+    var store     = new EntityStore();
+    var archetype = store.GetArchetype(ComponentTypes.Get<Position, Scale3>(), Tags.Get<MyTag1>());
+    var entities  = archetype.CreateEntities(100_000);  // ~ 0.5 ms
+    Console.WriteLine(entities.Count);                  // 100000
+}
+```
+<br/>
+
+
+## Batch - Operations
+
+🔥 **Update** - Add example to batch **add**, **remove** and **get** components and tags.
+
+**Optimization**  
+Minimize structural changes when adding / removing **multiple** components or tags.
+
+Components can be added / removed **one by one** to / from an entity with  
+`entity.AddComponent()` / `entity.RemoveComponent()`.  
+Every operation may cause a structural change which is an expensive operation.
+
+To execute these operations in a single step use the
+[EntityExtensions overloads](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityExtensions.md).  
+This approach also reduces the amount of code to perform these operations.
+
+In case accessing multiple components of the same entity use [entity.Data](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityData.md)
+instead of multiple `entity.GetComponent<>()` calls.
+
+```csharp
+public static void EntityBatchOperations()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    // batch: add operations
+    entity.Add(
+        new Position(1, 2, 3),
+        new Scale3(4, 5, 6),
+        new EntityName("test"),
+        Tags.Get<MyTag1>());
+    Console.WriteLine(entity); // id: 1  "test"  [EntityName, Position, Scale3, #MyTag1]
+    
+    // batch: get operations
+    var data    = entity.Data; // introduced in 3.0.0-preview.7
+    var pos     = data.Get<Position>();
+    var scale   = data.Get<Scale3>();
+    var name    = data.Get<EntityName>();
+    var tags    = data.Tags;
+    Console.WriteLine($"({pos}),({scale}),({name})"); // (1, 2, 3), (4, 5, 6), ('test')
+    Console.WriteLine(tags);                          // Tags: [#MyTag1]
+    
+    // batch: remove operations
+    entity.Remove<Position, Scale3, EntityName>(Tags.Get<MyTag1>());
+    Console.WriteLine(entity); // id: 1  []
+}
+```
+
+## Batch - Entity
+
+**Optimization**  
+Minimize structural changes when adding **and** removing components or tags to / from a **single entity**.
+
+**Note**  
+An `EntityBatch` should only be used when adding **AND** removing components / tags to an entity at the same entity.  
+If only adding **OR** removing components / tags use the **Add()** / **Remove()** overloads shown above.
+
+When adding/removing components or tags to/from a single entity it will be moved to a new archetype.  
+This is also called a *structural change* and in comparison to other methods a more costly operation.  
+Every component / tag change will cause a *structural change*.
+
+In case of multiple changes on a single entity use an [EntityBatch](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityBatch.md)
+to apply all changes at once.  
+Using this approach only a single or no *structural change* will be executed.
+
+```csharp
+public static void EntityBatch()
+{
+    var store   = new EntityStore();
+    var entity  = store.CreateEntity();
+    
+    entity.Batch()
+        .Add(new Position(1, 2, 3))
+        .AddTag<MyTag1>()
+        .Apply();
+    
+    Console.WriteLine($"entity: {entity}"); // > entity: id: 1  [Position, #MyTag1]
+}
+```
+<br/>
+
+
+## EntityBatch - Query
+
+**Optimization**: Minimize structural changes when adding / removing components or tags to / from **multiple entities**.
+
+In cases you need to add/remove components or tags to entities returned by a query use a **bulk operation**.  
+Executing these type of changes are most efficient using a bulk operation.  
+This can be done by either using `ApplyBatch()` or a common `foreach ()` loop as shown below.  
+To prevent unnecessary allocations the application should cache and reuse the list instance for future batches.
+
+```csharp
+public static void BulkBatch()
+{
+    var store   = new EntityStore();
+    for (int n = 0; n < 1000; n++) {
+        store.CreateEntity();
+    }
+    var batch = new EntityBatch();
+    batch.Add(new Position(1, 2, 3)).AddTag<MyTag1>();
+    store.Entities.ApplyBatch(batch);
+    
+    var query = store.Query<Position>().AllTags(Tags.Get<MyTag1>());
+    Console.WriteLine(query);               // > Query: [Position, #MyTag1]  Count: 1000
+    
+    // Same as: store.Entities.ApplyBatch(batch) above
+    foreach (var entity in store.Entities) {
+        batch.ApplyTo(entity);
+    }
+}
+```
+<br/>
+
+
+## EntityBatch - EntityList
+
+An [EntityList](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityList.md) is a container
+of entities added to the list.  
+Single entities are added using `Add()`. `AddTree()` adds an entity and all its children including their children etc.  
+A **bulk operation** can be applied to all entities in the lists as shown in the example below.  
+
+
+```csharp
+public static void EntityList()
+{
+    var store   = new EntityStore();
+    var root    = store.CreateEntity();
+    for (int n = 0; n < 10; n++) {
+        var child = store.CreateEntity();
+        root.AddChild(child);
+        // Add two children to each child
+        child.AddChild(store.CreateEntity());
+        child.AddChild(store.CreateEntity());
+    }
+    var list = new EntityList(store);
+    // Add root and all its children to the list
+    list.AddTree(root);
+    Console.WriteLine($"list - {list}");        // > list - Count: 31
+    
+    var batch = new EntityBatch();
+    batch.Add(new Position());
+    list.ApplyBatch(batch);
+    
+    var query = store.Query<Position>();
+    Console.WriteLine(query);                   // > Query: [Position]  Count: 31
+}
+```
+<br/>
+
+
+## CommandBuffer
+
+**Optimization**: Required when adding / removing components or tags in a [Parallel Query Job](#parallel-query-job).
+
+A `CommandBuffer` is used to record changes on multiple entities. E.g. `AddComponent()`.  
+These changes are applied to entities when calling `Playback()`.    
+Recording commands with a `CommandBuffer` instance can be done on **any** thread.  
+`Playback()` must be called on the **main** thread.  
+Available commands are in the [CommandBuffer - API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.md).  
+
+This enables recording entity changes in multi threaded application using entity systems / queries.  
+In this case enumerations of query results run on multiple worker threads.  
+Within these enumerations entity changes are recorded with a `CommandBuffer`.  
+After a query thread has finished these changes are executed with `Playback()` on the **main** thread.
+
+```csharp
+public static void CommandBuffer()
+{
+    var store   = new EntityStore();
+    var entity1 = store.CreateEntity(new Position());
+    var entity2 = store.CreateEntity();
+    
+    CommandBuffer cb = store.GetCommandBuffer();
+    var newEntity = cb.CreateEntity();
+    cb.DeleteEntity  (entity2.Id);
+    cb.AddComponent  (newEntity, new EntityName("new entity"));
+    cb.RemoveComponent<Position>(entity1.Id);        
+    cb.AddComponent  (entity1.Id, new EntityName("changed entity"));
+    cb.AddTag<MyTag1>(entity1.Id);
+    
+    cb.Playback();
+    
+    var entity3 = store.GetEntityById(newEntity);
+    Console.WriteLine(entity1);     // > id: 1  "changed entity"  [EntityName, #MyTag1]
+    Console.WriteLine(entity2);     // > id: 2  (detached)
+    Console.WriteLine(entity3);     // > id: 3  "new entity"  [EntityName]
+}
+```
+
+
+================================================
+FILE: extensions/Unity-extension.md
+================================================
+
+## **Friflo.Engine.ECS** for **Unity**
+
+Package extension for Unity - with full Editor integration like
+[Entitas](https://github.com/sschmid/Entitas),
+[Unity DOTS](https://docs.unity3d.com/Packages/com.unity.entities@1.2/manual/index.html) or
+[Morpeh](https://github.com/scellecs/morpeh).
+
+
+Check out the [friflo-ecs-unity · GitHub](https://github.com/friflo/friflo-ecs-unity).
+
+<span>
+  <img src="../images/ECS Store.png"  width="418" height="477"/>
+  <img src="../images/ECS Entity.png" width="450" height="477"/>
+</span>
+
+ECS - dead simple. Highlights
+- No boilerplate - Requires only C# code for **components** and **systems** and adding scripts via the Editor:  
+  **ECS Store**, **ECS System Set** and **ECS Entity** shown in the Inspector.
+- Support **Edit** & **Play** Mode with synchronization of `GameObject` position, scale, rotation and activeSelf.
+- Entities & Systems are stored in scene file and support: Cut/Copy/Paste, Duplicate/Delete, Undo/Redo and Drag & Drop.
+
+
+
+
+
+================================================
+FILE: package/Features.md
+================================================
+
+## Integration
+
+Friflo.Engine.ECS enables you integration in any C# based Game Engine and any .NET enterprise application.
+
+- **Unity** - ![new](../images/new.svg) - Integration as nuget package. Tested 2022.3.20f1 (Mono & AOT/IL2CPP).  
+    Use [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) to install nuget package **Friflo.Engine.ECS**. 1.23.0 or higher.
+    Usage in [Unity script example](../examples/General.md#unity-update-script).
+- **.NET** - Supported target frameworks: **.NET Standard 2.1 .NET 5 .NET 6 .NET 7 .NET 8**. Supports **WASM / WebAssembly**.  
+    Integration into a .NET project as nuget package see [nuget ⋅ Friflo.Engine.ECS](https://www.nuget.org/packages/Friflo.Engine.ECS/).  
+- **Godot** - Integration as nuget package. Tested with Godot 4.1.1.
+
+
+## Performance
+
+You want best ECS performance?  
+You get it! 😊  
+Without using unsafe code! 🔒
+
+E.g Creating 1.000.000 entities with two components: 13 ms.  
+Best ECS C++ implementation **pico_ecs**: 45 ms  
+See: [C++ ECS Benchmarks ⋅ Create Entities](https://github.com/abeimler/ecs_benchmark?tab=readme-ov-file#create-entities)
+
+
+- Uses array buffers and cache query instances -> no memory allocations after buffers are large enough.
+- High memory locality by storing components in continuous memory.
+- Optimized for high L1 cache line hit rate.
+- Best benchmark results at: [**Ecs.CSharp.Benchmark - GitHub**](https://github.com/Doraku/Ecs.CSharp.Benchmark).
+- Processing components of large queries has the memory bandwidth as bottleneck. Either using multi threading or SIMD.  
+    Alternative ECS implementations using C/C++, Rust, Zig or Mojo 🔥 cannot be faster due to the physical limits.
+
+
+## ECS
+
+- Developer friendly / OOP like API by exposing the [Entity API](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Entity.md)
+  **struct** as the main interface.  
+  Or compare the `Entity` API with other API's at [Engine-comparison.md](https://github.com/friflo/Friflo.Engine.ECS/blob/main/docs/Engine-comparison.md).  
+  The typical alternative of an ECS implementations is providing a `World` class and using `int` parameters as entity `id`s.
+- Record entity changes on arbitrary threads using [CommandBuffer](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.md)'s.
+- Build a **hierarchy of entities** typically used in Games and Game Editors.
+- Support **multi threaded** component queries (systems).
+- Support for **Vectorization (SIMD)** of components returned by queries.  
+  Returned component arrays have padding elements at the end to enable SIMD processing without a
+  [scalar remainder (epilogue) loop](https://llvm.org/docs/Vectorizers.html#epilogue-vectorization).  
+  It is preferred over multi threading as it uses only one core providing the same performance as multi threading running on all cores.
+- Minimize times required for GC collection by using struct types for entities and components.  
+  GC.Collect(1) < 0.8 ms when using 10.000.000 entities.
+- Support **tagging** of entities and use them as a filter in queries.
+- Add scripts - similar to `MonoBehavior`'s - to entities in cases OOP is preferred.
+- Support **observing entity changes** by event handlers triggered by adding / removing: components, tags, scripts and child entities.
+- Reliability - no undefined behavior with only one exception:  
+  Performing structural changes - adding/removing components/tags - while iterating a query result.  
+  The solution is buffering structural changes with a CommandBuffer.
+
+
+## Other
+- Enable binding an entity hierarchy to a [TreeDataGrid - GitHub](https://github.com/AvaloniaUI/Avalonia.Controls.TreeDataGrid)
+  in [AvaloniaUI - Website](https://avaloniaui.net/). Screenshot below:    
+<img src="https://raw.githubusercontent.com/friflo/Friflo.Json.Fliox/main/Engine/docs/images/Friflo-Engine-Editor.png" width="677" height="371"></img>
+
+
+
+
+================================================
+FILE: package/Library.md
+================================================
+
+The library can be build on all platforms a .NET SDK is available.  
+Build options:
+- `dotnet` CLI       - Windows, macOS, Linux
+- Rider              - Windows, macOS, Linux (untested)
+- Visual Studio 2022 - Windows
+- Visual Studio Code - Windows, macOS, Linux (untested)
+
+
+## Supported Platforms
+- Builds tested on:  
+  **Windows, macOS, Linux, WASM / WebAssembly, Unity, Godot, MonoGame**.  
+
+
+## Assembly (dll)
+- This library is using only *verifiably safe code*. `<AllowUnsafeBlocks>false</AllowUnsafeBlocks>`.  
+  No use of [Unsafe code ⋅ Microsoft](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/unsafe-code) -
+  *"Unsafe code may cause memory corruption and introduces security and stability risks"*.
+
+  Access violation bugs caused by unsafe code on customer installs provide often no stacktrace when crashing.
+
+  Typical random behavior using **unsafe code**:
+  - Expected behavior.
+  - An `AccessViolationException` while debugging. Best case. The stacktrace on dev machine may show the root cause.  
+  - A [Segmentation fault ⋅ Wikipedia](https://en.wikipedia.org/wiki/Segmentation_fault) on customer installs without stacktrace.
+  - An `Exception` which is unrelated to the root cause.
+  - native memory: leaks, dangling pointers or wild pointers
+  - Nothing happens - no exception. Worst case.
+  - Exploit execution of malicious code. Even worse. 😁
+
+  Behavior of **safe code**:
+  - Expected behavior.
+  - An `Exception` showing the root cause of a bug.
+
+- Pure C# implementation - no C/C++ bindings slowing down runtime / development performance.
+
+- The C# API is [CLS-compliant ⋅ Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.clscompliantattribute?view=net-8.0#remarks).
+
+- No custom C# preprocessor directives which requires custom builds to enable / disable features.
+
+- Deterministic dll build.
+
+- No 3rd party dependencies.
+
+- It requires **Friflo.Json.Fliox** which is part of this repository.
+
+
+## Build
+- Size: Friflo.Engine.ECS.dll: ~ 210 kb. Implementation: ~ 17.500 LOC.
+
+- Build time Windows: ~ 5 seconds, macOS (M2): 2,5 seconds.
+
+- Code coverage of the unit tests: 99,9%. See: [code-coverage.md](https://github.com/friflo/Friflo.Engine.ECS/blob/main/docs/code-coverage.md).
+
+- Unit test execution: ~ 1 second.
+
+- The nuget package contains four dll's specific for: **.NET Standard 2.1 .NET 6 .NET 7 .NET 8**.  
+  This enables using the most performant features available for each target.  
+  E.g. Some SIMD intrinsics methods available on .NET 7 and .NET 8 but not on earlier versions.
+
+
+
+================================================
+FILE: package/native-aot.md
+================================================
+
+**Friflo.Engine.ECS** supports [Native AOT deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot).
+
+> *Note*  
+> JSON serialization is currently not support by Native AOT.
+
+Using **Friflo.Engine.ECS** does not require a source generator - aka Roslyn Analyzer.  
+A source generator could be used to register component types automatically.
+
+Because of this component types used by an application must be registered on startup as shown below.
+
+```cs
+var aot = new NativeAOT();
+aot.RegisterComponent<MyComponent>();
+aot.RegisterTag      <MyTag1>();
+aot.RegisterScript   <MyScript>();
+var schema = aot.CreateSchema();
+```
+
+In case using an unregistered component a `TypeInitializationException` will be thrown. E.g.
+```cs
+ entity.AddComponent(new UnregisteredComponent());
+```
+
+On console to the exception log looks like
+```
+A type initializer threw an exception. To determine which type, inspect the InnerException's StackTrace property.
+Stack Trace:
+   at System.Runtime.CompilerServices.ClassConstructorRunner.EnsureClassConstructorRun(StaticClassConstructionContext*) + 0x14f
+   at System.Runtime.CompilerServices.ClassConstructorRunner.CheckStaticClassConstructionReturnNonGCStaticBase(StaticClassConstructionContext*, IntPtr) + 0x1c
+   at Friflo.Engine.ECS.Entity.AddComponent[T](T&) + 0x4e
+   at MyApplication.UseUnregisteredComponent() + 0x7c
+```
+
+
+
+### Other Trimmings issues
+
+Community feedback on Discord.  
+In case you get an exception like:
+```
+System.IndexOutOfRangeException: Index was outside the bounds of the array.
+ Stack Trace:
+   at Friflo.Engine.ECS.Relations.AbstractEntityRelations.GetEntityRelations(EntityStoreBase, Int32) + 0xd5
+   at Friflo.Engine.ECS.Relations.AbstractEntityRelations.AddRelation[TRelation](EntityStoreBase, Int32, TRelation&)
+   ...
+```
+
+Add the `<TrimmerRootAssembly>` to your *.csproj.  
+See: [Trimming options > Root assemblies](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options#root-assemblies)
+
+```xml
+<ItemGroup>
+  <TrimmerRootAssembly Include="Friflo.Engine.ECS" />
+</ItemGroup>
+```
+
+
+
+================================================
+FILE: package/Release-Notes.md
+================================================
+<div style="display: flex;">
+<div style="flex-grow: 1;"></div>
+<div>
+<a href="https://github.com/friflo/Friflo.Engine.ECS"/><img src="../images/friflo-ECS-small.svg"></a>
+<span width="40" style="display:inline;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<a href="https://github.com/friflo/Friflo.Engine.ECS"/><img src="../images/github-mark.svg"></a>
+<a href="https://github.com/friflo/Friflo.Engine.ECS"/><img src="https://img.shields.io/badge/GitHub-grey"></a>
+<span width="40" style="display:inline;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<a href="https://discord.gg/nFfrhgQkb8"/><img src="../images/discord.svg"></a>
+<a href="https://discord.gg/nFfrhgQkb8"/><img src="https://img.shields.io/badge/Discord-5865F2"></a>
+</div>
+</div>
+
+
+Features in this list are also explained in the GitHub Wiki.  
+- [**Examples - General**](../examples/General.md)  
+- [**Examples - Optimization**](../examples/Optimization.md)  
+
+Every new version is backward compatible to earlier versions.  
+Exceptions are labeled as  **Breaking change** / **Changed behavior**. These changes are made only on rarely used features.
+
+Releases on nuget are available at  
+[![nuget](https://img.shields.io/nuget/v/Friflo.Engine.ECS?logoColor=white)](https://www.nuget.org/packages/Friflo.Engine.ECS)
+
+Detailed information for each release at
+[GitHub - Release Tags](https://github.com/friflo/Friflo.Engine.ECS/releases)
+
+<br/>
+
+# 3.x Releases
+
+## 3.3.2
+- Added runtime assertions that indicates the value of an indexed component was changed previously.  
+  E.g. `"Indexed value of 'AttackComponent' not found. Reason: indexed values MUST NOT be changed. See: ..."`  
+  More info at **Important** disclaimer at: https://friflo.gitbook.io/friflo.engine.ecs/documentation/component-index#indexed-components
+
+## 3.3.1
+- Added runtime assertions for `ChildEntities` and `Entities` indexer.  
+  E.g. if  `ChildEntities.Count == 3` calling the indexer with `ChildEntities[3]` throws `IndexOutOfRangeException`.
+
+
+## 3.3.0
+
+The main focus of this release was to add support for **EcGui** - an In-Game GUI utilizing ImGui.NET.  
+The GUI is an optional extension and acts as an overlay over the Game screen.  
+It provides instant access to entities their components, tags and relations at runtime via **Explorer** and **Inspector** window.
+
+### New Features
+To enable sorting and filtering in **EcGui** the following features were added to the ECS.
+- Support sorting an `EntityList` with `SortByComponentField<,>()` and `SortByEntityId()`.
+- Support to filter an `EntityList` using `Filter(Func<Entity, bool> filter)` with a predicate delegate.
+
+### Bugfix
+- Fixed [Native AOT - System.NotSupportedException](https://github.com/friflo/Friflo.Engine.ECS/issues/65)
+
+
+### **EcGui**
+
+**EcGui** can be integrated in all environments that support **ImGui**. This means all desktop platforms: Windows, macOS & Linux.  
+It supports various graphic backends: Direct3D, Vulkan, Metal, OpenGL, ...
+
+#### Features
+- Requires only a few method calls (3 at minimum) to connect  **ECS** store, queries and systems to **EcGui**.
+  ```cs
+  // on startup
+  EcGui.AddExplorerStore("Store", store);
+  // in render loop
+  EcGui.ExplorerWindow();
+  EcGui.InspectorWindow();
+  ```
+- Renders the Explorer & Inspector in ~0.1 - 0.5 ms per frame. Rendering is allocation free.  
+  The time for rendering is independent from entity count. E.g. 1, 10, ..., 1.000 or 1.000.000 entities.
+- Explore ECS queries added to the **Explorer** in real time.
+- Filter and sort entity components in the explorer table.
+- Edit, Cut, Copy or Paste entities and components in the **Explorer** table.
+- Export Explorer table as **CSV** or **Markdown**.
+- View and edit all entity components, tags and relations in the **Inspector** window.
+
+
+Minimal Demos showing how to integrate **EcGui** in 
+[MonoGame](https://github.com/friflo/friflo-EcGui-MonoGame),
+[Godot](https://github.com/friflo/friflo-EcGui-Godot),
+[SDL3](https://github.com/friflo/friflo-EcGui-SDL3.GPU) &
+[Silk.NET](https://github.com/friflo/friflo-EcGui-Silk.NET.OpenGL)  
+See: [**EcGui Demo List**](https://github.com/friflo?tab=repositories&q=ecgui&type=public&language=&sort=name)
+
+![friflo-EcGui-MonoGame](https://github.com/user-attachments/assets/5150eafe-fad8-4502-88c9-7ceb9b60cbc6)
+
+
+## 3.2.1
+Simplified API
+- Added `Entity.CopyEntity(Entity target)`  
+  Intended to backup the entities from one `EntityStore` to another.  
+  See: [Docs - Clone / Copy entity](https://friflo.gitbook.io/friflo.engine.ecs/documentation/entity#clone-copy-entity)
+- Added `Entity.CloneEntity()`
+
+## 3.2.0
+- New feature: added `EntityStore.CopyEntity(Entity source, Entity target)`
+
+## 3.1.0
+- Introduced `StructuralChangeException` which is thrown when executing **structural changes** within a `Query<>()` loop.  
+  Detailed information at [Query - StructuralChangeException](https://friflo.gitbook.io/friflo.engine.ecs/documentation/query#structuralchangeexception)
+- Component type `UniqueEntity` now implements `IIndexedComponent<string>` to improve performance of `EntityStore.GetUniqueEntity(string uid)`.
+
+## 3.0.4
+- `RelationsEnumerator<>.Current` returns entities now by ref. This enables to modify relations in a `GetRelations<>()` loop.
+   E.g.
+  ```cs
+    foreach (ref var relation in entity.GetRelations<MyRelation>()) {
+        relation.Value += 1;
+    }
+  ```
+
+## 3.0.3
+- Add Native AOT support for specialized component types and relations introduced in v3.0.0:  
+  `IIndexedComponent<>`, `ILinkComponent`, `IRelation<>` and `ILinkRelation`.  
+  These types must be registered with: `NativeAOT.RegisterIndexedComponent()` or `NativeAOT.RegisterRelation()`.
+
+
+## 3.0.2
+- Implemented `Entity.Equals(object)` and `Entity.GetHashCode()` to enable use in `Dictionary<Entity,>` and `HashSet<Entity>`.  
+  See [FitHub Issue#56 - Entity.Equals() throws "Not implemented to avoid excessive boxing."](https://github.com/friflo/Friflo.Engine.ECS/issues/56)
+- Fixed [GitHub Issue#55 - SystemRoot.GetPerfLog() throws ArgumentOutOfRange when system names are too long.](https://github.com/friflo/Friflo.Engine.ECS/issues/55).  
+  The length of the System name column can now be customized in `system.GetPerfLog(int nameColLen)`.
+
+## 3.0.1
+
+- Simplify - Made `BaseSystem.OnAddStore()` and `BaseSystem.OnRemoveStore()` noop methods.  
+  An `override` of these method are not required to call the base implementation anymore which happened accidentally.
+- Fixed `AsSpan...<>()` when used in multithreaded queries. See https://github.com/friflo/Friflo.Engine.ECS/issues/47
+
+## 3.0.0
+
+Finally after 6 months in **preview** all new features are completed.
+- Updated test dependencies and ensured compatibility with MonoGame, Godot, Unity (Mono, IL2CPP & WebGL) and Native AOT.
+
+## 3.0.0-preview.19
+
+- Changed implementation of `EntityStore.CloneEntity()`  
+
+  **Old:** Used JSON serialization as fallback if source entity has one or more *non-blittable* component types.  
+         E.g. a struct component containing fields with reference types like a `array`, `List<>` or `Dictionary<,>`.  
+
+  **New:** *Non-blittable* components are now cloned using a static `CopyValue()` method with must part of component type.
+  E.g.
+  ```cs
+  public struct MyComponent : IComponent
+  {
+      public int[]   array;
+    
+      static void CopyValue(in MyComponent source, ref MyComponent target, in CopyContext context) {
+          target.array = source.array?.ToArray();
+      }
+  }
+  ```
+  In case `CopyValue()` is missing an exception is thrown including the required method signature in the exception message.  
+  *Info:* Removing JSON serialization from cloning has additional advantages.
+  1. Much faster as JSON serialization/deserialization is expensive.
+  2. No precision loss when using floating point types.
+  
+
+## 3.0.0-preview.18
+
+- Changed license to MIT. Used LGPL before.
+- Create `ComponentIndex` to simplify search entities with specific components in O(1).
+  ```cs
+    var store = new EntityStore();
+    store.CreateEntity(new Player { name = "Player One" });
+    var index = store.ComponentIndex<Player,string>();
+    var entities = index["Player One"];         // Count: 1
+  ```
+- Create `EntityRelations` to simplify iteration of relations.
+
+
+## 3.0.0-preview.17
+
+- Added support of JSON serialization for [relations](../examples/Component-Types.md#serialization).
+- Added row `M` to systems perf log to indicate if `MonitorPerf` is enabled for a specific system.
+
+
+## 3.0.0-preview.16
+
+> Breaking changes
+
+1. To avoid mixing up relations with components accidentally `IRelation` does not extends `IComponent` anymore.
+2. Renamed public API's  
+   `IRelationComponent<>` -> `IRelation<>`  
+   `RelationComponents<>` -> `Relations<>`
+
+
+## 3.0.0-preview.15
+
+Added support of serialization of `Entity` fields in components. E.g.
+```cs
+struct RefComponent : IComponent {
+    public Entity reference;
+}
+```
+will be serialized as JSON
+```json
+{
+    "components": {
+        "RefComponent": {"reference":42}
+    }  
+}
+```
+
+
+## 3.0.0-preview.14
+
+Fixes issues specific to indexed components and relations.
+- [Indexed component not found when adding component through EntityStore.CreateEntity - Issue #5](https://github.com/friflo/Friflo.Engine.ECS/issues/5)
+- [After deleting the entity, the target entity still has incoming links - Issue #13](https://github.com/friflo/Friflo.Engine.ECS/issues/13)
+- [After serialization/deserialization indexed components don't work - Issue #15](https://github.com/friflo/Friflo.Engine.ECS/issues/15)
+- [EntitySerializer throws when using a MemoryStream created from a byte[] - Issue #27](https://github.com/friflo/Friflo.Engine.ECS/issues/27)
+- [New entities have the same parent of recycled entities - Issue #29](https://github.com/friflo/Friflo.Engine.ECS/issues/29)
+- [Use CommandBuffer.SetComponent then crash in Playback- Issue #31](https://github.com/friflo/Friflo.Engine.ECS/issues/31)
+
+
+## 3.0.0-preview.11
+
+Return the passed `each` parameter in `QueryExtensions.Each(each)` methods.  
+This enables access to the state of the structs implementing `IEach<...>`.
+```cs
+    var query = store.Query<Position, Velocity>();
+    var each  = query.Each(new CountEach()); // returns the CountEach parameter
+    WriteLine(each.count);                   // in case CountEach count invocations
+```
+
+## 3.0.0-preview.10
+
+*Same as 3.0.0-preview.8, 3.0.0-preview.9. Created until CI was successful*
+
+Published new nuget package [Friflo.Engine.ECS.Boost](https://www.nuget.org/packages/Friflo.Engine.ECS.Boost/3.0.0-preview.10#readme-body-tab)  
+A unique feature of **Friflo.Engine.ECS** is - it uses no **unsafe code**.  
+For maximum query performance unsafe code it required to elide array bounds checks.  
+The new Boost package contains an extension dll and make use of unsafe code to improve query performance for large results ~30%.  
+See [Boosted Query](../examples/Optimization.md#boosted-query) with example used for maximum query performance.
+
+## 3.0.0-preview.7
+Focus of preview.7 was performance improvements
+
+- **Changed behavior** The ids of deleted entities are now recycled when creating new entities.  
+  Before: Every created entity got its own (incrementing ) unique id. This behavior lead to an every growing buffer when creating new entities.  
+  To switch to old behavior set [EntityStore.RecycleIds](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStore.RecycleIds.md) = false.
+
+- Introduced [EntityData](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityData.md) struct to optimize
+  read / write access to multiple components of the same entity.  
+  The cost to access a component is significant less than `Entity.GetComponent()`.
+
+- Change policy used to shrink the capacity of archetype containers.  
+  See: [EntityStore.ShrinkRatioThreshold](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStoreBase.ShrinkRatioThreshold.md)
+
+## 3.0.0-preview.6
+- Same release as preview.5 build with GitHub Action in [new Repository](https://github.com/friflo/Friflo.Engine.ECS)
+
+## 3.0.0-preview.5
+- Improved performance of `Entity.RemoveChild()` & `Entity.InsertChild()` when remove / insert child entity on tail.
+
+## 3.0.0-preview.4
+- Added runtime assertions to ensure an entity tree (parent / child relations) never contains cycles.  
+  So the tree is always a [DAG - directed acyclic graph](https://en.wikipedia.org/wiki/Tree_(graph_theory)).  
+  An operation e.g. `AddChild()` which would create a cycle within a tree will throw an exception like:
+  ```
+  System.InvalidOperationException : operation would cause a cycle: 3 -> 2 -> 1 -> 3
+  ```
+- Improved performance of `Entity.AddChild()`, `Entity.RemoveChild()` & `Entity.InsertChild()` by 30%
+
+## 3.0.0-preview.3
+- Reduced number of properties displayed for an Entity in the debugger.  
+  Moved properties: Archetype, Parent & Scripts  to Entity.Info
+
+- Improved performance and memory allocations to build a scene tree.  
+  Each parent in a tree has a `TreeNode` component.  
+  reduced `sizeof(TreeNode)` component from 16 to 8 bytes.
+
+  *Before:* Each `TreeNode` has an individual int[] array storing child ids.  
+  *Now:* child ids are stored in a ~ dozen id pool array buffers. Independent from the number of parent or child entities.  
+  If these array buffers grown large enough over time no heap allocations will happen if adding or removing child entities.
+
+## 3.0.0-preview.2
+- For specific use cases there is now a set of specialized component interfaces providing additional features.    
+  *Note:* Newly added features do not affect the behavior or performance of existing features.  
+  See documentation at: [Examples - Component-Types](../examples/Component-Types.md)
+
+  The specialized component types enable entity relationships, relations and full-text search.  
+  Typical use case for entity relationships in games are:
+  - Attack systems
+  - Path finding / Route tracing
+  - Model social networks. E.g friendship, alliances or rivalries
+  - Build any type of a [directed graph](https://en.wikipedia.org/wiki/Directed_graph)
+  using entities as *nodes* and links or relations as *edges*.
+
+
+<br/>
+
+# 2.x Releases
+
+## 2.1.0
+Added support for generic component and tags types.
+See [Issue #53](https://github.com/friflo/Friflo.Json.Fliox/issues/53). E.g.
+```cd
+public struct GenericComponent<T> : IComponent {
+    public T Value;
+}
+```
+
+## 2.0.0
+![new](../images/new.svg) **Features**
+- Introduced Systems, System Groups with command buffers and performance monitoring.  
+Details at [README - Systems](https://github.com/friflo/Friflo.Engine.ECS/blob/main/README.md#%EF%B8%8F-systems)
+- Added support for Native AOT.  
+Details at [Wiki ⋅ General - Native AOT](../examples/General.md#native-aot).
+- Enabled sharing a single [QueryFilter](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/QueryFilter.md) instance by multiple queries.  
+Changing a query filter - e.g. adding more constrains - directly changes the result set of all queries using the `queryFilter`.
+```cs
+var query = store.Query<....>(queryFilter);
+```
+- Added [CommandBuffer.Synced](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.Synced.md) intended to record entity changes in [parallel query jobs](../examples/General.md#parallel-query-job).
+
+**Performance**
+- Improved bulk creation of entities by 3x - 4x with [Archetype.CreateEntities(int count)](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/Archetype.CreateEntities(int).md).  
+See performance comparison at [ECS Benchamrks](https://github.com/friflo/Friflo.Engine.ECS?tab=readme-ov-file#-ecs-benchmarks).
+- Reduced memory footprint of an entity from 48 bytes to 16 bytes.  
+See column **Allocated** in [ECS Benchamrks](https://github.com/friflo/Friflo.Engine.ECS?tab=readme-ov-file#-ecs-benchmarks).
+- Decreased initial component type registration from 80 ms to 23 ms (Mac Mini M2).  
+Note: Component type registration runs only once per process on the first ECS API call.
+
+**Fixes**
+- Fixed issue related to JSON serialization. See [Issue #45](https://github.com/friflo/Friflo.Json.Fliox/issues/45)  
+**Before**: Component types with unsupported field types caused an exception.  
+**Fix**: These unsupported field types are now ignored by JSON serializer.
+- Parallel queries: fixed entities - of type `ChunkEntities` - used as last parameter in a `ArchetypeQuery.ForEach()`.  
+  See  [Issue #50](https://github.com/friflo/Friflo.Json.Fliox/issues/50)
+```cs
+query.ForEach((..., entities) => { ... });
+```
+Before: `entities` returned always the same set of entities.
+Fix: `entities` now returns the entities assigned to a thread.
+- Adding a Signal handler to an entity already having a Signal handler replaced the existing one.  
+  See  [Issue #46](https://github.com/friflo/Friflo.Json.Fliox/issues/46)
+
+**Project**
+- Simplify project structure for **Friflo.Engine.ECS**.
+Reduced number of files / folders in `Engine folder` from 21 to 7.
+- Moved documentation and examples from `README.md` to [GitBook.io ⋅ Wiki](https://friflo.gitbook.io/friflo.engine.ecs) pages.
+
+<br/>
+
+# 1.x Releases
+
+## 1.28.0
+Optimize performance of `Add<>()`, `Set<>()` and `Remove<>()` introduced in **1.26.0**.
+
+## 1.26.0
+Features:  
+Add 10 `CreateEntity()` overloads to create entities with components without any structural change in [EntityStoreExtensions](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStoreExtensions.md).  
+Add 10 overloads to `Add<>()`, `Set<>()` and `Remove<>()` entity components with one/none structural change in [EntityExtensions](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityExtensions.md).  
+Add [ArchetypeQuery.ToEntityList()](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ArchetypeQuery.ToEntityList().md) returning the entities as a list which can be used for structural changes.  
+Emit events on create / delete entity via [EntityStore.OnEntityCreate](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStore.OnEntityCreate.md) and
+[EntityStore.OnEntityDelete](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EntityStore.OnEntityDelete.md).
+
+## 1.25.0
+Switched project to more permissive license LGPL v3.0. Before AGPL v3.0.
+See [Issue #41](https://github.com/friflo/Friflo.Json.Fliox/discussions/41).
+
+## 1.24.0
+Add support for component fields of type: `sbyte, ushort, uint, ulong`.
+See [Issue #38](https://github.com/friflo/Friflo.Json.Fliox/issues/38).
+
+## 1.23.0
+Support integration in Unity as nuget package.  
+Supports Mono & AOT/IL2CPP builds. Tested on Windows & macOS.
+
+## 1.19.0
+Add `ArchetypeQuery.ForEachEntity()` for convenient query iteration.  
+Support / fix using vector types - e.g. `Vector3` - as component fields for .NET 7 or higher.  
+
+## 1.18.0
+Introduced `EntityList` to apply an entity batch to all entities in the list.  
+Add `Entity.Enabled` to enable/disable an entity.  
+Add `Entity.EnableTree()` / `Entity.DisableTree()` to enable/disable recursively the child entities of an entity.
+
+## 1.17.0
+Introduced `CreateEntityBatch` to optimize creation of entities.  
+Added DebugView's for all IEnumerable<> types to enable one click navigation to their elements in the debugger.  
+E.g. the expanded properties ChildEntities and Components in the examples screenshot.  
+**Breaking change**: Changed property `Entity.Batch` to method `Entity.Batch()`.
+
+## 1.16.0
+Add support for entity batches and bulk batch operations to apply multiple entity changes at once.  
+**Changed behavior** of the Archetype assigned to entities without components & tags.  
+*Before:* Entities were not stored in this specific Archetype. `Archetype.Entities` returned always an empty result.  
+*Now:*    Entities are stored in this Archetype.  
+
+## 1.15.0
+Reduced the number of properties shown for an entity in the debugger. See screenshot in Examples. 
+
+## 1.14.0
+Add support for parallel (multi threaded) query job execution.
+
+
+## 1.13.0
+Add support for target framework .NET Standard 2.1 or higher.
+
+
+## 1.12.0
+Add additional query filters like `WithoutAnyTags()` using an
+[ArchetypeQuery](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/ArchetypeQuery.md).  
+
+## 1.11.0
+Support to filter entity changes - like adding/removing components/tags - in queries using an
+[EventFilter](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/EventFilter.md).  
+
+
+## 1.10.0
+Add support for [CommandBuffer](https://github.com/friflo/Friflo.Engine-docs/blob/main/api/CommandBuffer.md)'s.  
+
+
+

@@ -16,7 +16,12 @@
         <ProjectReference
             Include="..\..\Ignis.Graphics.Backends.OpenGL\Ignis.Graphics.Backends.OpenGL.csproj" />
         <ProjectReference Include="..\..\Ignis.Audio\Ignis.Audio.csproj" />
+        <ProjectReference Include="..\..\Ignis.Physics\Ignis.Physics.csproj" />
         <ProjectReference Include="..\Common\Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
     </ItemGroup>
 
 </Project>

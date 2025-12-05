@@ -18,7 +18,7 @@ public sealed class BreakoutContext : GraphicsContext
 
     public FontHandle Font { get; private set; }
 
-    // Game state
+    // Game state (synced from ECS BreakoutState)
     public int CurrentLevel { get; set; } = 1;
     public int Score { get; set; }
     public int Lives { get; set; } = 3;

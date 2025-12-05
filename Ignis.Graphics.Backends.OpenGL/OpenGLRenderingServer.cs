@@ -411,17 +411,34 @@ public sealed class OpenGLRenderingServer : IRenderingServer
                 break;
 
             case CommandType.DrawQuad:
-                Setup2DShaderIfNeeded();
                 _batch2D?.DrawQuad(cmd.Position, cmd.Size, cmd.Color);
                 break;
 
             case CommandType.DrawLine:
-                Setup2DShaderIfNeeded();
                 _batch2D?.DrawLine(cmd.Position, cmd.LineEnd, cmd.Color, cmd.Thickness);
+                break;
+            
+            case CommandType.DrawCircle:
+                _batch2D?.DrawCircle(cmd.Position, cmd.Radius, cmd.Color, cmd.Thickness, cmd.Segments);
+                break;
+            
+            case CommandType.DrawCircleFilled:
+                _batch2D?.DrawCircleFilled(cmd.Position, cmd.Radius, cmd.Color, cmd.Segments);
+                break;
+            
+            case CommandType.DrawEllipse:
+                _batch2D?.DrawEllipse(cmd.Position, cmd.Size, cmd.Color, cmd.Thickness, cmd.Segments);
+                break;
+            
+            case CommandType.DrawEllipseFilled:
+                _batch2D?.DrawEllipseFilled(cmd.Position, cmd.Size, cmd.Color, cmd.Segments);
+                break;
+            
+            case CommandType.DrawArc:
+                _batch2D?.DrawArc(cmd.Position, cmd.Radius, cmd.StartAngle, cmd.EndAngle, cmd.Color, cmd.Thickness, cmd.Segments);
                 break;
 
             case CommandType.DrawSprite:
-                Setup2DShaderIfNeeded();
                 if (_textures.TryGetValue(cmd.Texture.Id, out var spriteTex))
                     _batch2D?.DrawQuad(cmd.Position, cmd.Size, cmd.Color, spriteTex.Handle);
                 break;
@@ -434,12 +451,6 @@ public sealed class OpenGLRenderingServer : IRenderingServer
                 DrawTextBoundedInternal(cmd.Font, cmd.Text ?? "", cmd.TextBounds, cmd.FontSize, cmd.Color, cmd.HAlign, cmd.VAlign);
                 break;
         }
-    }
-
-    private void Setup2DShaderIfNeeded()
-    {
-        // No longer needed - GL2DBatch now manages its own state at flush time
-        // This method is kept for API compatibility but does nothing
     }
 
     private void DrawTextInternal(FontHandle fontHandle, string text, Vector2 position, float fontSize, Color4 color)

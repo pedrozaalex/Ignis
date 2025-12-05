@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Audio", "Ignis.Audio\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TowerDefense", "Samples\TowerDefense\TowerDefense.csproj", "{DA0C92D2-6C0C-4658-BA77-BB266E6928D8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ignis.Physics", "Ignis.Physics\Ignis.Physics.csproj", "{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -194,6 +196,18 @@ Global
 		{DA0C92D2-6C0C-4658-BA77-BB266E6928D8}.Release|x64.Build.0 = Release|Any CPU
 		{DA0C92D2-6C0C-4658-BA77-BB266E6928D8}.Release|x86.ActiveCfg = Release|Any CPU
 		{DA0C92D2-6C0C-4658-BA77-BB266E6928D8}.Release|x86.Build.0 = Release|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Debug|x64.Build.0 = Debug|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Debug|x86.Build.0 = Debug|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Release|x64.ActiveCfg = Release|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Release|x64.Build.0 = Release|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Release|x86.ActiveCfg = Release|Any CPU
+		{944BBFB6-9E45-4CF4-9E8C-90644F7E7B51}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

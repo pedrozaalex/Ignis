@@ -134,6 +134,58 @@ public class RenderCommandList : IRenderCommandList
             Thickness = thickness
         });
     
+    // --- Shape Drawing ---
+    
+    public void DrawCircle(Vector2 center, float radius, Color4 color, float thickness = 1f, int segments = 32) =>
+        _commands.Add(new RenderCommand(CommandType.DrawCircle)
+        {
+            Position = center,
+            Radius = radius,
+            Color = color,
+            Thickness = thickness,
+            Segments = segments
+        });
+    
+    public void DrawCircleFilled(Vector2 center, float radius, Color4 color, int segments = 32) =>
+        _commands.Add(new RenderCommand(CommandType.DrawCircleFilled)
+        {
+            Position = center,
+            Radius = radius,
+            Color = color,
+            Segments = segments
+        });
+    
+    public void DrawEllipse(Vector2 center, Vector2 radii, Color4 color, float thickness = 1f, int segments = 32) =>
+        _commands.Add(new RenderCommand(CommandType.DrawEllipse)
+        {
+            Position = center,
+            Size = radii,
+            Color = color,
+            Thickness = thickness,
+            Segments = segments
+        });
+    
+    public void DrawEllipseFilled(Vector2 center, Vector2 radii, Color4 color, int segments = 32) =>
+        _commands.Add(new RenderCommand(CommandType.DrawEllipseFilled)
+        {
+            Position = center,
+            Size = radii,
+            Color = color,
+            Segments = segments
+        });
+    
+    public void DrawArc(Vector2 center, float radius, float startAngle, float endAngle, Color4 color, float thickness = 1f, int segments = 32) =>
+        _commands.Add(new RenderCommand(CommandType.DrawArc)
+        {
+            Position = center,
+            Radius = radius,
+            StartAngle = startAngle,
+            EndAngle = endAngle,
+            Color = color,
+            Thickness = thickness,
+            Segments = segments
+        });
+    
     // --- Text ---
     
     public void DrawText(FontHandle font, string text, Vector2 position, float fontSize, Color4 color) =>
@@ -190,6 +242,11 @@ public enum CommandType
     DrawRoundedQuad,
     DrawQuadOutline,
     DrawLine,
+    DrawCircle,
+    DrawCircleFilled,
+    DrawEllipse,
+    DrawEllipseFilled,
+    DrawArc,
     DrawText,
     DrawTextBounded,
     PushDebugMarker,
@@ -238,6 +295,12 @@ public struct RenderCommand(CommandType type)
     public float Thickness;
     public float CornerRadius;
     public Rect SrcRect;
+    
+    // Shape drawing
+    public float Radius;
+    public int Segments;
+    public float StartAngle;
+    public float EndAngle;
     
     // Text
     public FontHandle Font;

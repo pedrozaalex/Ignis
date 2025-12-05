@@ -18,7 +18,6 @@ var window = new Window(new WindowOptions
     Width = 1280,
     Height = 720,
     VSync = true,
-    Resizable = true,
     Backend = WindowBackend.Auto,
     GraphicsBackend = GraphicsBackend.OpenGL
 });
@@ -59,7 +58,7 @@ window.OnLoad += () =>
     Console.WriteLine("Controls:");
     Console.WriteLine("  Mouse - Select/Place turrets");
     Console.WriteLine("  1,2,3 - Select turret type");
-    Console.WriteLine("  Space - Start wave / Activate time rift");
+    Console.WriteLine("  Space - Start wave");
     Console.WriteLine("  Escape - Pause / Back");
 };
 

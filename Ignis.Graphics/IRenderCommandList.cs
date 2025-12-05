@@ -94,6 +94,23 @@ public interface IRenderCommandList
     /// <summary>Draw a line between two points.</summary>
     void DrawLine(Vector2 start, Vector2 end, Color4 color, float thickness = 1f);
     
+    // --- Shape Drawing ---
+    
+    /// <summary>Draw a circle outline.</summary>
+    void DrawCircle(Vector2 center, float radius, Color4 color, float thickness = 1f, int segments = 32);
+    
+    /// <summary>Draw a filled circle.</summary>
+    void DrawCircleFilled(Vector2 center, float radius, Color4 color, int segments = 32);
+    
+    /// <summary>Draw an ellipse outline.</summary>
+    void DrawEllipse(Vector2 center, Vector2 radii, Color4 color, float thickness = 1f, int segments = 32);
+    
+    /// <summary>Draw a filled ellipse.</summary>
+    void DrawEllipseFilled(Vector2 center, Vector2 radii, Color4 color, int segments = 32);
+    
+    /// <summary>Draw an arc (partial circle outline).</summary>
+    void DrawArc(Vector2 center, float radius, float startAngle, float endAngle, Color4 color, float thickness = 1f, int segments = 32);
+    
     // --- Text Drawing ---
     
     /// <summary>Draw text at the given position.</summary>

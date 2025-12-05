@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
-using Samples.Breakout.Core;
+using Friflo.Engine.ECS;
+using Samples.Breakout.ECS;
 
 namespace Samples.Breakout.Services;
 
@@ -59,16 +60,17 @@ public sealed class LevelService
         }
     }
     
-    public List<Brick> CreateBricksForLevel(int levelNumber, float screenWidth, float topMargin)
+    /// <summary>
+    /// Creates brick entities for a level using ECS.
+    /// </summary>
+    public void CreateBricksForLevel(EntityStore store, int levelNumber, float screenWidth, float topMargin)
     {
         var level = GetLevel(levelNumber) ?? CreateDefaultLevels()[0];
-        return CreateBricksFromGrid(level.BrickGrid, screenWidth, topMargin);
+        CreateBricksFromGrid(store, level.BrickGrid, screenWidth, topMargin);
     }
     
-    private List<Brick> CreateBricksFromGrid(int[][] grid, float screenWidth, float topMargin)
+    private void CreateBricksFromGrid(EntityStore store, int[][] grid, float screenWidth, float topMargin)
     {
-        var bricks = new List<Brick>();
-        
         const float brickWidth = 50f;
         const float brickHeight = 20f;
         const float padding = 4f;
@@ -83,15 +85,15 @@ public sealed class LevelService
         {
             for (var col = 0; col < grid[row].Length; col++)
             {
-                var brickType = grid[row][col];
-                if (brickType == 0) continue; // Empty space
+                var brickTypeInt = grid[row][col];
+                if (brickTypeInt == 0) continue; // Empty space
                 
                 var position = new Vector2(
                     startX + col * (brickWidth + padding),
                     topMargin + row * (brickHeight + padding)
                 );
                 
-                var type = brickType switch
+                var type = brickTypeInt switch
                 {
                     2 => BrickType.Hard,
                     3 => BrickType.Unbreakable,
@@ -99,15 +101,9 @@ public sealed class LevelService
                     _ => BrickType.Normal
                 };
                 
-                var brick = new Brick(position, type, row % 6)
-                {
-                    Size = new Vector2(brickWidth, brickHeight)
-                };
-                bricks.Add(brick);
+                EntityFactory.CreateBrick(store, position, type, row % 6);
             }
         }
-        
-        return bricks;
     }
     
     private List<LevelData> CreateDefaultLevels()

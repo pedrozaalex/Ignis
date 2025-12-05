@@ -189,6 +189,131 @@ internal sealed class GL2DBatch : IDisposable
 
         _quadCount++;
     }
+    
+    /// <summary>
+    /// Draws a circle outline using line segments.
+    /// </summary>
+    public void DrawCircle(Vector2 center, float radius, Color4 color, float thickness, int segments)
+    {
+        var angleStep = MathF.PI * 2f / segments;
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = i * angleStep;
+            var angle2 = (i + 1) * angleStep;
+            
+            var p1 = center + new Vector2(MathF.Cos(angle1), MathF.Sin(angle1)) * radius;
+            var p2 = center + new Vector2(MathF.Cos(angle2), MathF.Sin(angle2)) * radius;
+            
+            DrawLine(p1, p2, color, thickness);
+        }
+    }
+    
+    /// <summary>
+    /// Draws a filled circle using triangle fan approximation (as quads).
+    /// </summary>
+    public void DrawCircleFilled(Vector2 center, float radius, Color4 color, int segments)
+    {
+        var angleStep = MathF.PI * 2f / segments;
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = i * angleStep;
+            var angle2 = (i + 1) * angleStep;
+            
+            var p1 = center + new Vector2(MathF.Cos(angle1), MathF.Sin(angle1)) * radius;
+            var p2 = center + new Vector2(MathF.Cos(angle2), MathF.Sin(angle2)) * radius;
+            
+            // Draw triangle as degenerate quad (center, p1, p2, center)
+            DrawTriangle(center, p1, p2, color);
+        }
+    }
+    
+    /// <summary>
+    /// Draws an ellipse outline using line segments.
+    /// </summary>
+    public void DrawEllipse(Vector2 center, Vector2 radii, Color4 color, float thickness, int segments)
+    {
+        var angleStep = MathF.PI * 2f / segments;
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = i * angleStep;
+            var angle2 = (i + 1) * angleStep;
+            
+            var p1 = center + new Vector2(MathF.Cos(angle1) * radii.X, MathF.Sin(angle1) * radii.Y);
+            var p2 = center + new Vector2(MathF.Cos(angle2) * radii.X, MathF.Sin(angle2) * radii.Y);
+            
+            DrawLine(p1, p2, color, thickness);
+        }
+    }
+    
+    /// <summary>
+    /// Draws a filled ellipse using triangle fan approximation.
+    /// </summary>
+    public void DrawEllipseFilled(Vector2 center, Vector2 radii, Color4 color, int segments)
+    {
+        var angleStep = MathF.PI * 2f / segments;
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = i * angleStep;
+            var angle2 = (i + 1) * angleStep;
+            
+            var p1 = center + new Vector2(MathF.Cos(angle1) * radii.X, MathF.Sin(angle1) * radii.Y);
+            var p2 = center + new Vector2(MathF.Cos(angle2) * radii.X, MathF.Sin(angle2) * radii.Y);
+            
+            DrawTriangle(center, p1, p2, color);
+        }
+    }
+    
+    /// <summary>
+    /// Draws an arc (partial circle outline).
+    /// </summary>
+    public void DrawArc(Vector2 center, float radius, float startAngle, float endAngle, Color4 color, float thickness, int segments)
+    {
+        var angleDiff = endAngle - startAngle;
+        var angleStep = angleDiff / segments;
+        
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = startAngle + i * angleStep;
+            var angle2 = startAngle + (i + 1) * angleStep;
+            
+            var p1 = center + new Vector2(MathF.Cos(angle1), MathF.Sin(angle1)) * radius;
+            var p2 = center + new Vector2(MathF.Cos(angle2), MathF.Sin(angle2)) * radius;
+            
+            DrawLine(p1, p2, color, thickness);
+        }
+    }
+    
+    /// <summary>
+    /// Draws a triangle (used internally for filled shapes).
+    /// </summary>
+    private void DrawTriangle(Vector2 p0, Vector2 p1, Vector2 p2, Color4 color)
+    {
+        if (_quadCount >= MaxQuadsPerBatch)
+            Flush();
+
+        var offset = _quadCount * VerticesPerQuad * FloatsPerVertex;
+
+        void WriteVertex(int idx, Vector2 pos)
+        {
+            var o = offset + idx * FloatsPerVertex;
+            _vertices[o + 0] = pos.X;
+            _vertices[o + 1] = pos.Y;
+            _vertices[o + 2] = 0;
+            _vertices[o + 3] = 0;
+            _vertices[o + 4] = color.R;
+            _vertices[o + 5] = color.G;
+            _vertices[o + 6] = color.B;
+            _vertices[o + 7] = color.A;
+        }
+
+        // Degenerate quad: p0, p1, p2, p0 (indices 0,1,2 and 0,2,3 both draw the triangle)
+        WriteVertex(0, p0);
+        WriteVertex(1, p1);
+        WriteVertex(2, p2);
+        WriteVertex(3, p0);
+
+        _quadCount++;
+    }
 
     public unsafe void Flush()
     {
