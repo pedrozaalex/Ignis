@@ -28,6 +28,7 @@ public class WidgetInputHandler
         {
             _hoveredWidget?.SetHovered(false);
             newHovered?.SetHovered(true);
+            newHovered?.HandleHoverEnter();
             _hoveredWidget = newHovered;
         }
 
@@ -51,8 +52,8 @@ public class WidgetInputHandler
             widget.SetPressed(true);
             widget.HandleMouseDown(x, y);
 
-            // Update focus
-            if (_focusedWidget != widget)
+            // Update focus only for focusable widgets
+            if (widget.IsFocusable && _focusedWidget != widget)
             {
                 _focusedWidget?.SetFocused(false);
                 widget.SetFocused(true);
@@ -68,8 +69,9 @@ public class WidgetInputHandler
     {
         if (_pressedWidget != null)
         {
-            _pressedWidget.SetPressed(false);
+            // Handle mouse up BEFORE clearing pressed state, so the widget knows it was pressed
             _pressedWidget.HandleMouseUp(x, y);
+            _pressedWidget.SetPressed(false);
             _pressedWidget = null;
         }
 

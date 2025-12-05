@@ -40,6 +40,7 @@ public abstract class Widget
     public event Action<Widget>? OnFocus;
     public event Action<Widget>? OnBlur;
     public event Action<Widget>? OnSubmit;
+    public event Action<Widget>? OnHover;
 
     // Computed bounds (set by layout pass)
     public float ComputedX { get; private set; }
@@ -289,6 +290,7 @@ public abstract class Widget
     public virtual void HandleMouseUp(float x, float y) { }
     public virtual void HandleMouseMove(float x, float y) { }
     public virtual void HandleSubmit() { TriggerSubmit(); }
+    public virtual void HandleHoverEnter() { OnHover?.Invoke(this); }
 
     // --- Content Size (virtual for widgets that need to measure content like Label) ---
 

@@ -154,4 +154,46 @@ public class WidgetLayoutTests
         Assert.Equal(100f, child1.ComputedWidth);
         Assert.Equal(200f, child2.ComputedWidth);
     }
+
+    [Fact]
+    public void Widget_AutoSizePanel_CentersInParent()
+    {
+        // Mimics the MainMenuScene structure:
+        // Root: Stretch(1) x Stretch(1), Column, Alignment.Center
+        // MenuPanel: Auto x Auto, Column, Alignment.Center
+        // Button: 250px x 45px
+
+        var button = new Button("Test Button")
+            .Width<Button>(Units.Pixels(250))
+            .Height<Button>(Units.Pixels(45));
+
+        var menuPanel = new Panel()
+            .Column()
+            .Alignment(CrucibleUI.Types.Alignment.Center)
+            .Children(button);
+        // Note: menuPanel has no explicit width/height (Auto)
+
+        var root = new Panel()
+            .Width(Units.Stretch(1))
+            .Height(Units.Stretch(1))
+            .Alignment(CrucibleUI.Types.Alignment.Center)
+            .Children(menuPanel);
+
+        // Simulate what happens in OnEnter:
+        root.ComputeBounds(0, 0, 1280, 720);
+        root.ComputeLayout();
+
+        // Root should be full screen
+        Assert.Equal(1280f, root.ComputedWidth);
+        Assert.Equal(720f, root.ComputedHeight);
+
+        // MenuPanel should size to its content (button) and be centered
+        Assert.Equal(250f, menuPanel.ComputedWidth);
+        Assert.Equal(45f, menuPanel.ComputedHeight);
+
+        // MenuPanel X should be centered: (1280 - 250) / 2 = 515
+        Assert.Equal(515f, menuPanel.ComputedX);
+        // MenuPanel Y should be centered: (720 - 45) / 2 = 337.5
+        Assert.Equal(337.5f, menuPanel.ComputedY);
+    }
 }

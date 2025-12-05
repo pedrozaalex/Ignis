@@ -103,14 +103,19 @@ public sealed class LevelSelectScene : Scene, ITowerDefenseScene
                     UpdateInfo(levelIndex);
                 };
 
+                btn.OnHover += (_) =>
+                {
+                    UpdateInfo(levelIndex);
+                };
+
                 rowPanel.Children<Panel>(btn);
             }
             mainPanel.Children<Panel>(rowPanel);
         }
 
         // Info Panel
-        _infoLabel = new Label("").FontSize(24f).Alignment<Label>(Alignment.Center);
-        _wavesLabel = new Label("").FontSize(16f).Color(0.7f, 0.7f, 0.7f).Alignment<Label>(Alignment.Center);
+        _infoLabel = new Label("").FontSize(24f).Alignment<Label>(Alignment.Center).Width<Label>(Units.Stretch(1));
+        _wavesLabel = new Label("").FontSize(16f).Color(0.7f, 0.7f, 0.7f).Alignment<Label>(Alignment.Center).Width<Label>(Units.Stretch(1));
 
         mainPanel.Children<Panel>(_infoLabel, _wavesLabel);
 

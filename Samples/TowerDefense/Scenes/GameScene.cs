@@ -189,6 +189,10 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         _pauseRoot.ComputeBounds(0, 0, _width, _height);
         _victoryRoot.ComputeBounds(0, 0, _width, _height);
         _gameOverRoot.ComputeBounds(0, 0, _width, _height);
+
+        _pauseRoot.ComputeLayout();
+        _victoryRoot.ComputeLayout();
+        _gameOverRoot.ComputeLayout();
     }
 
     public override void OnExit()
@@ -633,6 +637,10 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         _pauseRoot.ComputeBounds(0, 0, width, height);
         _victoryRoot.ComputeBounds(0, 0, width, height);
         _gameOverRoot.ComputeBounds(0, 0, width, height);
+
+        _pauseRoot.ComputeLayout();
+        _victoryRoot.ComputeLayout();
+        _gameOverRoot.ComputeLayout();
     }
 }
 

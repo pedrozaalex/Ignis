@@ -17,9 +17,9 @@ public static class NodeExtensions
     {
         return parentLayoutType switch
         {
-            LayoutType.Row or LayoutType.Grid => node.Width ?? Units.Stretch(1.0f),
-            LayoutType.Column => node.Height ?? Units.Stretch(1.0f),
-            _ => Units.Stretch(1.0f)
+            LayoutType.Row or LayoutType.Grid => node.Width ?? Units.Auto,
+            LayoutType.Column => node.Height ?? Units.Auto,
+            _ => Units.Auto
         };
     }
 
@@ -62,9 +62,9 @@ public static class NodeExtensions
     {
         return parentLayoutType switch
         {
-            LayoutType.Row or LayoutType.Grid => node.Height ?? Units.Stretch(1.0f),
-            LayoutType.Column => node.Width ?? Units.Stretch(1.0f),
-            _ => Units.Stretch(1.0f)
+            LayoutType.Row or LayoutType.Grid => node.Height ?? Units.Auto,
+            LayoutType.Column => node.Width ?? Units.Auto,
+            _ => Units.Auto
         };
     }
 

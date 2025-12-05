@@ -60,8 +60,8 @@ public static class LayoutEngine
     {
         var ctx = new LayoutContext<TTree, TSubLayout, TCacheKey, TCache>(tree, cache, ref subLayout);
 
-        // Reset root
-        ctx.Cache.SetBounds(node.Key, 0, 0, 0, 0);
+        // Reset root with provided dimensions if available, otherwise 0
+        ctx.Cache.SetBounds(node.Key, 0, 0, width ?? 0, height ?? 0);
 
         // Kick off recursive layout
         LayoutNodeRecursive(node, ctx, parentWidth: width, parentHeight: height, overrideWidth: width, overrideHeight: height);
