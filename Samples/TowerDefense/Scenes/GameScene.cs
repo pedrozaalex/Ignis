@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Numerics;
+using CrucibleUI.Types;
+using CrucibleUI.Widgets;
 using Friflo.Engine.ECS;
 using Ignis.Core;
 using Ignis.Core.Scenery;
@@ -25,6 +27,7 @@ public sealed class GameScene : Scene, ITowerDefenseScene
 {
     private readonly TowerDefenseContext _context;
     private readonly SceneManager _sceneManager;
+    private readonly CrucibleRenderer _renderer;
 
     // ECS
     private readonly EntityStore _store;
@@ -54,15 +57,107 @@ public sealed class GameScene : Scene, ITowerDefenseScene
     private const float TileSize = 60f;
     private const float PathWidth = 40f;
 
+    // UI
+    private Widget _hudRoot = null!;
+    private Widget _pauseRoot = null!;
+    private Widget _victoryRoot = null!;
+    private Widget _gameOverRoot = null!;
+    private WidgetInputHandler _inputHandler = null!;
+
+    private Label _fpsLabel = null!;
+    private Label _levelLabel = null!;
+    private Label _waveLabel = null!;
+    private Label _goldLabel = null!;
+    private Label _livesLabel = null!;
+    private Label _scoreLabel = null!;
+    private Panel _buildPanel = null!;
+
     public GameScene(TowerDefenseContext context, SceneManager sceneManager)
     {
         _context = context;
         _sceneManager = sceneManager;
+        _renderer = new CrucibleRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
 
         _store = new EntityStore();
         _state = new TowerDefenseState();
+
+        BuildUI();
+    }
+
+    private void BuildUI()
+    {
+        // HUD
+        var topBar = new Panel()
+            .Width<Panel>(Units.Stretch(1))
+            .Height<Panel>(Units.Pixels(70))
+            .Background<Panel>(0.1f, 0.08f, 0.15f, 0.9f)
+            .Row<Panel>()
+            .Alignment<Panel>(Alignment.Center)
+            .Padding<Panel>(Units.Pixels(10));
+
+        _fpsLabel = new Label("FPS: 0").FontSize(12f).Color(0.6f, 0.6f, 0.6f);
+        _levelLabel = new Label("Level 1").FontSize(18f).Color(1f, 1f, 1f);
+        _waveLabel = new Label("Wave 1").FontSize(14f).Color(0.7f, 0.7f, 0.8f);
+
+        var leftInfo = new Panel().Column<Panel>().Gap<Panel>(Units.Pixels(5)).Children<Panel>(_fpsLabel, _levelLabel, _waveLabel);
+
+        _goldLabel = new Label("Gold: 0").FontSize(18f).Color(1f, 0.85f, 0.2f);
+        _livesLabel = new Label("Lives: 0").FontSize(18f).Color(1f, 0.4f, 0.4f);
+        _scoreLabel = new Label("Score: 0").FontSize(18f).Color(1f, 1f, 1f);
+
+        var rightInfo = new Panel().Column<Panel>().Gap<Panel>(Units.Pixels(5)).Children<Panel>(_goldLabel, _livesLabel);
+        var scorePanel = new Panel().Children<Panel>(_scoreLabel);
+
+        topBar.Children<Panel>(
+            leftInfo,
+            new Panel().Width<Panel>(Units.Stretch(1)), // Spacer
+            rightInfo,
+            new Panel().Width<Panel>(Units.Pixels(20)),
+            scorePanel
+        );
+
+        // Build Panel (Bottom)
+        _buildPanel = new Panel()
+            .Width<Panel>(Units.Stretch(1))
+            .Height<Panel>(Units.Pixels(80))
+            .Background<Panel>(0.1f, 0.08f, 0.15f, 0.9f)
+            .Row<Panel>()
+            .Alignment<Panel>(Alignment.Center)
+            .Gap<Panel>(Units.Pixels(20));
+
+        _hudRoot = new Panel()
+            .Width<Panel>(Units.Stretch(1))
+            .Height<Panel>(Units.Stretch(1))
+            .Children<Panel>(
+                topBar,
+                new Panel().Height<Panel>(Units.Stretch(1)), // Spacer
+                _buildPanel
+            );
+
+        // Overlays
+        _pauseRoot = BuildOverlay("PAUSED", "Press Space/Escape to Resume", "Press Q to Quit", new Color4(0f, 0f, 0f, 0.7f));
+        _victoryRoot = BuildOverlay("VICTORY!", "Level Complete", "Press Enter to Continue", new Color4(0f, 0.1f, 0f, 0.7f));
+        _gameOverRoot = BuildOverlay("GAME OVER", "Try Again", "Press Enter to Continue", new Color4(0.1f, 0f, 0f, 0.7f));
+
+        _inputHandler = new WidgetInputHandler(_hudRoot);
+    }
+
+    private Widget BuildOverlay(string title, string sub, string sub2, Color4 bg)
+    {
+        return new Panel()
+            .Width<Panel>(Units.Stretch(1))
+            .Height<Panel>(Units.Stretch(1))
+            .Background<Panel>(bg.R, bg.G, bg.B, bg.A)
+            .Column<Panel>()
+            .Alignment<Panel>(Alignment.Center)
+            .Gap<Panel>(Units.Pixels(20))
+            .Children<Panel>(
+                new Label(title).FontSize(48f).Alignment<Label>(Alignment.Center),
+                new Label(sub).FontSize(24f).Alignment<Label>(Alignment.Center),
+                new Label(sub2).FontSize(16f).Color(0.7f, 0.7f, 0.8f).Alignment<Label>(Alignment.Center)
+            );
     }
 
     public override void OnEnter(EngineContext context)
@@ -89,6 +184,11 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         _freezePulseRenderQuery = _store.Query<FreezePulseRing>().AllTags(Tags.Get<FreezePulseTag>());
 
         _context.Audio.PlayMusic("game_music");
+
+        _hudRoot.ComputeBounds(0, 0, _width, _height);
+        _pauseRoot.ComputeBounds(0, 0, _width, _height);
+        _victoryRoot.ComputeBounds(0, 0, _width, _height);
+        _gameOverRoot.ComputeBounds(0, 0, _width, _height);
     }
 
     public override void OnExit()
@@ -139,6 +239,15 @@ public sealed class GameScene : Scene, ITowerDefenseScene
             return;
         }
 
+        // UI Input
+        if (input != null)
+        {
+            var pos = input.MousePosition;
+            _inputHandler.HandleMouseMove(pos.X, pos.Y);
+            if (input.IsMousePressed(MouseButton.Left)) _inputHandler.HandleMouseDown(pos.X, pos.Y);
+            if (input.IsMouseReleased(MouseButton.Left)) _inputHandler.HandleMouseUp(pos.X, pos.Y);
+        }
+
         _systems?.Update(dt, input);
 
         // Sync state to context
@@ -156,7 +265,7 @@ public sealed class GameScene : Scene, ITowerDefenseScene
             Target = RenderTargetHandle.Screen,
             ClearColor = new Color4(0.08f, 0.06f, 0.12f),
             ClearDepth = true,
-            Viewport = new Rect(0, 0, _width, _height)
+            Viewport = new Ignis.Graphics.Rect(0, 0, _width, _height)
         };
 
         server.BeginPass(pass);
@@ -176,11 +285,79 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         RenderProjectiles(commands);
         RenderLaserBeams(commands);
         RenderParticles(commands);
-        RenderUI(commands);
-        RenderBuildUI(commands);
+
+        // Render UI
+        UpdateHUD();
+        _renderer.Render(_hudRoot, commands);
+
+        if (_state.Phase == GamePhase.Paused) _renderer.Render(_pauseRoot, commands);
+        else if (_state.Phase == GamePhase.Victory) _renderer.Render(_victoryRoot, commands);
+        else if (_state.Phase == GamePhase.GameOver) _renderer.Render(_gameOverRoot, commands);
 
         server.Submit(commands);
         server.EndPass();
+    }
+
+    private void UpdateHUD()
+    {
+        _fpsLabel.Text = $"FPS: {_displayFps} ({_displayFrameTimeMs:F1}ms)";
+        _levelLabel.Text = $"Level {_context.CurrentLevel}: {_level.Name}";
+
+        var waveText = _state.Phase == GamePhase.Build
+            ? $"Wave {_state.CurrentWave}/{_level.Waves.Count} - Press SPACE to start"
+            : $"Wave {_state.CurrentWave}/{_level.Waves.Count}";
+        _waveLabel.Text = waveText;
+
+        _goldLabel.Text = $"Gold: {_state.Gold}";
+        _livesLabel.Text = $"Lives: {_state.Lives}";
+        _scoreLabel.Text = $"Score: {_state.TotalScore}";
+
+        // Update Build Panel
+        if (_state.Phase == GamePhase.Build)
+        {
+            _buildPanel.Visible<Panel>(true);
+
+            if (_buildPanel.ChildWidgets.Count == 0)
+            {
+                var turretTypes = new[] { TurretType.Blaster, TurretType.Cannon, TurretType.Freezer };
+                foreach (var type in turretTypes)
+                {
+                    var t = type; // Capture
+                    var btn = new CrucibleUI.Widgets.Button(EntityFactory.GetTurretName(t))
+                        .FontSize(12f)
+                        .Width<CrucibleUI.Widgets.Button>(Units.Pixels(80))
+                        .Height<CrucibleUI.Widgets.Button>(Units.Pixels(60))
+                        .OnClick(() => _state.SelectedTurretType = t);
+
+                    _buildPanel.Children<Panel>(btn);
+                }
+            }
+
+            // Update buttons
+            var types = new[] { TurretType.Blaster, TurretType.Cannon, TurretType.Freezer };
+            for (int i = 0; i < types.Length; i++)
+            {
+                var type = types[i];
+                var btn = (CrucibleUI.Widgets.Button)_buildPanel.ChildWidgets[i];
+                var cost = EntityFactory.GetTurretCost(type);
+                var isSelected = _state.SelectedTurretType == type;
+                var canAfford = _state.Gold >= cost;
+
+                btn.Text = $"{EntityFactory.GetTurretName(type)}\n${cost}";
+
+                if (isSelected) btn.BorderColor<CrucibleUI.Widgets.Button>(0.5f, 0.7f, 1f);
+                else btn.BorderColor<CrucibleUI.Widgets.Button>(0, 0, 0, 0);
+
+                if (!canAfford) btn.Color(0.5f, 0.3f, 0.3f);
+                else btn.Color(1f, 1f, 1f);
+            }
+        }
+        else
+        {
+            _buildPanel.Visible<Panel>(false);
+        }
+
+        _hudRoot.ComputeLayout();
     }
 
     private void RenderGrid(IRenderCommandList commands)
@@ -275,11 +452,11 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         {
             var turret = turretEntity.GetComponent<Turret>();
             if (turret.GridX != hoverX || turret.GridY != hoverY) continue;
-            
+
             foundTurret = true;
             var transform = turretEntity.GetComponent<Transform2D>();
             var range = turret.Range;
-            
+
             var color = turret.Type switch
             {
                 TurretType.Blaster => new Color4(0.3f, 0.6f, 0.9f, 0.25f),
@@ -287,14 +464,14 @@ public sealed class GameScene : Scene, ITowerDefenseScene
                 TurretType.Freezer => new Color4(0.4f, 0.8f, 0.9f, 0.25f),
                 _ => new Color4(1f, 1f, 1f, 0.25f)
             };
-            
+
             commands.DrawCircleFilled(transform.Position, range, color);
             break;
         }
 
         // Show placement preview range during build phase if hovering over valid empty cell
         if (foundTurret || _state.Phase != GamePhase.Build || !_state.CanPlaceAtHovered) return;
-        
+
         var selectedType = _state.SelectedTurretType;
         var previewRange = selectedType switch
         {
@@ -303,7 +480,7 @@ public sealed class GameScene : Scene, ITowerDefenseScene
             TurretType.Freezer => 100f,
             _ => 120f
         };
-            
+
         var previewColor = selectedType switch
         {
             TurretType.Blaster => new Color4(0.3f, 0.6f, 0.9f, 0.2f),
@@ -311,7 +488,7 @@ public sealed class GameScene : Scene, ITowerDefenseScene
             TurretType.Freezer => new Color4(0.4f, 0.8f, 0.9f, 0.2f),
             _ => new Color4(1f, 1f, 1f, 0.2f)
         };
-            
+
         commands.DrawCircleFilled(hoverWorldPos, previewRange, previewColor);
     }
 
@@ -322,12 +499,12 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         foreach (var pulseEntity in _freezePulseRenderQuery.Entities)
         {
             var pulse = pulseEntity.GetComponent<FreezePulseRing>();
-            
+
             // Fade out as the pulse expands
             var progress = 1f - (pulse.Life / pulse.MaxLife);
             var alpha = (1f - progress) * 0.6f;
             var color = new Color4(0.4f, 0.8f, 1f, alpha);
-            
+
             commands.DrawCircleFilled(pulse.Origin, pulse.CurrentRadius, color);
         }
     }
@@ -417,14 +594,14 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         foreach (var beamEntity in _laserBeamRenderQuery.Entities)
         {
             var beam = beamEntity.GetComponent<LaserBeam>();
-            
+
             // Fade out based on remaining life
             var alpha = beam.Life / beam.MaxLife;
             var color = beam.Color with { A = alpha };
-            
+
             // Draw main beam
             commands.DrawLine(beam.Start, beam.End, color, 3f);
-            
+
             // Draw inner bright core
             var coreColor = new Color4(1f, 1f, 1f, alpha * 0.8f);
             commands.DrawLine(beam.Start, beam.End, coreColor, 1.5f);
@@ -446,116 +623,16 @@ public sealed class GameScene : Scene, ITowerDefenseScene
         }
     }
 
-    private void RenderUI(IRenderCommandList commands)
-    {
-        // Top bar background
-        commands.DrawQuad(Vector2.Zero, new Vector2(_width, 70f), new Color4(0.1f, 0.08f, 0.15f, 0.9f));
-
-        // FPS counter
-        UIRenderer.DrawText(commands, _context.Font, $"FPS: {_displayFps} ({_displayFrameTimeMs:F1}ms)", 10f, 5f, 12f, new Color4(0.6f, 0.6f, 0.6f, 1f));
-
-        // Level info
-        UIRenderer.DrawText(commands, _context.Font, $"Level {_context.CurrentLevel}: {_level.Name}", 20f, 20f, 18f, Color4.White);
-
-        // Wave info
-        var waveText = _state.Phase == GamePhase.Build
-            ? $"Wave {_state.CurrentWave}/{_level.Waves.Count} - Press SPACE to start"
-            : $"Wave {_state.CurrentWave}/{_level.Waves.Count}";
-        UIRenderer.DrawText(commands, _context.Font, waveText, 20f, 45f, 14f, new Color4(0.7f, 0.7f, 0.8f, 1f));
-
-        // Resources
-        var rightX = _width - 250f;
-        UIRenderer.DrawText(commands, _context.Font, $"Gold: {_state.Gold}", rightX, 15f, 18f, new Color4(1f, 0.85f, 0.2f, 1f));
-        UIRenderer.DrawText(commands, _context.Font, $"Lives: {_state.Lives}", rightX, 38f, 18f, new Color4(1f, 0.4f, 0.4f, 1f));
-        UIRenderer.DrawText(commands, _context.Font, $"Score: {_state.TotalScore}", rightX + 120f, 15f, 18f, Color4.White);
-
-        // Phase-specific overlays
-        switch (_state.Phase)
-        {
-            case GamePhase.Paused:
-                RenderPauseOverlay(commands);
-                break;
-            case GamePhase.Victory:
-                RenderVictoryOverlay(commands);
-                break;
-            case GamePhase.GameOver:
-                RenderGameOverOverlay(commands);
-                break;
-        }
-    }
-
-    private void RenderBuildUI(IRenderCommandList commands)
-    {
-        if (_state.Phase != GamePhase.Build) return;
-
-        var panelY = _height - 80f;
-        commands.DrawQuad(new Vector2(0, panelY), new Vector2(_width, 80f), new Color4(0.1f, 0.08f, 0.15f, 0.9f));
-
-        var turretTypes = new[] { TurretType.Blaster, TurretType.Cannon, TurretType.Freezer };
-        var startX = _width / 2f - 150f;
-
-        for (var i = 0; i < turretTypes.Length; i++)
-        {
-            var type = turretTypes[i];
-            var cost = EntityFactory.GetTurretCost(type);
-            var name = EntityFactory.GetTurretName(type);
-            var x = startX + i * 100f;
-            var isSelected = _state.SelectedTurretType == type;
-            var canAfford = _state.Gold >= cost;
-
-            var boxColor = isSelected
-                ? new Color4(0.3f, 0.4f, 0.6f, 1f)
-                : new Color4(0.15f, 0.15f, 0.25f, 1f);
-            commands.DrawQuad(new Vector2(x, panelY + 10f), new Vector2(80f, 60f), boxColor);
-
-            if (isSelected)
-            {
-                UIRenderer.DrawBorder(commands, x, panelY + 10f, 80f, 60f, 2f, new Color4(0.5f, 0.7f, 1f, 1f));
-            }
-
-            var iconColor = EntityFactory.GetTurretColor(type);
-            commands.DrawQuad(new Vector2(x + 25f, panelY + 15f), new Vector2(30f, 18f), iconColor);
-
-            var textColor = canAfford ? Color4.White : new Color4(0.5f, 0.3f, 0.3f, 1f);
-            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"[{i + 1}] {name}", x + 40f, panelY + 42f, 10f, textColor);
-            UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"${cost}", x + 40f, panelY + 56f, 10f, new Color4(1f, 0.85f, 0.2f, canAfford ? 1f : 0.5f));
-        }
-
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Left Click: Place | Right Click: Sell | 1-2-3: Select Turret",
-            _width / 2f, panelY - 10f, 12f, new Color4(0.5f, 0.5f, 0.6f, 1f));
-    }
-
-    private void RenderPauseOverlay(IRenderCommandList commands)
-    {
-        commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0f, 0f, 0f, 0.7f));
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "PAUSED", _width / 2f, _height / 2f - 40f, 48f, Color4.White);
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Space/Escape to Resume", _width / 2f, _height / 2f + 20f, 18f, new Color4(0.7f, 0.7f, 0.8f, 1f));
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Q to Quit", _width / 2f, _height / 2f + 50f, 16f, new Color4(0.6f, 0.6f, 0.7f, 1f));
-    }
-
-    private void RenderVictoryOverlay(IRenderCommandList commands)
-    {
-        commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0f, 0.1f, 0f, 0.7f));
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "VICTORY!", _width / 2f, _height / 2f - 60f, 48f, new Color4(0.2f, 1f, 0.4f, 1f));
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Level {_context.CurrentLevel} Complete", _width / 2f, _height / 2f - 10f, 24f, Color4.White);
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Score: {_state.TotalScore}", _width / 2f, _height / 2f + 30f, 20f, Color4.White);
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Enter to Continue", _width / 2f, _height / 2f + 80f, 16f, new Color4(0.7f, 0.7f, 0.8f, 1f));
-    }
-
-    private void RenderGameOverOverlay(IRenderCommandList commands)
-    {
-        commands.DrawQuad(Vector2.Zero, new Vector2(_width, _height), new Color4(0.1f, 0f, 0f, 0.7f));
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "GAME OVER", _width / 2f, _height / 2f - 60f, 48f, new Color4(1f, 0.3f, 0.3f, 1f));
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Reached Wave {_state.CurrentWave}", _width / 2f, _height / 2f - 10f, 24f, Color4.White);
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, $"Final Score: {_state.TotalScore}", _width / 2f, _height / 2f + 30f, 20f, Color4.White);
-        UIRenderer.DrawCenteredText(commands, _context.RenderingServer, _context.Font, "Press Enter to Continue", _width / 2f, _height / 2f + 80f, 16f, new Color4(0.7f, 0.7f, 0.8f, 1f));
-    }
-
     public void OnResize(int width, int height)
     {
         _width = width;
         _height = height;
         _systems?.SetScreenSize(width, height);
+
+        _hudRoot.ComputeBounds(0, 0, width, height);
+        _pauseRoot.ComputeBounds(0, 0, width, height);
+        _victoryRoot.ComputeBounds(0, 0, width, height);
+        _gameOverRoot.ComputeBounds(0, 0, width, height);
     }
 }
 

@@ -1,4 +1,6 @@
 using System.Numerics;
+using CrucibleUI.Types;
+using CrucibleUI.Widgets;
 using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
@@ -17,12 +19,11 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
 {
     private readonly TowerDefenseContext _context;
     private readonly SceneManager _sceneManager;
-    private readonly UIRenderer _ui;
+    private readonly CrucibleRenderer _renderer;
 
-    private int _selectedIndex;
-    private readonly string[] _menuItems = ["New Game", "Level Select", "Settings", "Exit"];
+    private Widget _root = null!;
+    private WidgetInputHandler _inputHandler = null!;
     private float _animTime;
-
     private int _width;
     private int _height;
 
@@ -30,14 +31,93 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
     {
         _context = context;
         _sceneManager = sceneManager;
-        _ui = new UIRenderer(context.RenderingServer, context.Font);
+        _renderer = new CrucibleRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
+
+        BuildUI();
+    }
+
+    private void BuildUI()
+    {
+        var menuPanel = new Panel()
+            .Column<Panel>()
+            .Gap<Panel>(Units.Pixels(20))
+            .Alignment<Panel>(Alignment.Center);
+
+        // Title
+        menuPanel.Children<Panel>(
+            new Label("TOWER DEFENSE")
+                .FontSize(48f)
+                .Color(0.8f, 0.3f, 1f)
+                .Alignment<Label>(Alignment.Center)
+        );
+
+        // Menu Items
+        AddMenuItem(menuPanel, "New Game", () =>
+        {
+            _context.ResetGame();
+            _sceneManager.LoadScene(new GameScene(_context, _sceneManager));
+        });
+
+        AddMenuItem(menuPanel, "Level Select", () =>
+        {
+            _sceneManager.LoadScene(new LevelSelectScene(_context, _sceneManager));
+        });
+
+        AddMenuItem(menuPanel, "Settings", () =>
+        {
+            _sceneManager.LoadScene(new SettingsScene(_context, _sceneManager));
+        });
+
+        AddMenuItem(menuPanel, "Exit", () =>
+        {
+            _context.Window.Close();
+        });
+
+        // Instructions
+        menuPanel.Children<Panel>(
+            new Label("Use Arrow Keys to Navigate, Enter to Select")
+                .FontSize(16f)
+                .Color(0.5f, 0.5f, 0.6f)
+                .Alignment<Label>(Alignment.Center)
+                .Padding<Label>(Units.Pixels(40)) // Add some space before instructions
+        );
+
+        _root = new Panel()
+            .Width<Panel>(Units.Stretch(1))
+            .Height<Panel>(Units.Stretch(1))
+            .Alignment<Panel>(Alignment.Center)
+            .Children<Panel>(menuPanel);
+
+        _inputHandler = new WidgetInputHandler(_root);
+    }
+
+    private void AddMenuItem(Panel parent, string text, Action action)
+    {
+        var btn = new CrucibleUI.Widgets.Button(text)
+            .FontSize(24f)
+            .Width<CrucibleUI.Widgets.Button>(Units.Pixels(250))
+            .Height<CrucibleUI.Widgets.Button>(Units.Pixels(45))
+            .OnClick(() =>
+            {
+                _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+                action();
+            });
+
+        // Add sound on focus
+        btn.OnFocus += (_) => _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+
+        parent.Children<Panel>(btn);
     }
 
     public override void OnEnter(EngineContext context)
     {
         _context.Audio.PlayMusic("menu_music");
+
+        // Layout
+        _root.ComputeBounds(0, 0, _width, _height);
+        _root.ComputeLayout();
     }
 
     public override void OnExit()
@@ -52,51 +132,27 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
         var input = _context.GetInput();
         if (input == null) return;
 
-        // Navigation
+        // Mouse Input
+        var pos = input.MousePosition;
+        _inputHandler.HandleMouseMove(pos.X, pos.Y);
+
+        if (input.IsMousePressed(MouseButton.Left))
+            _inputHandler.HandleMouseDown(pos.X, pos.Y);
+
+        if (input.IsMouseReleased(MouseButton.Left))
+            _inputHandler.HandleMouseUp(pos.X, pos.Y);
+
+        // Keyboard Navigation
         if (input.IsKeyPressed(Key.Up) || input.IsKeyPressed(Key.W))
-        {
-            _selectedIndex = (_selectedIndex - 1 + _menuItems.Length) % _menuItems.Length;
-            _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
-        }
+            _inputHandler.HandleNavigation(0, -1);
         else if (input.IsKeyPressed(Key.Down) || input.IsKeyPressed(Key.S))
-        {
-            _selectedIndex = (_selectedIndex + 1) % _menuItems.Length;
-            _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
-        }
+            _inputHandler.HandleNavigation(0, 1);
 
-        // Selection
         if (input.IsKeyPressed(Key.Enter) || input.IsKeyPressed(Key.Space))
-        {
-            HandleSelection();
-        }
+            _inputHandler.HandleSubmit();
 
-        // Quick exit
         if (input.IsKeyPressed(Key.Escape))
-        {
             _context.Window.Close();
-        }
-    }
-
-    private void HandleSelection()
-    {
-        _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
-
-        switch (_selectedIndex)
-        {
-            case 0: // New Game
-                _context.ResetGame();
-                _sceneManager.LoadScene(new GameScene(_context, _sceneManager));
-                break;
-            case 1: // Level Select
-                _sceneManager.LoadScene(new LevelSelectScene(_context, _sceneManager));
-                break;
-            case 2: // Settings
-                _sceneManager.LoadScene(new SettingsScene(_context, _sceneManager));
-                break;
-            case 3: // Exit
-                _context.Window.Close();
-                break;
-        }
     }
 
     public void Render(float alpha)
@@ -108,7 +164,7 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
             Target = RenderTargetHandle.Screen,
             ClearColor = new Color4(0.05f, 0.02f, 0.1f),
             ClearDepth = true,
-            Viewport = new Rect(0, 0, _width, _height)
+            Viewport = new Ignis.Graphics.Rect(0, 0, _width, _height)
         };
 
         server.BeginPass(pass);
@@ -122,41 +178,8 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
         // Animated background particles
         DrawBackgroundEffects(commands);
 
-        // Title with glow effect
-        var titleY = 100f + MathF.Sin(_animTime * 2f) * 5f;
-        _ui.DrawCenteredText(commands, "TOWER DEFENSE", _width / 2f, titleY, 48f, new Color4(0.8f, 0.3f, 1f, 1f));
-
-        // Menu items
-        var menuStartY = 280f;
-        var menuSpacing = 60f;
-
-        for (var i = 0; i < _menuItems.Length; i++)
-        {
-            var isSelected = i == _selectedIndex;
-            var y = menuStartY + i * menuSpacing;
-
-            if (isSelected)
-            {
-                var pulse = 1f + MathF.Sin(_animTime * 8f) * 0.1f;
-                var boxWidth = 250f * pulse;
-                var boxHeight = 45f;
-
-                // Selection highlight
-                commands.DrawQuad(
-                    new Vector2(_width / 2f - boxWidth / 2f, y - boxHeight / 2f),
-                    new Vector2(boxWidth, boxHeight),
-                    new Color4(0.4f, 0.2f, 0.6f, 0.5f)
-                );
-            }
-
-            _ui.DrawMenuItem(commands, _menuItems[i], _width / 2f, y, isSelected);
-        }
-
-        // Instructions
-        _ui.DrawCenteredText(commands, "Use Arrow Keys to Navigate, Enter to Select", _width / 2f, _height - 80f, 16f, new Color4(0.5f, 0.5f, 0.6f, 1f));
-
-        // Version
-        _ui.DrawText(commands, "v1.0", 10f, _height - 30f, 14f, new Color4(0.3f, 0.3f, 0.4f, 1f));
+        // Render UI
+        _renderer.Render(_root, commands);
 
         server.Submit(commands);
         server.EndPass();
@@ -189,5 +212,7 @@ public sealed class MainMenuScene : Scene, ITowerDefenseScene
     {
         _width = width;
         _height = height;
+        _root.ComputeBounds(0, 0, width, height);
+        _root.ComputeLayout();
     }
 }

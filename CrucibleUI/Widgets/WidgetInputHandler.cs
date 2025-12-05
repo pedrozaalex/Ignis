@@ -85,4 +85,117 @@ public class WidgetInputHandler
     /// Gets the currently focused widget.
     /// </summary>
     public Widget? FocusedWidget => _focusedWidget;
+
+    /// <summary>
+    /// Triggers the submit action on the currently focused widget.
+    /// </summary>
+    public void HandleSubmit()
+    {
+        _focusedWidget?.HandleSubmit();
+    }
+
+    /// <summary>
+    /// Navigates focus in the specified direction.
+    /// </summary>
+    public void HandleNavigation(float dx, float dy)
+    {
+        if (_focusedWidget == null)
+        {
+            // If nothing focused, focus the first focusable widget
+            var first = FindFirstFocusable(_root);
+            if (first != null)
+            {
+                _focusedWidget = first;
+                _focusedWidget.SetFocused(true);
+            }
+            return;
+        }
+
+        var allFocusable = new List<Widget>();
+        CollectFocusable(_root, allFocusable);
+
+        var best = FindBestCandidate(_focusedWidget, allFocusable, dx, dy);
+        if (best != null)
+        {
+            _focusedWidget.SetFocused(false);
+            _focusedWidget = best;
+            _focusedWidget.SetFocused(true);
+        }
+    }
+
+    private void CollectFocusable(Widget root, List<Widget> list)
+    {
+        if (root.IsFocusable && root.IsVisible && !root.IsDisabled)
+        {
+            list.Add(root);
+        }
+        foreach (var child in root.ChildWidgets)
+        {
+            CollectFocusable(child, list);
+        }
+    }
+
+    private Widget? FindFirstFocusable(Widget root)
+    {
+        if (root.IsFocusable && root.IsVisible && !root.IsDisabled) return root;
+        foreach (var child in root.ChildWidgets)
+        {
+            var found = FindFirstFocusable(child);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private Widget? FindBestCandidate(Widget current, List<Widget> candidates, float dx, float dy)
+    {
+        Widget? best = null;
+        float bestDist = float.MaxValue;
+
+        var cx = current.ComputedX + current.ComputedWidth / 2;
+        var cy = current.ComputedY + current.ComputedHeight / 2;
+
+        foreach (var candidate in candidates)
+        {
+            if (candidate == current) continue;
+
+            var tx = candidate.ComputedX + candidate.ComputedWidth / 2;
+            var ty = candidate.ComputedY + candidate.ComputedHeight / 2;
+
+            var vx = tx - cx;
+            var vy = ty - cy;
+
+            bool valid = false;
+            if (Math.Abs(dx) > Math.Abs(dy)) // Horizontal
+            {
+                if (dx > 0) valid = vx > 0; // Right
+                else valid = vx < 0; // Left
+            }
+            else // Vertical
+            {
+                if (dy > 0) valid = vy > 0; // Down
+                else valid = vy < 0; // Up
+            }
+
+            if (valid)
+            {
+                var dist = vx * vx + vy * vy;
+                // Weight distance to prefer aligned items
+                if (Math.Abs(dx) > Math.Abs(dy)) // Horizontal movement
+                {
+                    dist += Math.Abs(vy) * Math.Abs(vy) * 10; // Penalize vertical offset
+                }
+                else
+                {
+                    dist += Math.Abs(vx) * Math.Abs(vx) * 10; // Penalize horizontal offset
+                }
+
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = candidate;
+                }
+            }
+        }
+        return best;
+    }
 }

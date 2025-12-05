@@ -1,4 +1,6 @@
 using System.Numerics;
+using CrucibleUI.Types;
+using CrucibleUI.Widgets;
 using Ignis.Core;
 using Ignis.Core.Scenery;
 using Ignis.Core.Timing;
@@ -10,18 +12,14 @@ using Silk.NET.Input;
 
 namespace Samples.TowerDefense.Scenes;
 
-/// <summary>
-/// Settings scene for audio options.
-/// </summary>
 public sealed class SettingsScene : Scene, ITowerDefenseScene
 {
     private readonly TowerDefenseContext _context;
     private readonly SceneManager _sceneManager;
-    private readonly UIRenderer _ui;
+    private readonly CrucibleRenderer _renderer;
 
-    private int _selectedIndex;
-    private readonly string[] _menuItems = ["Master Volume", "SFX Volume", "Music Volume", "Back"];
-
+    private Widget _root = null!;
+    private WidgetInputHandler _inputHandler = null!;
     private int _width;
     private int _height;
 
@@ -29,13 +27,111 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
     {
         _context = context;
         _sceneManager = sceneManager;
-        _ui = new UIRenderer(context.RenderingServer, context.Font);
+        _renderer = new CrucibleRenderer(context.RenderingServer, context.Font);
         _width = context.Width;
         _height = context.Height;
+
+        BuildUI();
+    }
+
+    private void BuildUI()
+    {
+        var panel = new Panel()
+            .Column<Panel>()
+            .Gap<Panel>(Units.Pixels(30))
+            .Alignment<Panel>(Alignment.Center);
+
+        // Title
+        panel.Children<Panel>(
+            new Label("SETTINGS")
+                .FontSize(36f)
+                .Alignment<Label>(Alignment.Center)
+                .Padding<Label>(Units.Pixels(20))
+        );
+
+        // Sliders
+        AddSlider(panel, "Master Volume", _context.Audio.MasterVolume, v =>
+        {
+            _context.Audio.MasterVolume = v;
+            _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+        });
+
+        AddSlider(panel, "SFX Volume", _context.Audio.SfxVolume, v =>
+        {
+            _context.Audio.SfxVolume = v;
+            _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+        });
+
+        AddSlider(panel, "Music Volume", _context.Audio.MusicVolume, v =>
+        {
+            _context.Audio.MusicVolume = v;
+        });
+
+        // Back Button
+        var backBtn = new CrucibleUI.Widgets.Button("Back")
+            .FontSize(24f)
+            .Width<CrucibleUI.Widgets.Button>(Units.Pixels(200))
+            .Height<CrucibleUI.Widgets.Button>(Units.Pixels(45))
+            .OnClick(() =>
+            {
+                _sceneManager.LoadScene(new MainMenuScene(_context, _sceneManager));
+            });
+
+        backBtn.OnFocus += (_) => _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+
+        panel.Children<Panel>(backBtn);
+
+        // Instructions
+        panel.Children<Panel>(
+            new Label("Left/Right to Adjust, Escape to Return")
+                .FontSize(14f)
+                .Color(0.5f, 0.5f, 0.6f)
+                .Alignment<Label>(Alignment.Center)
+                .Padding<Label>(Units.Pixels(40))
+        );
+
+        _root = new Panel()
+            .Width<Panel>(Units.Stretch(1))
+            .Height<Panel>(Units.Stretch(1))
+            .Alignment<Panel>(Alignment.Center)
+            .Children<Panel>(panel);
+
+        _inputHandler = new WidgetInputHandler(_root);
+    }
+
+    private void AddSlider(Panel parent, string label, float initialValue, Action<float> onChange)
+    {
+        var container = new Panel()
+            .Column<Panel>()
+            .Gap<Panel>(Units.Pixels(5))
+            .Width<Panel>(Units.Pixels(300));
+
+        var labelWidget = new Label(label).FontSize(20f);
+        var valueLabel = new Label($"{(int)(initialValue * 100)}%").FontSize(16f).Color(0.7f, 0.7f, 0.7f);
+
+        var slider = new Slider(0f, 1f, initialValue)
+            .Width<Slider>(Units.Stretch(1))
+            .Height<Slider>(Units.Pixels(20))
+            .OnValueChanged(v =>
+            {
+                onChange(v);
+                valueLabel.Text = $"{(int)(v * 100)}%";
+            });
+
+        slider.OnFocus += (_) => _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+
+        container.Children<Panel>(
+            new Panel().Row<Panel>().Children<Panel>(labelWidget, valueLabel),
+            slider
+        );
+
+        parent.Children<Panel>(container);
     }
 
     public override void OnEnter(EngineContext context)
     {
+        _root.ComputeBounds(0, 0, _width, _height);
+        _root.ComputeLayout();
     }
 
     public override void OnExit()
@@ -48,60 +144,36 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
         var input = _context.GetInput();
         if (input == null) return;
 
-        // Navigation
+        // Mouse
+        var pos = input.MousePosition;
+        _inputHandler.HandleMouseMove(pos.X, pos.Y);
+
+        if (input.IsMousePressed(MouseButton.Left))
+            _inputHandler.HandleMouseDown(pos.X, pos.Y);
+
+        if (input.IsMouseReleased(MouseButton.Left))
+            _inputHandler.HandleMouseUp(pos.X, pos.Y);
+
+        // Keyboard Navigation
         if (input.IsKeyPressed(Key.Up) || input.IsKeyPressed(Key.W))
-        {
-            _selectedIndex = (_selectedIndex - 1 + _menuItems.Length) % _menuItems.Length;
-            _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
-        }
+            _inputHandler.HandleNavigation(0, -1);
         else if (input.IsKeyPressed(Key.Down) || input.IsKeyPressed(Key.S))
+            _inputHandler.HandleNavigation(0, 1);
+
+        // Slider adjustment with keys
+        if (_inputHandler.FocusedWidget is Slider slider)
         {
-            _selectedIndex = (_selectedIndex + 1) % _menuItems.Length;
-            _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
+            if (input.IsKeyPressed(Key.Left) || input.IsKeyPressed(Key.A))
+                slider.SetValue(slider.Value - 0.1f);
+            else if (input.IsKeyPressed(Key.Right) || input.IsKeyPressed(Key.D))
+                slider.SetValue(slider.Value + 0.1f);
         }
 
-        // Adjust values
-        if (input.IsKeyPressed(Key.Left) || input.IsKeyPressed(Key.A))
-        {
-            AdjustSetting(-0.1f);
-        }
-        else if (input.IsKeyPressed(Key.Right) || input.IsKeyPressed(Key.D))
-        {
-            AdjustSetting(0.1f);
-        }
-
-        // Selection (for Back button)
         if (input.IsKeyPressed(Key.Enter) || input.IsKeyPressed(Key.Space))
-        {
-            if (_selectedIndex == _menuItems.Length - 1)
-            {
-                _sceneManager.LoadScene(new MainMenuScene(_context, _sceneManager));
-            }
-        }
+            _inputHandler.HandleSubmit();
 
-        // Quick back
         if (input.IsKeyPressed(Key.Escape))
-        {
             _sceneManager.LoadScene(new MainMenuScene(_context, _sceneManager));
-        }
-    }
-
-    private void AdjustSetting(float delta)
-    {
-        switch (_selectedIndex)
-        {
-            case 0: // Master Volume
-                _context.Audio.MasterVolume = Math.Clamp(_context.Audio.MasterVolume + delta, 0f, 1f);
-                _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
-                break;
-            case 1: // SFX Volume
-                _context.Audio.SfxVolume = Math.Clamp(_context.Audio.SfxVolume + delta, 0f, 1f);
-                _context.Audio.PlaySfx(AudioService.SfxMenuSelect);
-                break;
-            case 2: // Music Volume
-                _context.Audio.MusicVolume = Math.Clamp(_context.Audio.MusicVolume + delta, 0f, 1f);
-                break;
-        }
     }
 
     public void Render(float alpha)
@@ -113,7 +185,7 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
             Target = RenderTargetHandle.Screen,
             ClearColor = new Color4(0.05f, 0.02f, 0.1f),
             ClearDepth = true,
-            Viewport = new Rect(0, 0, _width, _height)
+            Viewport = new Ignis.Graphics.Rect(0, 0, _width, _height)
         };
 
         server.BeginPass(pass);
@@ -124,43 +196,7 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
         commands.SetProjectionMatrix(projection);
         commands.SetViewMatrix(Matrix4x4.Identity);
 
-        // Title
-        _ui.DrawCenteredText(commands, "SETTINGS", _width / 2f, 80f, 36f, Color4.White);
-
-        // Settings items
-        var startY = 200f;
-        var spacing = 70f;
-        var sliderX = _width / 2f + 20f;
-        var sliderWidth = 200f;
-
-        for (var i = 0; i < _menuItems.Length; i++)
-        {
-            var isSelected = i == _selectedIndex;
-            var y = startY + i * spacing;
-            var color = isSelected ? Color4.White : new Color4(0.6f, 0.6f, 0.7f, 1f);
-
-            if (i < 3) // Volume sliders
-            {
-                var value = i switch
-                {
-                    0 => _context.Audio.MasterVolume,
-                    1 => _context.Audio.SfxVolume,
-                    2 => _context.Audio.MusicVolume,
-                    _ => 0f
-                };
-
-                _ui.DrawSliderWithLabel(commands, _menuItems[i], _width / 2f - 200f, sliderX, y,
-                    sliderWidth, 16f, value, isSelected, color);
-            }
-            else // Back button
-            {
-                _ui.DrawMenuItem(commands, _menuItems[i], _width / 2f, y, isSelected);
-            }
-        }
-
-        // Instructions
-        _ui.DrawCenteredText(commands, "Left/Right to Adjust, Escape to Return",
-            _width / 2f, _height - 60f, 14f, new Color4(0.5f, 0.5f, 0.6f, 1f));
+        _renderer.Render(_root, commands);
 
         server.Submit(commands);
         server.EndPass();
@@ -170,5 +206,7 @@ public sealed class SettingsScene : Scene, ITowerDefenseScene
     {
         _width = width;
         _height = height;
+        _root.ComputeBounds(0, 0, width, height);
+        _root.ComputeLayout();
     }
 }

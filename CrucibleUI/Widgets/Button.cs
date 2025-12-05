@@ -19,6 +19,13 @@ public class Button : Widget
     {
         Text = text;
         BackgroundColor = new WidgetColor(0.3f, 0.3f, 0.4f, 1f);
+        IsFocusable = true;
+    }
+
+    public override void HandleSubmit()
+    {
+        base.HandleSubmit();
+        ClickHandler?.Invoke();
     }
 
     public Button FontSize(float size)

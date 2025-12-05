@@ -51,7 +51,9 @@ public static class LayoutEngine
         TNode node,
         TCache cache,
         TTree tree,
-        ref TSubLayout subLayout)
+        ref TSubLayout subLayout,
+        float? width = null,
+        float? height = null)
         where TNode : INode<TTree, TSubLayout, TCacheKey>
         where TCache : ICache<TCacheKey>
         where TCacheKey : notnull
@@ -62,7 +64,7 @@ public static class LayoutEngine
         ctx.Cache.SetBounds(node.Key, 0, 0, 0, 0);
 
         // Kick off recursive layout
-        LayoutNodeRecursive(node, ctx, parentWidth: null, parentHeight: null);
+        LayoutNodeRecursive(node, ctx, parentWidth: width, parentHeight: height, overrideWidth: width, overrideHeight: height);
     }
 
     // -------------------------------------------------------------------------
@@ -252,13 +254,13 @@ public static class LayoutEngine
         // Gap items use negative indices (-1 for gap after child 0, -2 for gap after child 1, etc.)
         var numGaps = Math.Max(0, flexChildren.Count - 1);
         var gapSizes = new float[numGaps];
-        
+
         if (isStretchGap && numGaps > 0)
         {
             var gapFactor = Math.Max(gapDef.Value, 1f);
             var minGap = minGapDef.ToPx(finalMain - edgeMain, 0);
             var maxGap = maxGapDef.ToPx(finalMain - edgeMain, float.MaxValue);
-            
+
             // Add one stretch item per gap (index encoded as -(gapIndex + 1))
             for (var g = 0; g < numGaps; g++)
             {
@@ -292,14 +294,14 @@ public static class LayoutEngine
         // -------------------------------------------------------------
 
         var (startMain, startCross) = ToAxis(border.Left + padding.Left, border.Top + padding.Top);
-        
+
         // Calculate total main size of all flex children (for main-axis alignment)
         var totalChildMain = flexChildren.Select((_, i) => childMainSizes[i] ?? 0).Sum();
         var totalGapsMain = gapSizes.Sum();
         var mainSum = totalChildMain + totalGapsMain;
-        
+
         // Main-axis alignment offset
-        var mainAlignOff = GetMainAlignmentOffset(node.Alignment ?? Alignment.TopLeft, 
+        var mainAlignOff = GetMainAlignmentOffset(node.Alignment ?? Alignment.TopLeft,
             finalMain - edgeMain, mainSum, isRow);
         var currentMainPos = startMain + mainAlignOff;
 
@@ -310,7 +312,7 @@ public static class LayoutEngine
             var sizeM = childMainSizes[i] ?? 0;
             var sizeC = childCrossSizes[i] ?? 0;
 
-            var alignOff = GetCrossAlignmentOffset(node.Alignment ?? Alignment.TopLeft, 
+            var alignOff = GetCrossAlignmentOffset(node.Alignment ?? Alignment.TopLeft,
                 finalCross - edgeCross, sizeC, isRow);
             var posCross = startCross + alignOff;
 
@@ -384,7 +386,7 @@ public static class LayoutEngine
                 {
                     min = child.MinCross(type).ToPx(containerCross, 0);
                 }
-                
+
                 var max = child.MaxCross(type).ToPx(containerCross, float.MaxValue);
                 crossSizes[i] = Math.Clamp(availableCross, min, max);
                 knownC = crossSizes[i]; // Update local for use in Case 2
@@ -447,7 +449,7 @@ public static class LayoutEngine
         };
         return factor * (availableSpace - childSize);
     }
-    
+
     private static float GetMainAlignmentOffset(Alignment align, float availableSpace, float totalChildrenSize, bool isRow)
     {
         // For Row: main axis is horizontal, alignment horizontal component matters
@@ -460,7 +462,7 @@ public static class LayoutEngine
         }
         return mainFactor * (availableSpace - totalChildrenSize);
     }
-    
+
     private static float GetCrossAlignmentOffset(Alignment align, float availableSpace, float childSize, bool isRow)
     {
         // For Row: cross axis is vertical
@@ -473,7 +475,7 @@ public static class LayoutEngine
         }
         return crossFactor * (availableSpace - childSize);
     }
-    
+
     private static (float Vertical, float Horizontal) GetAlignmentFactors(Alignment align)
     {
         return align switch
@@ -504,7 +506,7 @@ public static class LayoutEngine
         var parentBorder = ResolveEdges(parent, parentW, parentH, isBorder: true);
         var innerW = parentW - parentPadding.Horizontal - parentBorder.Horizontal;
         var innerH = parentH - parentPadding.Vertical - parentBorder.Vertical;
-        
+
         // Content area for positioning (inside border, includes padding)
         var contentW = parentW - parentBorder.Horizontal;
         var contentH = parentH - parentBorder.Vertical;
@@ -530,8 +532,8 @@ public static class LayoutEngine
         // Pre-compute content size if needed for Auto min constraints
         float? childContentW = null;
         float? childContentH = null;
-        if ((minWidthIsAuto && widthIsStretch) || (minHeightIsAuto && heightIsStretch) || 
-            (child.Width ?? Units.Auto).Kind is UnitsKind.Auto || 
+        if ((minWidthIsAuto && widthIsStretch) || (minHeightIsAuto && heightIsStretch) ||
+            (child.Width ?? Units.Auto).Kind is UnitsKind.Auto ||
             (child.Height ?? Units.Auto).Kind is UnitsKind.Auto)
         {
             var lType = child.LayoutType ?? LayoutType.Column;
@@ -616,7 +618,7 @@ public static class LayoutEngine
 
         var isStretchW = (child.Width ?? Units.Auto).Kind is UnitsKind.Stretch;
         var isStretchH = (child.Height ?? Units.Auto).Kind is UnitsKind.Stretch;
-        
+
         // For stretch hints, apply max constraints even if min is Auto
         var hintW = w;
         if (!hintW.HasValue && isStretchW)
@@ -624,14 +626,14 @@ public static class LayoutEngine
             var maxW = child.MaxWidth?.ToPx(pW, float.MaxValue) ?? float.MaxValue;
             hintW = Math.Min(pW, maxW);
         }
-        
+
         var hintH = h;
         if (!hintH.HasValue && isStretchH)
         {
             var maxH = child.MaxHeight?.ToPx(pH, float.MaxValue) ?? float.MaxValue;
             hintH = Math.Min(pH, maxH);
         }
-        
+
         var (contentMainHint, contentCrossHint) = childIsRow ? (hintW, hintH) : (hintH, hintW);
 
         var content = child.ContentSizing(ref ctx.SubLayout, childLayout, contentMainHint, contentCrossHint);
@@ -654,7 +656,7 @@ public static class LayoutEngine
 
         float totalMain = 0;
         float maxCross = 0;
-        
+
         var (gcRefW, gcRefH) = (w ?? (isStretchW ? pW : 0), h ?? (isStretchH ? pH : 0));
 
         foreach (var gc in grandchildren)
@@ -744,14 +746,14 @@ public static class LayoutEngine
         };
 
         if (!val.HasValue && !startIsAuto && !endIsAuto) val = parentSize - start - end;
-        
+
         if (!val.HasValue) return null;
 
         // Apply content-based minimum when min is Auto
         var effectiveMin = min;
         if (min?.Kind == UnitsKind.Auto && contentSize.HasValue)
             effectiveMin = Units.Pixels(contentSize.Value);
-        
+
         return DetermineFinalSize(val.Value, effectiveMin, max, parentSize);
     }
 

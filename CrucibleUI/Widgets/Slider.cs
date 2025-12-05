@@ -24,6 +24,7 @@ public class Slider : Widget
         Max = max;
         Value = Math.Clamp(initialValue, min, max);
         HeightValue = Units.Pixels(20);
+        IsFocusable = true;
     }
 
     public void SetValue(float value)

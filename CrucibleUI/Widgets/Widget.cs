@@ -32,8 +32,14 @@ public abstract class Widget
     public bool IsHovered { get; private set; }
     public bool IsPressed { get; private set; }
     public bool IsFocused { get; private set; }
+    public bool IsFocusable { get; protected set; }
     public bool IsDisabled { get; private set; }
     public bool IsVisible { get; private set; } = true;
+
+    // Events
+    public event Action<Widget>? OnFocus;
+    public event Action<Widget>? OnBlur;
+    public event Action<Widget>? OnSubmit;
 
     // Computed bounds (set by layout pass)
     public float ComputedX { get; private set; }
@@ -150,6 +156,12 @@ public abstract class Widget
         return (T)this;
     }
 
+    public T Focusable<T>(bool focusable = true) where T : Widget
+    {
+        IsFocusable = focusable;
+        return (T)this;
+    }
+
     public T Children<T>(params Widget[] children) where T : Widget
     {
         foreach (var child in children)
@@ -164,7 +176,15 @@ public abstract class Widget
 
     public void SetHovered(bool hovered) => IsHovered = hovered;
     public void SetPressed(bool pressed) => IsPressed = pressed;
-    public void SetFocused(bool focused) => IsFocused = focused;
+    public void SetFocused(bool focused)
+    {
+        if (IsFocused == focused) return;
+        IsFocused = focused;
+        if (focused) OnFocus?.Invoke(this);
+        else OnBlur?.Invoke(this);
+    }
+
+    public void TriggerSubmit() => OnSubmit?.Invoke(this);
 
     // --- Layout ---
 
@@ -208,8 +228,13 @@ public abstract class Widget
         var node = new WidgetNode(this);
         var cache = new WidgetCache();
         var subLayout = new WidgetSubLayout();
+
+        // Pass current computed size as the constraint for the root
+        float? w = ComputedWidth > 0 ? ComputedWidth : null;
+        float? h = ComputedHeight > 0 ? ComputedHeight : null;
+
         LayoutEngine.Compute<WidgetNode, Widget, WidgetSubLayout, Widget, WidgetCache>(
-            node, cache, this, ref subLayout);
+            node, cache, this, ref subLayout, w, h);
     }
 
     /// <summary>
@@ -263,6 +288,7 @@ public abstract class Widget
     public virtual void HandleMouseDown(float x, float y) { }
     public virtual void HandleMouseUp(float x, float y) { }
     public virtual void HandleMouseMove(float x, float y) { }
+    public virtual void HandleSubmit() { TriggerSubmit(); }
 
     // --- Content Size (virtual for widgets that need to measure content like Label) ---
 
