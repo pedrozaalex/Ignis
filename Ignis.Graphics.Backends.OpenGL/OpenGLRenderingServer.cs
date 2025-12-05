@@ -277,29 +277,9 @@ public sealed class OpenGLRenderingServer : IRenderingServer
             return (text.Length * fontSize * 0.5f, fontSize);
 
         // Scale font size by resolution factor for correct measurement
-        var spritFont = fontSystem.GetFont(fontSize * FontResolutionFactor);
-        var size = spritFont.MeasureString(text);
+        var spriteFont = fontSystem.GetFont(fontSize * FontResolutionFactor);
+        var size = spriteFont.MeasureString(text);
         return (size.X, size.Y);
-    }
-
-    /// <summary>
-    /// Get the FontSystem for a given font handle (for direct text rendering).
-    /// </summary>
-    public FontSystem? GetFontSystem(FontHandle handle)
-    {
-        _fontSystems.TryGetValue(handle.Id, out var fontSystem);
-        return fontSystem;
-    }
-
-    /// <summary>
-    /// Get a SpriteFontBase for rendering at the specified font size.
-    /// Automatically applies the font resolution factor for crisp rendering.
-    /// </summary>
-    public SpriteFontBase? GetFont(FontHandle handle, float fontSize)
-    {
-        return _fontSystems.TryGetValue(handle.Id, out var fontSystem)
-            ? fontSystem.GetFont(fontSize * FontResolutionFactor)
-            : null;
     }
 
     // --- Render Target Management ---
@@ -404,22 +384,23 @@ public sealed class OpenGLRenderingServer : IRenderingServer
 
             case CommandType.SetProjection:
                 _currentProjection = cmd.Matrix;
+                _batch2D?.SetProjection(cmd.Matrix);
                 break;
 
             case CommandType.SetView:
                 _currentView = cmd.Matrix;
                 break;
-            
+
             case CommandType.SetUniformVec3:
                 if (_shaders.TryGetValue(_currentShader.Id, out var shaderVec3))
                     shaderVec3.SetVec3(cmd.UniformName!, cmd.UniformVec3);
                 break;
-            
+
             case CommandType.SetUniformFloat:
                 if (_shaders.TryGetValue(_currentShader.Id, out var shaderFloat))
                     shaderFloat.SetFloat(cmd.UniformName!, cmd.UniformFloat);
                 break;
-            
+
             case CommandType.SetUniformColor:
                 if (_shaders.TryGetValue(_currentShader.Id, out var shaderColor))
                     shaderColor.SetVec4(cmd.UniformName!, new System.Numerics.Vector4(cmd.Color.R, cmd.Color.G, cmd.Color.B, cmd.Color.A));
@@ -444,16 +425,80 @@ public sealed class OpenGLRenderingServer : IRenderingServer
                 if (_textures.TryGetValue(cmd.Texture.Id, out var spriteTex))
                     _batch2D?.DrawQuad(cmd.Position, cmd.Size, cmd.Color, spriteTex.Handle);
                 break;
+
+            case CommandType.DrawText:
+                DrawTextInternal(cmd.Font, cmd.Text ?? "", cmd.Position, cmd.FontSize, cmd.Color);
+                break;
+
+            case CommandType.DrawTextBounded:
+                DrawTextBoundedInternal(cmd.Font, cmd.Text ?? "", cmd.TextBounds, cmd.FontSize, cmd.Color, cmd.HAlign, cmd.VAlign);
+                break;
         }
     }
 
     private void Setup2DShaderIfNeeded()
     {
-        if (!_shaders.TryGetValue(_currentShader.Id, out var shader)) return;
+        // No longer needed - GL2DBatch now manages its own state at flush time
+        // This method is kept for API compatibility but does nothing
+    }
 
-        shader.Use();
-        shader.SetMat4("uProjection", _currentProjection);
-        shader.SetInt("uUseTexture", 0);
+    private void DrawTextInternal(FontHandle fontHandle, string text, Vector2 position, float fontSize, Color4 color)
+    {
+        if (_fontRenderer == null || string.IsNullOrEmpty(text)) return;
+        if (!_fontSystems.TryGetValue(fontHandle.Id, out var fontSystem)) return;
+
+        // Flush any pending 2D batched draws first
+        _batch2D?.Flush();
+
+        var font = fontSystem.GetFont(fontSize * FontResolutionFactor);
+        var textColor = new FSColor(
+            (byte)(color.R * 255),
+            (byte)(color.G * 255),
+            (byte)(color.B * 255),
+            (byte)(color.A * 255)
+        );
+
+        _fontRenderer.Begin(_currentProjection);
+        font.DrawText(_fontRenderer, text, position, textColor);
+        _fontRenderer.End();
+    }
+
+    private void DrawTextBoundedInternal(FontHandle fontHandle, string text, Rect bounds, float fontSize, Color4 color, HorizontalAlign hAlign, VerticalAlign vAlign)
+    {
+        if (_fontRenderer == null || string.IsNullOrEmpty(text)) return;
+        if (!_fontSystems.TryGetValue(fontHandle.Id, out var fontSystem)) return;
+
+        // Flush any pending 2D batched draws first
+        _batch2D?.Flush();
+
+        var font = fontSystem.GetFont(fontSize * FontResolutionFactor);
+        var textSize = font.MeasureString(text);
+
+        // Calculate position based on alignment
+        float x = hAlign switch
+        {
+            HorizontalAlign.Center => bounds.X + (bounds.Width - textSize.X) / 2,
+            HorizontalAlign.Right => bounds.X + bounds.Width - textSize.X,
+            _ => bounds.X
+        };
+
+        float y = vAlign switch
+        {
+            VerticalAlign.Center => bounds.Y + (bounds.Height - textSize.Y) / 2,
+            VerticalAlign.Bottom => bounds.Y + bounds.Height - textSize.Y,
+            _ => bounds.Y
+        };
+
+        var textColor = new FontStashSharp.FSColor(
+            (byte)(color.R * 255),
+            (byte)(color.G * 255),
+            (byte)(color.B * 255),
+            (byte)(color.A * 255)
+        );
+
+        _fontRenderer.Begin(_currentProjection);
+        font.DrawText(_fontRenderer, text, new Vector2(x, y), textColor);
+        _fontRenderer.End();
     }
 
     private void DrawMeshInternal(MeshHandle meshHandle, Matrix4x4 worldMatrix)
@@ -568,22 +613,8 @@ public sealed class OpenGLRenderingServer : IRenderingServer
     {
         if (_gl == null) return;
 
-        // Set up state for 2D rendering
-        // Use LessEqual so overlapping quads at same Z pass, and disable depth writes
-        _gl.DepthFunc(DepthFunction.Lequal);
-        _gl.DepthMask(false);
-        _gl.Enable(EnableCap.Blend);
-        _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
-        // Set up 2D shader before flushing batch
-        if (_shaders.TryGetValue(_defaultShader2D.Id, out var shader2D))
-        {
-            shader2D.Use();
-            shader2D.SetMat4("uProjection", _currentProjection);
-            shader2D.SetInt("uUseTexture", 0);
-        }
-
-        // Flush 2D batch
+        // Flush any remaining 2D batch content
+        // The batch manages its own shader and blend state at flush time
         _batch2D?.End();
 
         // Restore default depth state

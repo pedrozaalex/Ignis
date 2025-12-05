@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Samples.Common\Samples.Common.csproj" />
+        <ProjectReference Include="..\..\CrucibleUI\CrucibleUI.csproj" />
+        <ProjectReference Include="..\..\Ignis.Core\Ignis.Core.csproj" />
+        <ProjectReference Include="..\..\Ignis.Graphics\Ignis.Graphics.csproj" />
+        <ProjectReference
+            Include="..\..\Ignis.Graphics.Backends.OpenGL\Ignis.Graphics.Backends.OpenGL.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Content\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Levels\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+</Project>

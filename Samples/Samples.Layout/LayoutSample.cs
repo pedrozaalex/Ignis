@@ -3,7 +3,6 @@ using CrucibleUI;
 using CrucibleUI.Types;
 using Friflo.Engine.ECS;
 using Ignis.Graphics;
-using Ignis.Graphics.Backends.OpenGL;
 using Samples.Common;
 
 namespace Samples.Layout;
@@ -379,15 +378,13 @@ public class LayoutSample : GraphicsSample
         commands.SetProjectionMatrix(projection);
         commands.SetViewMatrix(Matrix4x4.Identity);
         
-        RenderQuads(_root, commands, 0, 0);
+        RenderNode(_root, commands, 0, 0);
         
         RenderingServer.Submit(commands);
         RenderingServer.EndPass();
-        
-        RenderText(_root, projection, 0, 0);
     }
     
-    private void RenderQuads(Entity entity, IRenderCommandList commands, float parentX, float parentY)
+    private void RenderNode(Entity entity, IRenderCommandList commands, float parentX, float parentY)
     {
         if (entity.IsNull) return;
         if (!entity.TryGetComponent<LayoutBounds>(out var bounds)) return;
@@ -395,6 +392,7 @@ public class LayoutSample : GraphicsSample
         float absX = parentX + bounds.PosX;
         float absY = parentY + bounds.PosY;
         
+        // Draw background quad
         if (entity.TryGetComponent<ShapeColor>(out var color) && bounds.Width > 0 && bounds.Height > 0 && color.A > 0)
         {
             commands.DrawQuad(
@@ -404,48 +402,20 @@ public class LayoutSample : GraphicsSample
             );
         }
         
-        foreach (var child in entity.ChildEntities)
-        {
-            RenderQuads(child, commands, absX, absY);
-        }
-    }
-    
-    private void RenderText(Entity entity, Matrix4x4 projection, float parentX, float parentY)
-    {
-        if (entity.IsNull) return;
-        if (!entity.TryGetComponent<LayoutBounds>(out var bounds)) return;
-        
-        float absX = parentX + bounds.PosX;
-        float absY = parentY + bounds.PosY;
-        
+        // Draw text label using command list API
         if (entity.TryGetComponent<TextLabel>(out var label) && !string.IsNullOrEmpty(label.Text))
         {
-            if (RenderingServer is OpenGLRenderingServer { FontRenderer: not null } glServer)
-            {
-                var font = glServer.GetFont(_font, label.FontSize);
-                if (font != null)
-                {
-                    var textColor = new FontStashSharp.FSColor(
-                        (byte)(label.R * 255),
-                        (byte)(label.G * 255),
-                        (byte)(label.B * 255),
-                        (byte)(label.A * 255)
-                    );
-                    
-                    var textSize = font.MeasureString(label.Text);
-                    float textY = absY + (bounds.Height - textSize.Y) / 2;
-                    float textX = absX + 5;
-                    
-                    glServer.FontRenderer.Begin(projection);
-                    font.DrawText(glServer.FontRenderer, label.Text, new Vector2(textX, textY), textColor);
-                    glServer.FontRenderer.End();
-                }
-            }
+            var textColor = new Color4(label.R, label.G, label.B, label.A);
+            var textBounds = new Ignis.Graphics.Rect(absX + 5, absY, bounds.Width - 10, bounds.Height);
+            
+            commands.DrawText(_font, label.Text, textBounds, label.FontSize, textColor, 
+                HorizontalAlign.Left, VerticalAlign.Center);
         }
         
+        // Recursively render children
         foreach (var child in entity.ChildEntities)
         {
-            RenderText(child, projection, absX, absY);
+            RenderNode(child, commands, absX, absY);
         }
     }
     
