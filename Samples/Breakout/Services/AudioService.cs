@@ -1,4 +1,4 @@
-using CSCore;
+using NAudio.Wave;
 using Ignis.Audio;
 
 namespace Samples.Breakout.Services;

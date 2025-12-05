@@ -1,7 +1,4 @@
-using CSCore;
-using CSCore.Codecs;
-using CSCore.SoundOut;
-using CSCore.Streams;
+using NAudio.Wave;
 
 namespace Ignis.Audio;
 
@@ -16,7 +13,7 @@ public interface ISoundData : IDisposable
 
 /// <summary>
 /// Core audio engine managing device initialization and audio playback.
-/// Uses CSCore with WasapiOut for broad compatibility.
+/// Uses NAudio with WasapiOut for broad compatibility.
 /// </summary>
 public sealed class AudioEngine : IDisposable
 {
@@ -24,8 +21,8 @@ public sealed class AudioEngine : IDisposable
     private readonly List<SoundInstance> _activeInstances = [];
     private readonly object _lock = new();
 
-    private ISoundOut? _musicOut;
-    private IWaveSource? _musicSource;
+    private IWavePlayer? _musicOut;
+    private WaveStream? _musicSource;
     private LoopStream? _musicLoop;
     private string? _currentMusicId;
 
@@ -132,18 +129,18 @@ public sealed class AudioEngine : IDisposable
 
         try
         {
-            _musicSource = CodecFactory.Instance.GetCodec(path);
+            _musicSource = new AudioFileReader(path);
 
             if (loop)
             {
                 _musicLoop = new LoopStream(_musicSource);
                 _musicOut = new WasapiOut();
-                _musicOut.Initialize(_musicLoop);
+                _musicOut.Init(_musicLoop);
             }
             else
             {
                 _musicOut = new WasapiOut();
-                _musicOut.Initialize(_musicSource);
+                _musicOut.Init(_musicSource);
             }
 
             UpdateMusicVolume();
@@ -184,7 +181,7 @@ public sealed class AudioEngine : IDisposable
         if (paused && _musicOut.PlaybackState == PlaybackState.Playing)
             _musicOut.Pause();
         else if (!paused && _musicOut.PlaybackState == PlaybackState.Paused)
-            _musicOut.Resume();
+            _musicOut.Play();
     }
 
     /// <summary>
@@ -192,9 +189,9 @@ public sealed class AudioEngine : IDisposable
     /// </summary>
     public void UpdateMusicVolume()
     {
-        if (_musicOut != null)
+        if (_musicSource is AudioFileReader reader)
         {
-            _musicOut.Volume = Math.Clamp(MasterVolume * MusicVolume, 0f, 1f);
+            reader.Volume = Math.Clamp(MasterVolume * MusicVolume, 0f, 1f);
         }
     }
 
@@ -247,13 +244,13 @@ public sealed class SoundEffectData : ISoundData
 
     public SoundEffectData(string filepath)
     {
-        using var source = CodecFactory.Instance.GetCodec(filepath);
-        Format = source.WaveFormat;
+        using var reader = new AudioFileReader(filepath);
+        Format = reader.WaveFormat;
 
         using var stream = new MemoryStream();
-        var buffer = new byte[source.WaveFormat.BytesPerSecond];
+        var buffer = new byte[reader.WaveFormat.AverageBytesPerSecond];
         int read;
-        while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
+        while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
         {
             stream.Write(buffer, 0, read);
         }
@@ -291,21 +288,20 @@ public sealed class ProceduralSoundData : ISoundData
 /// </summary>
 internal sealed class SoundInstance : IDisposable
 {
-    private readonly ISoundOut _soundOut;
-    private readonly IWaveSource _source;
+    private readonly WasapiOut _soundOut;
+    private readonly RawSourceWaveStream _source;
     private bool _disposed;
 
     public bool IsFinished => _disposed || _soundOut.PlaybackState == PlaybackState.Stopped;
 
     public SoundInstance(ISoundData data, float volume)
     {
-        // Create a memory stream from the cached data
         var memStream = new MemoryStream(data.Data);
-        _source = new RawDataReader(memStream, data.Format);
+        _source = new RawSourceWaveStream(memStream, data.Format);
+        var volumeProvider = new VolumeWaveProvider16(_source) { Volume = Math.Clamp(volume, 0f, 1f) };
 
         _soundOut = new WasapiOut();
-        _soundOut.Initialize(_source);
-        _soundOut.Volume = Math.Clamp(volume, 0f, 1f);
+        _soundOut.Init(volumeProvider);
     }
 
     public void Play()
@@ -330,60 +326,50 @@ internal sealed class SoundInstance : IDisposable
 }
 
 /// <summary>
-/// Wraps a wave source to enable looping.
+/// Wraps a wave stream to enable looping.
 /// </summary>
-internal sealed class LoopStream : WaveAggregatorBase
+internal sealed class LoopStream : WaveStream
 {
+    private readonly WaveStream _sourceStream;
     public bool EnableLoop { get; set; } = true;
 
-    public LoopStream(IWaveSource source) : base(source)
+    public LoopStream(WaveStream sourceStream)
     {
+        _sourceStream = sourceStream;
+    }
+
+    public override WaveFormat WaveFormat => _sourceStream.WaveFormat;
+    public override long Length => _sourceStream.Length;
+    public override long Position
+    {
+        get => _sourceStream.Position;
+        set => _sourceStream.Position = value;
     }
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        var read = base.Read(buffer, offset, count);
+        var totalRead = 0;
 
-        while (read < count && EnableLoop)
+        while (totalRead < count)
         {
-            Position = 0;
-            read += base.Read(buffer, offset + read, count - read);
+            var read = _sourceStream.Read(buffer, offset + totalRead, count - totalRead);
+            if (read == 0)
+            {
+                if (!EnableLoop) break;
+                _sourceStream.Position = 0;
+            }
+            totalRead += read;
         }
 
-        return read;
-    }
-}
-
-/// <summary>
-/// Reads raw PCM data from a stream.
-/// </summary>
-internal sealed class RawDataReader : IWaveSource
-{
-    private readonly Stream _stream;
-    private readonly WaveFormat _waveFormat;
-
-    public WaveFormat WaveFormat => _waveFormat;
-    public long Position
-    {
-        get => _stream.Position;
-        set => _stream.Position = value;
-    }
-    public long Length => _stream.Length;
-    public bool CanSeek => _stream.CanSeek;
-
-    public RawDataReader(Stream stream, WaveFormat format)
-    {
-        _stream = stream;
-        _waveFormat = format;
+        return totalRead;
     }
 
-    public int Read(byte[] buffer, int offset, int count)
+    protected override void Dispose(bool disposing)
     {
-        return _stream.Read(buffer, offset, count);
-    }
-
-    public void Dispose()
-    {
-        _stream.Dispose();
+        if (disposing)
+        {
+            _sourceStream.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }
