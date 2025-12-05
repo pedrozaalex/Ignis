@@ -1,13 +1,11 @@
 using Ignis.Core;
 using Ignis.Core.Scenery;
-using Ignis.Core.Timing;
 using Ignis.Graphics.Backends.OpenGL;
 using Samples.Breakout.Core;
 using Samples.Breakout.Scenes;
-using Samples.Common;
 
 // Create game context with shared services
-var server = new OpenGLRenderingServer();
+var renderingServer = new OpenGLRenderingServer();
 var engineLoop = new EngineLoop
 {
     TargetFixedStep = TimeSpan.FromSeconds(1.0 / 60.0),
@@ -31,9 +29,9 @@ IBreakoutScene? currentScene = null;
 
 window.OnLoad += () =>
 {
-    server.Initialize(window);
+    renderingServer.Initialize(window);
 
-    gameContext = new BreakoutContext(server, window.Width, window.Height, window);
+    gameContext = new BreakoutContext(renderingServer, window.Width, window.Height, window);
     gameContext.Initialize();
     gameContext.Audio.Initialize();
     gameContext.Audio.UpdateFromSettings(gameContext.Settings);
@@ -57,7 +55,7 @@ window.OnLoad += () =>
     };
 
     Console.WriteLine("=== Breakout Sample ===");
-    Console.WriteLine($"Backend: {server.Capabilities.BackendName}");
+    Console.WriteLine($"Backend: {renderingServer.Capabilities.BackendName}");
     Console.WriteLine("Controls:");
     Console.WriteLine("  Arrow Keys / A,D - Move paddle");
     Console.WriteLine("  Space - Launch ball / Pause");
@@ -75,7 +73,7 @@ window.OnUpdate += _ =>
 
 window.OnResize += (w, h) =>
 {
-    server.Resize(w, h);
+    renderingServer.Resize(w, h);
     if (gameContext != null)
     {
         gameContext.Width = w;
@@ -88,7 +86,7 @@ window.OnClosing += () =>
 {
     gameContext?.SaveSettings();
     sceneManager?.CurrentScene?.OnExit();
-    server.Dispose();
+    renderingServer.Dispose();
 };
 
 window.Run();

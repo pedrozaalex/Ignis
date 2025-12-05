@@ -1,5 +1,5 @@
 using Ignis.Core;
-using Ignis.Core.Scenery;
+using Ignis.Core.Assets;
 using Ignis.Graphics;
 using Samples.Breakout.Services;
 
@@ -8,13 +8,9 @@ namespace Samples.Breakout.Core;
 /// <summary>
 /// Extended context for Breakout with game-specific services.
 /// </summary>
-public sealed class BreakoutContext : EngineContext
+public sealed class BreakoutContext : GraphicsContext
 {
     public IRenderingServer RenderingServer { get; }
-    public int Width { get; set; }
-    public int Height { get; set; }
-
-    public Window Window { get; }
     public LeaderboardService Leaderboard { get; }
     public LevelService Levels { get; }
     public SettingsService Settings { get; }
@@ -28,11 +24,9 @@ public sealed class BreakoutContext : EngineContext
     public int Lives { get; set; } = 3;
 
     public BreakoutContext(IRenderingServer server, int width, int height, Window window)
+        : base(window, width, height)
     {
         RenderingServer = server;
-        Width = width;
-        Height = height;
-        Window = window;
 
         Leaderboard = new LeaderboardService();
         Levels = new LevelService();
@@ -63,28 +57,14 @@ public sealed class BreakoutContext : EngineContext
 
     private FontHandle LoadFont()
     {
-        string[] fontPaths =
+        var fontPath = SystemFontLocator.FindSystemFont();
+        if (fontPath != null)
         {
-            @"C:\Windows\Fonts\segoeui.ttf",
-            @"C:\Windows\Fonts\arial.ttf",
-            @"C:\Windows\Fonts\tahoma.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/System/Library/Fonts/Helvetica.ttc"
-        };
-
-        foreach (var path in fontPaths)
-        {
-            if (File.Exists(path))
-            {
-                var handle = RenderingServer.CreateFontFromFile(path);
-                if (handle.Id != 0) return handle;
-            }
+            var handle = RenderingServer.CreateFontFromFile(fontPath);
+            if (handle.Id != 0) return handle;
         }
-
         return FontHandle.Invalid;
     }
-
-    public InputState? GetInput() => Window.InputState;
 }
 
 /// <summary>

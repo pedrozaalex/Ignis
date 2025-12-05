@@ -1,5 +1,5 @@
 using Ignis.Core;
-using Ignis.Core.Scenery;
+using Ignis.Core.Assets;
 using Ignis.Graphics;
 using Samples.TowerDefense.Services;
 
@@ -8,13 +8,9 @@ namespace Samples.TowerDefense.Core;
 /// <summary>
 /// Extended context for Tower Defense with game-specific services.
 /// </summary>
-public sealed class TowerDefenseContext : EngineContext
+public sealed class TowerDefenseContext : GraphicsContext
 {
     public IRenderingServer RenderingServer { get; }
-    public int Width { get; set; }
-    public int Height { get; set; }
-
-    public Window Window { get; }
     public LevelService Levels { get; }
     public SettingsService Settings { get; }
     public AudioService Audio { get; }
@@ -28,11 +24,9 @@ public sealed class TowerDefenseContext : EngineContext
     public int Lives { get; set; } = 20;
 
     public TowerDefenseContext(IRenderingServer server, int width, int height, Window window)
+        : base(window, width, height)
     {
         RenderingServer = server;
-        Width = width;
-        Height = height;
-        Window = window;
 
         Levels = new LevelService();
         Settings = new SettingsService();
@@ -71,28 +65,14 @@ public sealed class TowerDefenseContext : EngineContext
 
     private FontHandle LoadFont()
     {
-        string[] fontPaths =
-        [
-            @"C:\Windows\Fonts\segoeui.ttf",
-            @"C:\Windows\Fonts\arial.ttf",
-            @"C:\Windows\Fonts\tahoma.ttf",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/System/Library/Fonts/Helvetica.ttc"
-        ];
-
-        foreach (var path in fontPaths)
+        var fontPath = SystemFontLocator.FindSystemFont();
+        if (fontPath != null)
         {
-            if (File.Exists(path))
-            {
-                var handle = RenderingServer.CreateFontFromFile(path);
-                if (handle.Id != 0) return handle;
-            }
+            var handle = RenderingServer.CreateFontFromFile(fontPath);
+            if (handle.Id != 0) return handle;
         }
-
         return FontHandle.Invalid;
     }
-
-    public InputState? GetInput() => Window.InputState;
 }
 
 /// <summary>
